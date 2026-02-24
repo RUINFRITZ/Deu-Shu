@@ -1,6 +1,11 @@
+// =========================================================================
+// [ ドゥーシュー ] 統合 build.gradle (Spring Boot 3.5.x / Java 17)
+// 注意: フロントエンド（JSP/Thymeleaf等）の依存関係は確定後に追記してください。
+// =========================================================================
+
 plugins {
 	id 'java'
-	id 'org.springframework.boot' version '3.5.12-SNAPSHOT'
+	id 'org.springframework.boot' version '3.5.11'
 	id 'io.spring.dependency-management' version '1.1.7'
 }
 
@@ -26,21 +31,64 @@ repositories {
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-security'
-	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-	implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.5'
-	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
-	compileOnly 'org.projectlombok:lombok'
-	developmentOnly 'org.springframework.boot:spring-boot-devtools'
-	runtimeOnly 'com.mysql:mysql-connector-j'
-	annotationProcessor 'org.projectlombok:lombok'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter-test:3.0.5'
-	testImplementation 'org.springframework.security:spring-security-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    // =========================================================================
+    // 1. コア・フレームワークおよびDB通信 (パクさん / べさん領域)
+    // =========================================================================
+    // RESTful APIのエンドポイント構築および組み込みTomcatサーバーの提供
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    // べさんが担当するフォーム入力値の厳密な検証（@Valid, @NotBlank等）機能
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    // パクさんとべさんが連携する、ユーザー(USER)とオーナー(OWNER)の権限分離アーキテクチャ
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    // SQLマッピングを担うMyBatisフレームワークのSpring Boot統合
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.3'
+    // MySQL 8.0 データベースとの物理的な接続(JDBC)ドライバー
+    runtimeOnly 'com.mysql:mysql-connector-j'
+
+    // =========================================================================
+    // 2. 外部API非同期通信およびJSONパース (パクさん領域: トランザクション・決済)
+    // =========================================================================
+    // PortOne等の外部決済サーバーとのノンブロッキング(Non-blocking)通信を担うWebClient
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    // 決済サーバーからの複雑なJSONレスポンスをJavaオブジェクト(DTO)へ直列化・反直列化するパーサー
+    implementation 'com.google.code.gson:gson'
+
+    // =========================================================================
+    // 3. JWTベースの無状態(Stateless)認証トークン (べさん領域: 権限管理)
+    // =========================================================================
+    // サーバーのメモリ(Session)を消費せず、暗号化されたトークンで認証を維持するJWTモジュール群
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+
+    // =========================================================================
+    // 4. LBS空間データおよびバイナリ圧縮伝送 (ゴさん領域: 地図最適化)
+    // =========================================================================
+    // 何千件もの店舗座標(緯度・経度)を重いJSON配列ではなく、超軽量なバイナリタイル(MVT)に圧縮するエンジン
+    implementation 'com.wdtinc:mapbox-vector-tile:3.1.0'
+    // MVTの内部構造であるProtobufフォーマットをエンコード・デコードするコアライブラリ
+    implementation 'com.google.protobuf:protobuf-java:3.21.12'
+
+    // =========================================================================
+    // 5. AWS S3 クラウドストレージ連携 (ユさん領域: レビュー画像処理)
+    // =========================================================================
+    // 店舗のメニュー写真やレビュー画像をローカルサーバーに保存せず、スケーラブルなAWS S3へ直接アップロードする連携モジュール
+    implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
+
+    // =========================================================================
+    // 6. 開発環境の利便性向上およびテストモジュール
+    // =========================================================================
+    // Getter/Setterなどのボイラープレートコードをコンパイル時に自動生成するツール
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    // コード修正時にサーバーを手動で再起動する手間を省くホットリロード(Hot Reload)機能
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    // 単体テストおよび統合テスト(TDD)を支えるJUnit5基盤
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
 }
 
 tasks.named('test') {
-	useJUnitPlatform()
+    useJUnitPlatform()
 }
+

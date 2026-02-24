@@ -1,37 +1,34 @@
-HELP.md
-.gradle
+# =========================================================================
+# チーム開発向け .gitignore 標準設定（Spring Boot / Java 環境）
+# =========================================================================
+
+# 1. コンパイル済みのアウトプット（ビルド結果物）はバージョン管理から除外する
+target/
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### STS ###
-.apt_generated
+# 2. 各メンバーのIDE（統合開発環境）の固有設定ファイルを除外する
+# STS(Eclipse), IntelliJ, VSCode の設定が衝突するのを未然に防ぎ切る
+.idea/
+.metadata/
 .classpath
-.factorypath
 .project
-.settings
-.springBeans
-.sts4-cache
-bin/
-!**/src/main/**/bin/
-!**/src/test/**/bin/
-
-### IntelliJ IDEA ###
-.idea
-*.iws
+.settings/
+*.launch
 *.iml
-*.ipr
-out/
-!**/src/main/**/out/
-!**/src/test/**/out/
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-
-### VS Code ###
 .vscode/
+
+# 3. OSの隠しファイル・キャッシュファイルを除外する
+.DS_Store
+Thumbs.db
+
+# 4. セキュリティに関するファイル（DBパスワード、APIキーなど）を除外する
+# application-secret.yml やローカル専用の設定ファイルが漏洩しないよう隔離する
+application-secret.yml
+application-local.yml
+*.jks
+
+# 5. ログファイル
+*.log
