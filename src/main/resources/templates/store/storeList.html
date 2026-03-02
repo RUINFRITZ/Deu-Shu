@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Deu-Shu | 오늘의 마감 할인</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+          crossorigin="anonymous"/>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
+
+    <style>
+        :root {
+            --primary-sage:      #6FAF8F;
+            --primary-sage-deep: #4F7F68;
+            --bg-main:           #FAFAF8;
+            --bg-soft:           #F1F1EF;
+            --text-main:         #2F2F2F;
+            --text-sub:          #6B6B6B;
+            --border-soft:       #E0E0E0;
+            --warning:           #FF9800;
+            --error:             #D32F2F;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        main { margin-top: 72px; }
+
+        /* ── Hero ── */
+        .hero-section   { background-color: var(--bg-soft); }
+        .hero-sub       { color: var(--text-sub); font-size: 0.9rem; }
+
+        /* ── 패널 ── */
+        .panel          { background-color: #fff; border-radius: 1rem; border: 1px solid var(--border-soft); }
+        .panel-header   { border-bottom: 1px solid var(--border-soft); }
+
+        /* ── 지도 ── */
+        #map {
+            width: 100%;
+            height: 480px;
+            border-radius: 0 0 1rem 1rem;
+            z-index: 0;
+        }
+
+        /* ── 가게 리스트 무한스크롤 컨테이너 ── */
+        #store-list-container {
+            overflow-y: auto;
+            max-height: 480px;
+            /* 부드러운 스크롤 */
+            scroll-behavior: smooth;
+        }
+
+        /* 스크롤바 커스텀 */
+        #store-list-container::-webkit-scrollbar { width: 4px; }
+        #store-list-container::-webkit-scrollbar-track { background: transparent; }
+        #store-list-container::-webkit-scrollbar-thumb { background: var(--border-soft); border-radius: 4px; }
+
+        /* ── 가게 카드 ── */
+        .store-card {
+            background-color: var(--bg-soft);
+            border-radius: 0.75rem;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .store-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+
+        .store-thumb {
+            width: 64px;
+            height: 64px;
+            border-radius: 0.75rem;
+            background-color: #D3D3D3;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .price-discount  { color: var(--primary-sage-deep); font-weight: 600; }
+        .price-original  { color: #9E9E9E; text-decoration: line-through; font-size: 0.8rem; }
+        .badge-warning-custom { background-color: var(--warning); }
+        .badge-error-custom   { background-color: var(--error); }
+
+        /* ── 로딩 스피너 ── */
+        #scroll-loader {
+            display: none;
+            padding: 1rem 0;
+        }
+        .spinner-sage {
+            width: 24px; height: 24px;
+            border: 3px solid var(--border-soft);
+            border-top-color: var(--primary-sage);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* 끝 메시지 */
+        #list-end-msg {
+            display: none;
+            font-size: 0.8rem;
+            color: var(--text-sub);
+            padding: 1rem 0;
+        }
+
+        /* ── 버튼 커스텀 ── */
+        .btn-primary-sage {
+            background-color: var(--primary-sage-deep);
+            border-color: var(--primary-sage-deep);
+            color: #fff;
+        }
+        .btn-primary-sage:hover {
+            background-color: var(--primary-sage);
+            border-color: var(--primary-sage);
+            color: #fff;
+        }
+
+        /* ── 필터 Pill ── */
+        .filter-pill {
+            background-color: var(--primary-sage);
+            color: #fff;
+            font-size: 0.75rem;
+            border-radius: 999px;
+            padding: 0.2rem 0.75rem;
+        }
+
+        /* ── Leaflet 핀 커스텀 색상 ── */
+        .leaflet-marker-icon { filter: hue-rotate(100deg); }
+
+        /* ── 지도 팝업 커스텀 ── */
+        .leaflet-popup-content-wrapper {
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+        }
+        .map-popup-title {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--text-main);
+        }
+        .map-popup-sub {
+            font-size: 0.78rem;
+            color: var(--text-sub);
+            margin-top: 2px;
+        }
+        .map-popup-price {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--primary-sage-deep);
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     헤더 조각 삽입 (fragments/layout.html)
+     실제 경로에 맞게 수정하세요
+════════════════════════════════════════════ -->
+<div th:replace="~{fragments/header :: header}"></div>
+
+<!-- ═══════════════════════════════════════════
+     메인 콘텐츠
+════════════════════════════════════════════ -->
+<main>
+
+    <!-- Hero 영역 -->
+    <section class="hero-section py-4 py-md-5">
+        <div class="container">
+            <div class="row g-4 align-items-center">
+                <!-- 왼쪽: 문구 + 검색 -->
+                <div class="col-md-6">
+                    <h1 class="h3 fw-bold mb-2">
+                        내 주변 마감 할인 빵·도시락, 지금 픽업하기
+                    </h1>
+                    <p class="hero-sub mb-3">
+                        버려질 뻔한 음식을 저렴하게, 그리고 ESG 포인트로 나의 에코 점수도 함께 쌓아보세요.
+                    </p>
+                    <form class="row g-2" th:action="@{/stores/search}" method="get">
+                        <div class="col-8 col-sm-9">
+                            <input type="text" name="keyword"
+                                   class="form-control rounded-pill"
+                                   placeholder="예: 강남역, 홍대입구 주변, 회사 주소 입력"
+                                   th:value="${param.keyword}"/>
+                        </div>
+                        <div class="col-4 col-sm-3 d-grid">
+                            <button type="submit" class="btn btn-primary-sage rounded-pill">검색</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- 오른쪽: ESG 통계 플레이스홀더 -->
+                <div class="col-md-6">
+                    <div class="border border-dashed rounded-4 p-4 text-center text-muted small bg-white">
+                        <div class="mb-2 fw-semibold">ESG &amp; 통계 영역</div>
+                        <div>오늘 절약된 음식 수량, 절감된 탄소량 등의</div>
+                        <div>간단한 카드나 일러스트를 배치할 수 있습니다.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 지도 + 리스트 영역 -->
+    <section class="py-4 py-md-5">
+        <div class="container">
+            <div class="row g-3 g-lg-4">
+
+                <!-- ── 좌측: 지도 패널 ── -->
+                <div class="col-lg-7">
+                    <div class="panel h-100 d-flex flex-column">
+                        <div class="panel-header px-3 px-md-4 py-2 d-flex justify-content-between align-items-center">
+                            <span class="small text-muted">지도에서 내 주변 마감 할인 가게 보기</span>
+                            <span class="filter-pill d-none d-sm-inline" id="map-filter-label">
+                                전체 카테고리
+                            </span>
+                        </div>
+                        <!-- Leaflet 지도 컨테이너 -->
+                        <div id="map"></div>
+                    </div>
+                </div>
+
+                <!-- ── 우측: 가게 리스트 패널 (무한스크롤) ── -->
+                <div class="col-lg-5">
+                    <div class="panel h-100 d-flex flex-column">
+                        <div class="panel-header px-3 px-md-4 py-2 d-flex justify-content-between align-items-center">
+                            <span class="small text-muted">오늘 픽업 가능한 가게</span>
+                            <span class="small text-muted">재고 / 마감 임박 순</span>
+                        </div>
+
+                        <div class="p-2 p-md-3 flex-grow-1 d-flex flex-column">
+                            <!-- 무한 스크롤 리스트 영역 -->
+                            <div id="store-list-container" class="flex-grow-1">
+
+                                <!-- ┌──────────────────────────────────────────
+                                     Thymeleaf 서버 렌더링 초기 카드
+                                     (th:each로 실제 데이터 바인딩)
+                                ──────────────────────────────────────────┘ -->
+                                <div th:each="store : ${stores}" class="card store-card mb-2"
+                                     th:data-store-id="${store.id}"
+                                     th:data-lat="${store.lat}"
+                                     th:data-lng="${store.lng}"
+                                     onclick="focusMapPin(this)">
+                                    <div class="card-body d-flex">
+                                        <img th:src="${store.thumbnailUrl} ?: '/img/default-store.png'"
+                                             class="store-thumb me-3"
+                                             th:alt="${store.name}"/>
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                                <h6 class="mb-0" th:text="${store.name}">가게이름</h6>
+                                                <!-- 재고 상태 배지 -->
+                                                <span th:if="${store.totalStock > 5}"
+                                                      class="badge bg-success text-white small"
+                                                      th:text="'재고 여유 · ' + ${store.totalStock}">재고 여유</span>
+                                                <span th:if="${store.totalStock > 0 and store.totalStock <= 5}"
+                                                      class="badge badge-warning-custom text-white small"
+                                                      th:text="'마감 임박 · 재고 ' + ${store.totalStock}">마감 임박</span>
+                                                <span th:if="${store.totalStock == 0}"
+                                                      class="badge badge-error-custom text-white small">품절</span>
+                                            </div>
+                                            <div class="text-muted small mb-1">
+                                                <span th:text="${store.category}">BAKERY</span>
+                                                · <span th:text="${store.distance} + '분'">5분</span>
+                                                · 오늘 <span th:text="${store.closeTime}">22:00</span> 마감
+                                            </div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="price-discount"
+                                                      th:text="'₩' + ${#numbers.formatInteger(store.minDiscountPrice, 3, 'COMMA')}">₩4,000</span>
+                                                <span class="price-original"
+                                                      th:text="'₩' + ${#numbers.formatInteger(store.minOriginalPrice, 3, 'COMMA')}">₩8,000</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!--
+                                    th:each 서버렌더링이 없을 때의 데모 카드 (개발 중 확인용)
+                                    실제 배포 시 th:if="${#lists.isEmpty(stores)}" 또는 제거
+                                -->
+                                <div id="demo-cards" th:if="${stores == null or #lists.isEmpty(stores)}">
+                                    <!-- 데모 카드 1 -->
+                                    <div class="card store-card mb-2" data-store-id="1" data-lat="37.5665" data-lng="126.9780" onclick="focusMapPin(this)">
+                                        <div class="card-body d-flex">
+                                            <div class="store-thumb me-3" style="background:#c8ddd0;"></div>
+                                            <div class="flex-grow-1">
+                                                <div class="d-flex justify-content-between align-items-start mb-1">
+                                                    <h6 class="mb-0">그린베이커리 신촌점</h6>
+                                                    <span class="badge badge-warning-custom text-white small">마감 임박 · 재고 3</span>
+                                                </div>
+                                                <div class="text-muted small mb-1">BAKERY · 도보 5분 · 오늘 22:00 마감</div>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <span class="price-discount">₩4,000</span>
+                                                    <span class="price-original">₩8,000</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- 데모 카드 2 -->
+                                    <div class="card store-card mb-2" data-store-id="2" data-lat="37.5020" data-lng="127.0276" onclick="focusMapPin(this)">
+                                        <div class="card-body d-flex">
+                                            <div class="store-thumb me-3" style="background:#d0c8dd;"></div>
+                                            <div class="flex-grow-1">
+                                                <div class="d-flex justify-content-between align-items-start mb-1">
+                                                    <h6 class="mb-0">에코 도시락 강남점</h6>
+                                                    <span class="badge badge-error-custom text-white small">품절</span>
+                                                </div>
+                                                <div class="text-muted small mb-1">LUNCHBOX · 도보 8분 · 오늘 21:30 마감</div>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <span class="price-discount">₩5,500</span>
+                                                    <span class="price-original">₩11,000</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- 데모 카드 3 -->
+                                    <div class="card store-card mb-2" data-store-id="3" data-lat="37.5563" data-lng="126.9236" onclick="focusMapPin(this)">
+                                        <div class="card-body d-flex">
+                                            <div class="store-thumb me-3" style="background:#d0ddc8;"></div>
+                                            <div class="flex-grow-1">
+                                                <div class="d-flex justify-content-between align-items-start mb-1">
+                                                    <h6 class="mb-0">세이지 카페 홍대점</h6>
+                                                    <span class="badge bg-success text-white small">재고 여유 · 10+</span>
+                                                </div>
+                                                <div class="text-muted small mb-1">CAFE · 도보 3분 · 오늘 23:00 마감</div>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <span class="price-discount">₩3,200</span>
+                                                    <span class="price-original">₩6,400</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- /demo-cards -->
+
+                                <!-- 무한스크롤 감지 센티넬 -->
+                                <div id="scroll-sentinel"></div>
+
+                                <!-- 로딩 스피너 -->
+                                <div id="scroll-loader" class="d-flex justify-content-center">
+                                    <div class="spinner-sage"></div>
+                                </div>
+
+                                <!-- 리스트 끝 메시지 -->
+                                <div id="list-end-msg" class="text-center">
+                                    ✅ 주변의 모든 가게를 불러왔어요
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<!-- ═══════════════════════════════════════════
+     푸터 조각 삽입
+════════════════════════════════════════════ -->
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<!-- Bootstrap 5 JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN/WLcE="
+        crossorigin=""></script>
+
+<script th:inline="javascript">
+    /* ═══════════════════════════════════════════════════════════════
+       1. OpenStreetMap (Leaflet) 초기화
+    ══════════════════════════════════════════════════════════════ */
+    const DEFAULT_LAT  = 37.5665;   // 서울 시청 기본 좌표
+    const DEFAULT_LNG  = 126.9780;
+    const DEFAULT_ZOOM = 13;
+
+    // Thymeleaf에서 서버 핀 데이터 주입 (없으면 빈 배열)
+    // 형식: [{id, name, lat, lng, category, minDiscountPrice, totalStock, closeTime}, ...]
+    const serverPins = /*[[${storePins}]]*/ [];
+
+    const map = L.map('map').setView([DEFAULT_LAT, DEFAULT_LNG], DEFAULT_ZOOM);
+
+    /* ── 타일 레이어: OpenStreetMap ── */
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
+    }).addTo(map);
+
+    /* ── 커스텀 마커 아이콘 생성 함수 ── */
+    function createMarkerIcon(stock) {
+        let color = '#4F7F68'; // sage-deep (기본)
+        if (stock === 0)       color = '#D32F2F'; // 품절 - 빨강
+        else if (stock <= 5)   color = '#FF9800'; // 임박 - 주황
+
+        return L.divIcon({
+            className: '',
+            html: `<div style="
+                    width:32px; height:32px; border-radius:50% 50% 50% 0;
+                    background:${color}; border:2px solid #fff;
+                    transform:rotate(-45deg);
+                    box-shadow:0 2px 8px rgba(0,0,0,0.25);
+                  "></div>`,
+            iconSize:   [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor:[0, -36]
+        });
+    }
+
+    /* ── 마커 컬렉션 (storeId → marker) ── */
+    const markerMap = {};
+
+    /* ── 팝업 HTML 빌더 ── */
+    function buildPopup(pin) {
+        const stockBadge = pin.totalStock === 0
+            ? '<span style="color:#D32F2F;font-weight:700;">품절</span>'
+            : pin.totalStock <= 5
+                ? `<span style="color:#FF9800;font-weight:700;">재고 ${pin.totalStock}개</span>`
+                : `<span style="color:#4F7F68;font-weight:700;">재고 여유 ${pin.totalStock}+</span>`;
+
+        return `
+            <div style="min-width:160px;">
+              <div class="map-popup-title">${pin.name}</div>
+              <div class="map-popup-sub">${pin.category} · 오늘 ${pin.closeTime} 마감</div>
+              <div class="map-popup-price">₩${Number(pin.minDiscountPrice).toLocaleString()} ${stockBadge}</div>
+              <a href="/stores/${pin.id}"
+                 style="display:block;margin-top:8px;text-align:center;
+                        background:#4F7F68;color:#fff;border-radius:6px;
+                        padding:4px 0;font-size:0.8rem;text-decoration:none;">
+                 상세보기
+              </a>
+            </div>`;
+    }
+
+    /* ── 서버 핀 등록 ── */
+    function renderPins(pins) {
+        pins.forEach(pin => {
+            const marker = L.marker([pin.lat, pin.lng], {
+                icon: createMarkerIcon(pin.totalStock)
+            })
+            .bindPopup(buildPopup(pin), { maxWidth: 220 })
+            .addTo(map);
+
+            markerMap[pin.id] = marker;
+        });
+    }
+
+    if (serverPins && serverPins.length > 0) {
+        renderPins(serverPins);
+    } else {
+        // ── 데모용 더미 핀 (서버 데이터 없을 때) ──
+        renderPins([
+            { id:1, name:'그린베이커리 신촌점',  lat:37.5565, lng:126.9363, category:'BAKERY',   minDiscountPrice:4000, totalStock:3,  closeTime:'22:00' },
+            { id:2, name:'에코 도시락 강남점',    lat:37.5020, lng:127.0276, category:'LUNCHBOX', minDiscountPrice:5500, totalStock:0,  closeTime:'21:30' },
+            { id:3, name:'세이지 카페 홍대점',    lat:37.5563, lng:126.9236, category:'CAFE',     minDiscountPrice:3200, totalStock:12, closeTime:'23:00' },
+            { id:4, name:'자연반찬 마포점',       lat:37.5485, lng:126.9125, category:'SIDEDISH', minDiscountPrice:3800, totalStock:4,  closeTime:'20:30' },
+            { id:5, name:'오늘의 스시 이태원점',  lat:37.5344, lng:126.9940, category:'SUSHI',    minDiscountPrice:7500, totalStock:8,  closeTime:'22:30' },
+        ]);
+    }
+
+    /* ── GPS 위치 요청 ── */
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            pos => {
+                const { latitude: lat, longitude: lng } = pos.coords;
+                map.setView([lat, lng], DEFAULT_ZOOM);
+
+                // 내 위치 표시
+                L.circleMarker([lat, lng], {
+                    radius: 10, color: '#4F7F68', fillColor: '#6FAF8F',
+                    fillOpacity: 0.6, weight: 2
+                })
+                .bindPopup('<b>📍 현재 내 위치</b>')
+                .addTo(map);
+            },
+            _err => {
+                // 위치 거부 → 기본 서울 좌표 유지
+                console.info('[Deu-Shu] GPS 거부 — 기본 좌표 사용');
+            }
+        );
+    }
+
+    /* ── 카드 클릭 시 지도 핀 포커스 ── */
+    function focusMapPin(cardEl) {
+        const id  = parseInt(cardEl.dataset.storeId, 10);
+        const lat = parseFloat(cardEl.dataset.lat);
+        const lng = parseFloat(cardEl.dataset.lng);
+
+        if (lat && lng) {
+            map.flyTo([lat, lng], 16, { animate: true, duration: 0.8 });
+        }
+        if (markerMap[id]) {
+            markerMap[id].openPopup();
+        }
+    }
+
+
+    /* ═══════════════════════════════════════════════════════════════
+       2. 무한 스크롤 (IntersectionObserver)
+       - 서버 API: GET /api/stores?page=N&size=10
+       - 서버에서 JSON { content:[...], last: boolean } 형태로 응답해야 함
+    ══════════════════════════════════════════════════════════════ */
+    let currentPage   = 1;      // 초기 0페이지는 Thymeleaf 서버렌더링으로 처리
+    let isFetching    = false;
+    let isListEnd     = false;
+
+    const PAGE_SIZE   = 10;
+    const sentinel    = document.getElementById('scroll-sentinel');
+    const loader      = document.getElementById('scroll-loader');
+    const endMsg      = document.getElementById('list-end-msg');
+    const listContainer = document.getElementById('store-list-container');
+
+    /* ── 카드 HTML 빌더 ── */
+    function buildCardHtml(store) {
+        const stockBadge = store.totalStock === 0
+            ? `<span class="badge badge-error-custom text-white small">품절</span>`
+            : store.totalStock <= 5
+                ? `<span class="badge badge-warning-custom text-white small">마감 임박 · 재고 ${store.totalStock}</span>`
+                : `<span class="badge bg-success text-white small">재고 여유 · ${store.totalStock}+</span>`;
+
+        const discountPrice  = Number(store.minDiscountPrice).toLocaleString();
+        const originalPrice  = Number(store.minOriginalPrice).toLocaleString();
+        const thumb          = store.thumbnailUrl || '/img/default-store.png';
+
+        return `
+        <div class="card store-card mb-2"
+             data-store-id="${store.id}"
+             data-lat="${store.lat}"
+             data-lng="${store.lng}"
+             onclick="focusMapPin(this)">
+            <div class="card-body d-flex">
+                <img src="${thumb}" class="store-thumb me-3" alt="${store.name}"
+                     onerror="this.style.background='#D3D3D3';this.src='data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='"/>
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <h6 class="mb-0">${store.name}</h6>
+                        ${stockBadge}
+                    </div>
+                    <div class="text-muted small mb-1">
+                        ${store.category} · 도보 ${store.distance}분 · 오늘 ${store.closeTime} 마감
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="price-discount">₩${discountPrice}</span>
+                        <span class="price-original">₩${originalPrice}</span>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    /* ── 다음 페이지 fetch ── */
+    async function loadNextPage() {
+        if (isFetching || isListEnd) return;
+        isFetching = true;
+        loader.style.display = 'flex';
+
+        try {
+            const resp = await fetch(`/api/stores?page=${currentPage}&size=${PAGE_SIZE}`);
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+            const data = await resp.json();
+            // data 구조: { content: StoreMapDto[], last: boolean }
+            const { content, last } = data;
+
+            content.forEach(store => {
+                // 리스트 카드 삽입
+                sentinel.insertAdjacentHTML('beforebegin', buildCardHtml(store));
+
+                // 지도 핀도 동적 추가
+                if (!markerMap[store.id]) {
+                    const marker = L.marker([store.lat, store.lng], {
+                        icon: createMarkerIcon(store.totalStock)
+                    })
+                    .bindPopup(buildPopup(store))
+                    .addTo(map);
+                    markerMap[store.id] = marker;
+                }
+            });
+
+            currentPage++;
+
+            if (last || content.length < PAGE_SIZE) {
+                isListEnd = true;
+                loader.style.display  = 'none';
+                endMsg.style.display  = 'block';
+                observer.unobserve(sentinel);
+            }
+        } catch (err) {
+            console.error('[InfiniteScroll] 오류:', err);
+        } finally {
+            isFetching = false;
+            if (!isListEnd) loader.style.display = 'none';
+        }
+    }
+
+    /* ── IntersectionObserver 등록 ── */
+    const observer = new IntersectionObserver(entries => {
+        if (entries[0].isIntersecting) loadNextPage();
+    }, {
+        root:       listContainer,
+        rootMargin: '0px',
+        threshold:  0.1
+    });
+
+    observer.observe(sentinel);
+</script>
+</body>
+</html>
