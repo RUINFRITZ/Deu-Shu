@@ -1,5 +1,28 @@
 package com.deushu.store.controller;
 
-public class StoreController {
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
 
+@Controller
+@RequestMapping("/store")
+public class StoreController {
+   
+   @GetMapping("/list")
+   public String storeList() {
+      
+      return "store/storeList";
+   }
+   
+   // 가게 상세 페이지
+   @GetMapping("/{storeId}")
+   public String storeDetail(@PathVariable Long storeId, Model model) {
+
+       // JS에서 API 호출할 수 있도록 storeId만 넘겨줌
+       model.addAttribute("storeId", storeId);
+
+       return "store/detail";
+   }
 }
