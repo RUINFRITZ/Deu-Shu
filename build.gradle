@@ -44,8 +44,9 @@ dependencies {
     implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.3'
     // MySQL 8.0 データベースとの物理的な接続(JDBC)ドライバー
     runtimeOnly 'com.mysql:mysql-connector-j'
-
-    // =========================================================================
+ implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+ 
+     // =========================================================================
     // 2. 外部API非同期通信およびJSONパース (パクさん領域: トランザクション・決済)
     // =========================================================================
     // PortOne等の外部決済サーバーとのノンブロッキング(Non-blocking)通信を担うWebClient
