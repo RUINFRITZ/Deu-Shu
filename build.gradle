@@ -46,8 +46,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     // 타임리프
     runtimeOnly 'com.mysql:mysql-connector-j'
-
-    // =========================================================================
+ implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+ 
+     // =========================================================================
     // 2. 外部API非同期通信およびJSONパース (パクさん領域: トランザクション・決済)
     // =========================================================================
     // PortOne等の外部決済サーバーとのノンブロッキング(Non-blocking)通信を担うWebClient
