@@ -1,10 +1,243 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
-<meta charset="UTF-8">
-<title>Insert title here</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title></title>
+
+    <!-- ✅ static 리소스는 @{} -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/detail.css}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 </head>
 <body>
+
+<!-- ✅ header fragment 붙이기 -->
+<div th:replace="~{fragments/header :: header}"></div>
+
+<main class="main-content">
+    <div class="container">
+
+        <!-- 뒤로가기 -->
+        <div class="back-nav">
+            <!-- ✅ list로 가는게 자연스럽다면 이렇게 -->
+            <a th:href="@{/store/list}" class="back-link">
+                <i class="bi bi-arrow-left"></i>
+                <span>가게 목록</span>
+            </a>
+        </div>
+
+        <!-- 이미지 갤러리 -->
+        <section class="image-gallery">
+            <div class="gallery-main">
+                <img th:src="@{/images/store1-main.jpg}" alt="행복한 베이커리">
+                <button class="btn-favorite active">
+                    <i class="bi bi-heart-fill"></i>
+                </button>
+            </div>
+
+            <div class="gallery-grid">
+                <img th:src="@{/images/store1-1.jpg}" alt="행복한 베이커리 2">
+                <img th:src="@{/images/store1-2.jpg}" alt="행복한 베이커리 3">
+                <img th:src="@{/images/store1-3.jpg}" alt="행복한 베이커리 4">
+                <div class="gallery-more">
+                    <img th:src="@{/images/store1-4.jpg}" alt="행복한 베이커리 5">
+                    <div class="more-overlay">
+                        <span>+2</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 가게 정보 -->
+        <section class="store-info">
+            <div class="store-header">
+                <h1>행복한 베이커리</h1>
+                <span class="store-category">빵집</span>
+            </div>
+
+            <div class="store-rating">
+                <div class="rating-stars">
+                    <i class="bi bi-star-fill"></i>
+                    <span class="rating-score">4.8</span>
+                </div>
+                <span class="review-count">리뷰 127</span>
+            </div>
+
+            <p class="store-description">
+                매일 아침 구운 신선한 빵을 합리적인 가격에 만나보세요. 마감 시간 전 남은 빵을 특가로 제공합니다.
+            </p>
+
+            <div class="store-details">
+                <div class="detail-item">
+                    <i class="bi bi-geo-alt"></i>
+                    <div>
+                        <span class="detail-label">주소</span>
+                        <span class="detail-value">서울시 강남구 테헤란로 123</span>
+                    </div>
+                </div>
+
+                <div class="detail-item">
+                    <i class="bi bi-telephone"></i>
+                    <div>
+                        <span class="detail-label">전화번호</span>
+                        <span class="detail-value">02-1234-5678</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 지도 -->
+        <section class="map-section">
+            <h2>위치</h2>
+            <div class="map-placeholder">
+                <i class="bi bi-geo-alt"></i>
+                <p>지도 API 영역</p>
+                <span>서울시 강남구 테헤란로 123</span>
+            </div>
+        </section>
+
+        <!-- 할인 상품 목록 -->
+        <section class="products-section">
+            <h2>할인 상품 목록</h2>
+            <div class="product-grid">
+
+                <div class="product-card">
+                    <div class="product-image">
+                        <img th:src="@{/images/product1.jpg}" alt="크루아상 5개 세트">
+                        <span class="discount-badge">40%</span>
+                    </div>
+                    <div class="product-info">
+                        <h3>크루아상 5개 세트</h3>
+                        <div class="product-price">
+                            <span class="discount-price">9,000원</span>
+                            <span class="original-price">15,000원</span>
+                        </div>
+                        <div class="product-meta">
+                            <div class="meta-item">
+                                <i class="bi bi-box"></i>
+                                <span>재고 3개</span>
+                            </div>
+                            <div class="meta-item time">
+                                <i class="bi bi-clock"></i>
+                                <span>3시간 남음</span>
+                            </div>
+                        </div>
+                        <button class="btn-reserve">예약하기</button>
+                    </div>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-image">
+                        <img th:src="@{/images/product2.jpg}" alt="소금빵 10개">
+                        <span class="discount-badge">50%</span>
+                    </div>
+                    <div class="product-info">
+                        <h3>소금빵 10개</h3>
+                        <div class="product-price">
+                            <span class="discount-price">6,000원</span>
+                            <span class="original-price">12,000원</span>
+                        </div>
+                        <div class="product-meta">
+                            <div class="meta-item">
+                                <i class="bi bi-box"></i>
+                                <span>재고 5개</span>
+                            </div>
+                            <div class="meta-item time">
+                                <i class="bi bi-clock"></i>
+                                <span>3시간 남음</span>
+                            </div>
+                        </div>
+                        <button class="btn-reserve">예약하기</button>
+                    </div>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-image">
+                        <img th:src="@{/images/product3.jpg}" alt="케이크 조각 (딸기)">
+                        <span class="discount-badge">40%</span>
+                    </div>
+                    <div class="product-info">
+                        <h3>케이크 조각 (딸기)</h3>
+                        <div class="product-price">
+                            <span class="discount-price">3,600원</span>
+                            <span class="original-price">6,000원</span>
+                        </div>
+                        <div class="product-meta">
+                            <div class="meta-item">
+                                <i class="bi bi-box"></i>
+                                <span>재고 8개</span>
+                            </div>
+                            <div class="meta-item time">
+                                <i class="bi bi-clock"></i>
+                                <span>5시간 남음</span>
+                            </div>
+                        </div>
+                        <button class="btn-reserve">예약하기</button>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- 리뷰 섹션 -->
+        <section class="reviews-section">
+            <div class="reviews-header">
+                <h2>리뷰 (127)</h2>
+                <button class="btn-write-review" onclick="openReviewModal()">
+                    <i class="bi bi-pencil"></i>
+                    리뷰 작성
+                </button>
+            </div>
+
+            <!-- 리뷰 목록 (일단 정적 유지) -->
+            <div class="reviews-list">
+                <!-- ... 기존 그대로 두셔도 됩니다. 이미지 src만 th:src로 바꾸면 끝 -->
+                <div class="review-item">
+                    <div class="review-header">
+                        <span class="review-author">이지은</span>
+                        <div class="review-rating">
+                            <div class="rating-stars">
+                                <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                            </div>
+                            <span class="review-date">2026년 2월 25일</span>
+                        </div>
+                    </div>
+
+                    <div class="review-images">
+                        <img th:src="@{/images/review1.jpg}" alt="리뷰 이미지">
+                    </div>
+
+                    <div class="review-content">
+                        <p class="review-text">
+                            빵이 정말 신선하고 맛있어요! ...
+                        </p>
+                        <button class="btn-show-more" onclick="toggleReviewText(this)">
+                            더보기 <i class="bi bi-chevron-down"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-load-more">
+                더보기 <i class="bi bi-chevron-down"></i>
+            </button>
+        </section>
+
+    </div>
+</main>
+
+<!-- ✅ footer fragment 붙이기 -->
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<!-- ✅ js 경로도 @{} -->
+<script th:src="@{/js/script.js}"></script>
+<script th:src="@{/js/detail.js}"></script>
+
+<!-- ✅ 컨트롤러에서 model.addAttribute("storeId", storeId) 해준 값 -->
+<script th:inline="javascript">
+    const storeId = /*[[${storeId}]]*/ 0;
+</script>
 
 </body>
 </html>

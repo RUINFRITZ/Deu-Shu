@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.deushu.store.mapper.StoreMapper">
+
+    <select id="findStoreInfo" parameterType="long"
+            resultType="com.deushu.store.dto.StoreDetailResponse$StoreInfo">
+        SELECT
+            s.id,
+            s.name,
+            s.category,
+            s.address,
+            s.lat,
+            s.lng,
+            s.thumbnail_url AS thumbnailUrl,
+            CAST(s.open_time AS CHAR)  AS openTime,
+            CAST(s.close_time AS CHAR) AS closeTime
+        FROM stores s
+        WHERE s.id = #{storeId}
+          AND s.deleted_at IS NULL
+    </select>
+
+    <select id="findStoreImages" parameterType="long" resultType="string">
+        SELECT si.image_url
+        FROM store_images si
+        WHERE si.store_id = #{storeId}
+          AND si.deleted_at IS NULL
+        ORDER BY si.sort_order ASC, si.id ASC
+    </select>
+
+    <select id="findRatingInfo" parameterType="long"
+            resultType="com.deushu.store.dto.StoreDetailResponse$RatingInfo">
+        SELECT
+            COALESCE(ROUND(AVG(r.rating), 1), 0) AS avg,
+            COUNT(*) AS count
+        FROM reviews r
+        WHERE r.store_id = #{storeId}
+          AND r.deleted_at IS NULL
+    </select>
+
+    <select id="findSellingItems" parameterType="long"
+            resultType="com.deushu.store.dto.StoreDetailResponse$ItemInfo">
+        SELECT
+            i.id,
+            i.name,
+            i.original_price AS originalPrice,
+            i.discount_price AS discountPrice,
+            i.discount_rate AS discountRate,
+            i.stock,
+            i.expire_at AS expireAt,
+            i.thumbnail_url AS thumbnailUrl
+        FROM items i
+        WHERE i.store_id = #{storeId}
+          AND i.deleted_at IS NULL
+          AND i.expire_at > NOW()
+          AND i.stock > 0
+        ORDER BY i.expire_at ASC
+    </select>
+
+</mapper>
