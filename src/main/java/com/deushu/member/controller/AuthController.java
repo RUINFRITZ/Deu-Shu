@@ -253,6 +253,114 @@ public class AuthController {
         return ResponseEntity.ok(result);
     }
 
+    // 비밀번호 재설정 요청 데이터
+    public static class ResetPasswordRequest {
+        private String email;
+        private String lastName;
+        private String firstName;
+        private String phone;
+        private String newPw;
+
+        public String getEmail()             { return email; }
+        public void   setEmail(String v)     { this.email = v; }
+        public String getLastName()          { return lastName; }
+        public void   setLastName(String v)  { this.lastName = v; }
+        public String getFirstName()         { return firstName; }
+        public void   setFirstName(String v) { this.firstName = v; }
+        public String getPhone()             { return phone; }
+        public void   setPhone(String v)     { this.phone = v; }
+        public String getNewPw()             { return newPw; }
+        public void   setNewPw(String v)     { this.newPw = v; }
+    }
+
+    // 비밀번호 재설정 본인확인 — POST /api/auth/verify-identity
+    // 이메일 + 이름 + 전화번호 일치 여부만 확인 (비밀번호 변경 안 함)
+    @PostMapping("/verify-identity")
+    public ResponseEntity<Map<String, Object>> verifyIdentity(@RequestBody ResetPasswordRequest req) {
+        Map<String, Object> result = new HashMap<>();
+
+        MemberEntity 회원 = memberRepository.findByEmail(req.getEmail());
+
+        if (회원 == null
+                || !회원.getLastName().equals(req.getLastName())
+                || !회원.getFirstName().equals(req.getFirstName())
+                || !회원.getPhone().equals(req.getPhone())) {
+            result.put("success", false);
+            result.put("message", "入力情報が一致しません");
+            return ResponseEntity.ok(result);
+        }
+
+        result.put("success", true);
+        return ResponseEntity.ok(result);
+    }
+
+    // 비밀번호 재설정 — POST /api/auth/reset-password
+    // 이메일 + 이름 + 전화번호로 본인 확인 후 새 비밀번호로 변경
+    @PostMapping("/reset-password")
+    public ResponseEntity<Map<String, Object>> resetPassword(@RequestBody ResetPasswordRequest req) {
+        Map<String, Object> result = new HashMap<>();
+
+        // 이메일로 회원 조회
+        MemberEntity 회원 = memberRepository.findByEmail(req.getEmail());
+
+        // 회원이 없거나 이름/전화번호가 불일치하면 실패
+        if (회원 == null
+                || !회원.getLastName().equals(req.getLastName())
+                || !회원.getFirstName().equals(req.getFirstName())
+                || !회원.getPhone().equals(req.getPhone())) {
+            result.put("success", false);
+            result.put("message", "入力情報が一致しません");
+            return ResponseEntity.ok(result);
+        }
+
+        // 새 비밀번호 암호화 후 저장
+        회원.setPassword(passwordEncoder.encode(req.getNewPw()));
+        memberRepository.updatePassword(회원);
+
+        result.put("success", true);
+        result.put("message", "パスワードが変更されました");
+        return ResponseEntity.ok(result);
+    }
+
+    // 이메일 찾기 요청 데이터
+    public static class FindEmailRequest {
+        private String lastName;
+        private String firstName;
+        private String phone;
+
+        public String getLastName()              { return lastName; }
+        public void   setLastName(String v)      { this.lastName = v; }
+        public String getFirstName()             { return firstName; }
+        public void   setFirstName(String v)     { this.firstName = v; }
+        public String getPhone()                 { return phone; }
+        public void   setPhone(String v)         { this.phone = v; }
+    }
+
+    // 이메일 찾기 — POST /api/auth/find-email
+    @PostMapping("/find-email")
+    public ResponseEntity<Map<String, Object>> findEmail(@RequestBody FindEmailRequest req) {
+        Map<String, Object> result = new HashMap<>();
+
+        // 이름 + 전화번호로 회원 조회
+        MemberEntity 검색용 = new MemberEntity();
+        검색용.setLastName(req.getLastName());
+        검색용.setFirstName(req.getFirstName());
+        검색용.setPhone(req.getPhone());
+
+        MemberEntity 회원 = memberRepository.findByNameAndPhone(검색용);
+
+        if (회원 == null) {
+            result.put("success", false);
+            result.put("message", "一致する会員情報が見つかりません");
+            return ResponseEntity.ok(result);
+        }
+
+        // 이메일 그대로 반환 (마스킹 없이 전체 표시)
+        result.put("success", true);
+        result.put("email", 회원.getEmail());
+        return ResponseEntity.ok(result);
+    }
+
     // 회원 탈퇴 — POST /api/auth/withdraw
     @PostMapping("/withdraw")
     public ResponseEntity<Map<String, Object>> withdraw(HttpSession session) {

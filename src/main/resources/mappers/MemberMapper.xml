@@ -2,20 +2,38 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-
-
 <mapper namespace="com.deushu.member.mapper.MemberRepository">
-	
-	<!-- 회원가입 -->
-<insert id="insert" parameterType="com.deushu.member.domain.MemberEntity">
-    INSERT INTO members (email, password, last_name, first_name,
-                         last_name_kana, first_name_kana, phone, role)
-    VALUES (#{email}, #{password}, #{lastName}, #{firstName},
-            #{lastNameKana}, #{firstNameKana}, #{phone}, 'ROLE_USER')
-</insert>
-	
+
+    <!--
+        DB 컬럼명(snake_case) → Java 필드명(camelCase) 매핑 정의
+        예: last_name → lastName, esg_point → esgPoint
+        resultMap 을 쓰면 자동 매핑 설정 없이도 확실하게 연결됨
+    -->
+    <resultMap id="memberResultMap" type="com.deushu.member.domain.MemberEntity">
+        <id     property="id"            column="id"/>
+        <result property="email"         column="email"/>
+        <result property="password"      column="password"/>
+        <result property="lastName"      column="last_name"/>
+        <result property="firstName"     column="first_name"/>
+        <result property="lastNameKana"  column="last_name_kana"/>
+        <result property="firstNameKana" column="first_name_kana"/>
+        <result property="phone"         column="phone"/>
+        <result property="role"          column="role"/>
+        <result property="esgPoint"      column="esg_point"/>
+        <result property="createdAt"     column="created_at"/>
+        <result property="deletedAt"     column="deleted_at"/>
+    </resultMap>
+
+    <!-- 회원가입 -->
+    <insert id="insert" parameterType="com.deushu.member.domain.MemberEntity">
+        INSERT INTO members (email, password, last_name, first_name,
+                             last_name_kana, first_name_kana, phone, role)
+        VALUES (#{email}, #{password}, #{lastName}, #{firstName},
+                #{lastNameKana}, #{firstNameKana}, #{phone}, 'ROLE_USER')
+    </insert>
+
     <!-- 이메일로 회원 조회 (탈퇴하지 않은 회원만) -->
-    <select id="findByEmail" parameterType="String" resultType="com.deushu.member.domain.MemberEntity">
+    <select id="findByEmail" parameterType="String" resultMap="memberResultMap">
         SELECT id, email, password, last_name, first_name,
                last_name_kana, first_name_kana, phone, role, esg_point,
                created_at, deleted_at
@@ -25,7 +43,7 @@
     </select>
 
     <!-- ID로 회원 조회 (마이페이지 최신 정보 로드용) -->
-    <select id="findById" parameterType="Long" resultType="com.deushu.member.domain.MemberEntity">
+    <select id="findById" parameterType="Long" resultMap="memberResultMap">
         SELECT id, email, password, last_name, first_name,
                last_name_kana, first_name_kana, phone, role, esg_point,
                created_at, deleted_at
@@ -55,6 +73,17 @@
         WHERE id = #{id}
           AND deleted_at IS NULL
     </update>
+
+    <!-- 이름 + 전화번호로 이메일 찾기 -->
+    <select id="findByNameAndPhone" parameterType="com.deushu.member.domain.MemberEntity" resultMap="memberResultMap">
+        SELECT id, email, last_name, first_name, phone
+        FROM members
+        WHERE last_name  = #{lastName}
+          AND first_name = #{firstName}
+          AND phone      = #{phone}
+          AND deleted_at IS NULL
+        LIMIT 1
+    </select>
 
     <!-- 회원 탈퇴 (논리삭제 — deleted_at 현재시각으로 설정) -->
     <update id="withdraw" parameterType="Long">
