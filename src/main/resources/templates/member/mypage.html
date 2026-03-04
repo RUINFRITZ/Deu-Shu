@@ -884,17 +884,8 @@ function handleSaveAll() {
     .then(function(res) { return res.json(); })
     .then(function(data) {
         if (data.success) {
-            // 비밀번호 변경 여부에 따라 다른 토스트 메시지 표시
-            var toastMsg = (currentPw && newPw)
-                ? 'パスワードと情報が更新されました'
-                : '情報が更新されました';
-
-            // 토스트를 먼저 띄운 후 모달 닫기 (토스트가 가려지지 않도록)
-            showToast(toastMsg, 'success');
-            setTimeout(function() {
-                closeEditModal();
-            }, 300);
-
+            closeEditModal();
+            showToast('情報が更新されました', 'success');
             // 화면 정보 즉시 갱신
             document.getElementById('infoName').textContent  = lastName + ' ' + firstName;
             document.getElementById('infoKana').textContent  = lastNameKana + ' ' + firstNameKana;

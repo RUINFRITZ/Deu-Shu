@@ -12,9 +12,6 @@ public interface MemberRepository {
     // ID로 회원 조회 (마이페이지 최신 정보 로드용)
     MemberEntity findById(Long id);
 
-    // 이름 + 전화번호로 회원 조회 (이메일 찾기용)
-    MemberEntity findByNameAndPhone(MemberEntity member);
-
     // 회원가입
     void insert(MemberEntity member);
 
