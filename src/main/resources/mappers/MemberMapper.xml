@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+
+<mapper namespace="com.deushu.member.mapper.MemberRepository">
+	
+	<!-- 회원가입 -->
+<insert id="insert" parameterType="com.deushu.member.domain.MemberEntity">
+    INSERT INTO members (email, password, last_name, first_name,
+                         last_name_kana, first_name_kana, phone, role)
+    VALUES (#{email}, #{password}, #{lastName}, #{firstName},
+            #{lastNameKana}, #{firstNameKana}, #{phone}, 'ROLE_USER')
+</insert>
+	
+    <!-- 이메일로 회원 조회 (탈퇴하지 않은 회원만) -->
+    <select id="findByEmail" parameterType="String" resultType="com.deushu.member.domain.MemberEntity">
+        SELECT id, email, password, last_name, first_name,
+               last_name_kana, first_name_kana, phone, role, esg_point,
+               created_at, deleted_at
+        FROM members
+        WHERE email = #{email}
+          AND deleted_at IS NULL
+    </select>
+
+    <!-- ID로 회원 조회 (마이페이지 최신 정보 로드용) -->
+    <select id="findById" parameterType="Long" resultType="com.deushu.member.domain.MemberEntity">
+        SELECT id, email, password, last_name, first_name,
+               last_name_kana, first_name_kana, phone, role, esg_point,
+               created_at, deleted_at
+        FROM members
+        WHERE id = #{id}
+          AND deleted_at IS NULL
+    </select>
+
+    <!-- 정보 수정 (이름, 후리가나, 전화번호) -->
+    <update id="update" parameterType="com.deushu.member.domain.MemberEntity">
+        UPDATE members
+        SET last_name       = #{lastName},
+            first_name      = #{firstName},
+            last_name_kana  = #{lastNameKana},
+            first_name_kana = #{firstNameKana},
+            phone           = #{phone},
+            updated_at      = NOW()
+        WHERE id = #{id}
+          AND deleted_at IS NULL
+    </update>
+
+    <!-- 비밀번호 변경 -->
+    <update id="updatePassword" parameterType="com.deushu.member.domain.MemberEntity">
+        UPDATE members
+        SET password   = #{password},
+            updated_at = NOW()
+        WHERE id = #{id}
+          AND deleted_at IS NULL
+    </update>
+
+    <!-- 회원 탈퇴 (논리삭제 — deleted_at 현재시각으로 설정) -->
+    <update id="withdraw" parameterType="Long">
+        UPDATE members
+        SET deleted_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+</mapper>

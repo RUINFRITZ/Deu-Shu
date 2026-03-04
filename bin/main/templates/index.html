@@ -1,10 +1,55 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
 <head>
 <meta charset="UTF-8">
-<title>ドゥーシュー</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ドゥーシュー — 閉店割引</title>
+
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link
+	href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap"
+	rel="stylesheet">
+
+<!-- Bootstrap Icons -->
+<link
+	href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css"
+	rel="stylesheet">
+
+<!-- th:href="@{/css/style.css}" : static/css/style.css 연결 -->
+<link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
+
 <body>
+
+	<!-- th:replace : fragments/header.html 의 header 블록을 이 자리에 삽입 -->
+	<div th:replace="~{fragments/header :: header}"></div>
+
+	<main>
+
+		<!-- 히어로 배너 -->
+		<div class="demo-hero">
+			<h1>
+				今日の閉店割引、<br>드슈〜 どうぞ
+			</h1>
+			<p>新鮮な食べ物をお得な価格で。フードロスを減らし、地球に優しく。</p>
+
+			<!-- openModal('user') : 로그인/회원가입 모달 열기 -->
+			<button class="demo-cta" id="heroCta" onclick="openModal('user')">ログイン /
+				会員登録してみる</button>
+		</div>
+
+		<!-- 추가 컨텐츠 영역 -->
+		<section
+			style="max-width: 1200px; margin: 3rem auto; padding: 0 2rem; text-align: center; color: var(--mid-gray);">
+
+		</section>
+
+	</main>
+
+	<!-- th:replace : fragments/footer.html 의 footer 블록을 이 자리에 삽입 -->
+	<div th:replace="~{fragments/footer :: footer}"></div>
 
 </body>
 </html>
