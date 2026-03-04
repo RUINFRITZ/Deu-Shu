@@ -1,13 +1,8 @@
 package com.deushu.store.service;
 
-import com.deushu.common.util.Bbox;
-import com.deushu.store.dto.NearbyStoreResponse;
-import com.deushu.store.dto.StoreDetailDto;
-import com.deushu.store.dto.StoreFilterRequest;
-import com.deushu.store.dto.StoreMapDto;
-import com.deushu.store.mapper.StoreMapper;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDate;
+import java.util.List;
+
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
@@ -15,8 +10,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalDate;
-import java.util.List;
+import com.deushu.common.util.Bbox;
+import com.deushu.store.dto.NearbyStoreResponse;
+import com.deushu.store.dto.StoreDetailDto;
+import com.deushu.store.dto.StoreDetailResponse;
+import com.deushu.store.dto.StoreFilterRequest;
+import com.deushu.store.dto.StoreMapDto;
+import com.deushu.store.mapper.StoreMapper;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * FR-M01 ~ FR-M05 비즈니스 로직
@@ -28,7 +31,34 @@ import java.util.List;
 public class StoreService {
 
     private final StoreMapper storeMapper;
+    
+    public StoreDetailResponse getStoreDetail(Long storeId) {
+        StoreDetailResponse.StoreInfo store = storeMapper.findStoreInfo(storeId);
+        if (store == null) {
+            throw new IllegalArgumentException("STORE_NOT_FOUND: " + storeId);
+        }
 
+        List<String> images = storeMapper.findStoreImages(storeId);
+        StoreDetailResponse.RatingInfo rating = storeMapper.findRatingInfo(storeId);
+        List<StoreDetailResponse.ItemInfo> items = storeMapper.findSellingItems(storeId);
+
+        // 리뷰 0개면 null 방지
+        if (rating == null) {
+            rating = new StoreDetailResponse.RatingInfo();
+            rating.setAvg(0.0);
+            rating.setCount(0);
+        } else {
+            if (rating.getAvg() == null) rating.setAvg(0.0);
+            if (rating.getCount() == null) rating.setCount(0);
+        }
+
+        StoreDetailResponse res = new StoreDetailResponse();
+        res.setStore(store);
+        res.setImages(images);
+        res.setRating(rating);
+        res.setItems(items);
+        return res;
+    }
     // ══════════════════════════════════════════════════════════════
     // FR-M01 + FR-M02  마감 할인 가게 핀 리스트 (캐시 적용)
     // ══════════════════════════════════════════════════════════════

@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.deushu.common.util.Bbox;
 import com.deushu.store.dto.NearbyStoreResponse;
 import com.deushu.store.dto.StoreDetailDto;
+import com.deushu.store.dto.StoreDetailResponse;
 import com.deushu.store.dto.StoreFilterRequest;
 import com.deushu.store.dto.StoreMapDto;
 import com.deushu.store.service.StoreService;
@@ -36,6 +37,11 @@ import lombok.extern.slf4j.Slf4j;
 public class StoreApiController {
 
     private final StoreService storeService;
+    
+    @GetMapping("/{storeId}")
+    public StoreDetailResponse getStoreDetail(@PathVariable("storeId") Long storeId) {
+        return storeService.getStoreDetail(storeId);
+    }
 
     // ──────────────────────────────────────────────────────────────
     // FR-M01 + FR-M02  마감 할인 가게 핀 리스트 조회

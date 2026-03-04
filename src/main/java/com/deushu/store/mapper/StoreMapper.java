@@ -1,13 +1,15 @@
 package com.deushu.store.mapper;
 
-import com.deushu.common.util.Bbox;
-import com.deushu.store.dto.StoreDetailDto;
-import com.deushu.store.dto.StoreFilterRequest;
-import com.deushu.store.dto.StoreMapDto;
+import java.util.List;
+
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-import java.util.List;
+import com.deushu.common.util.Bbox;
+import com.deushu.store.dto.StoreDetailDto;
+import com.deushu.store.dto.StoreDetailResponse;
+import com.deushu.store.dto.StoreFilterRequest;
+import com.deushu.store.dto.StoreMapDto;
 
 /**
  * MyBatis 스토어 매퍼
@@ -16,6 +18,14 @@ import java.util.List;
 @Mapper
 public interface StoreMapper {
 
+	
+    StoreDetailResponse.StoreInfo findStoreInfo(@Param("storeId") Long storeId);
+
+    List<String> findStoreImages(@Param("storeId") Long storeId);
+
+    StoreDetailResponse.RatingInfo findRatingInfo(@Param("storeId") Long storeId);
+
+    List<StoreDetailResponse.ItemInfo> findSellingItems(@Param("storeId") Long storeId);
     /**
      * FR-M01 / FR-M02
      * 오늘 기준 활성 마감 할인 가게 핀 전체 조회
