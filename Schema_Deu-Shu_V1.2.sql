@@ -1,6 +1,5 @@
 -- =========================================================================
--- [ ドゥーシュー DB Schema V1.1 ]
--- ユさんのソーシャル機能（レビュー）および、運営管理用のクレームテーブル
+-- [ ドゥーシュー DB Schema V1.2 ]
 -- =========================================================================
 
 -- 1. 会員テーブル (Members) - べさん担当領域
@@ -90,19 +89,30 @@ CREATE INDEX idx_item_images_item_sort ON item_images(item_id, sort_order);
 -- 7. 注文・決済テーブル (Orders) - パクさん領域
 CREATE TABLE orders (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    member_id BIGINT NOT NULL,
-    item_id BIGINT NOT NULL,
+    member_id BIGINT NOT NULL COMMENT '注文者(FK) / (한국어: 주문자(FK))',
+    store_id BIGINT NOT NULL COMMENT '対象店舗(FK): 1回の注文は1つの店舗に限定する設計 / (한국어: 대상 점포(FK): 1회의 주문은 1개의 점포로 한정하는 설계)',
     order_status ENUM('PAYMENT_PENDING', 'PAYMENT_COMPLETED', 'PICKUP_COMPLETED', 'CANCELED', 'EXPIRED') NOT NULL,
-    quantity INT NOT NULL,
-    total_price INT NOT NULL,
-    pickup_code VARCHAR(36) NOT NULL UNIQUE COMMENT '受け取り用UUID',
+    total_price INT NOT NULL COMMENT '注文全体の合計金額 / (한국어: 주문 전체의 총합 금액)',
+    pickup_code VARCHAR(36) NOT NULL UNIQUE COMMENT '受け取り用UUID / (한국어: 픽업용 UUID)',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (member_id) REFERENCES members(id),
+    FOREIGN KEY (store_id) REFERENCES stores(id)
+);
+
+-- 8. 注文詳細テーブル (Order_Items) - カート内の個別商品たち (1:N)
+CREATE TABLE order_items (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    order_id BIGINT NOT NULL COMMENT '所属する注文(FK) / (한국어: 소속된 주문(FK))',
+    item_id BIGINT NOT NULL COMMENT '購入した商品(FK) / (한국어: 구매한 상품(FK))',
+    quantity INT NOT NULL COMMENT '購入数量 / (한국어: 구매 수량)',
+    order_price INT NOT NULL COMMENT '購入当時の単価（スナップショット）/ (한국어: 구매 당시의 단가 (스냅샷))',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
     FOREIGN KEY (item_id) REFERENCES items(id)
 );
 
--- 8. 仮想政府事業者認証テーブル (Mock_Business_Registry) - べさん領域
+-- 9. 仮想政府事業者認証テーブル (Mock_Business_Registry) - べさん領域
 CREATE TABLE mock_business_registry (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     business_number VARCHAR(20) NOT NULL UNIQUE,
@@ -112,7 +122,7 @@ CREATE TABLE mock_business_registry (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- 9. レビューテーブル (Reviews) - ユさん担当領域
+-- 10. レビューテーブル (Reviews) - ユさん担当領域
 -- 実際に商品を購入・受け取り完了したユーザーのみが店舗を評価できるセキュアな構造
 CREATE TABLE reviews (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -122,7 +132,7 @@ CREATE TABLE reviews (
     title VARCHAR(100) NOT NULL COMMENT 'レビューの件名',
     content TEXT NOT NULL COMMENT 'レビューの本文',
     photo_url VARCHAR(500) COMMENT '添付画像(S3バケットURL)',
-    rating INT NOT NULL CHECK(rating >= 1 AND rating <= 5) COMMENT '星評価(1~5)',
+    rating DECIMAL(2,1) NOT NULL CHECK(rating >= 1 AND rating <= 5) COMMENT '星評価(1~5)',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME DEFAULT NULL COMMENT '論理削除フラグ',
@@ -131,7 +141,7 @@ CREATE TABLE reviews (
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
 );
 
--- 10. クレーム・問い合わせテーブル (Complaints) - 運営(Admin)領域
+-- 11. クレーム・問い合わせテーブル (Complaints) - 運営(Admin)領域
 -- ユーザーと店舗、および運営(開発者)間のトラブルを中央集権的に管理するテーブル
 CREATE TABLE complaints (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
