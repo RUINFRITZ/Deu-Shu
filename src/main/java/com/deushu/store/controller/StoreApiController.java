@@ -10,4 +10,10 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/stores")
 public class StoreApiController {
 
+    private final StoreService storeService;
+
+    @GetMapping("/{storeId}")
+    public StoreDetailResponse getStoreDetail(@PathVariable("storeId") Long storeId) {
+        return storeService.getStoreDetail(storeId);
+    }
 }

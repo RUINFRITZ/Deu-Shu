@@ -16,7 +16,7 @@ public class ReviewListResponse {
         private String memberName;   // members.name join해서 내려줄 값
         private String title;
         private String content;
-        private Integer rating;
+        private Double rating;
         private String photoUrl;
         private LocalDateTime createdAt;
     }

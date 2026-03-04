@@ -1,243 +1,164 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title></title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title th:text="${pageTitle} ?: '가게 상세'">가게 상세</title>
 
-    <!-- ✅ static 리소스는 @{} -->
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-    <link rel="stylesheet" th:href="@{/css/detail.css}">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+<link rel="stylesheet" th:href="@{/css/detail.css}">
+<link rel="stylesheet"
+	href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 </head>
 <body>
 
-<!-- ✅ header fragment 붙이기 -->
-<div th:replace="~{fragments/header :: header}"></div>
+	<div th:replace="~{fragments/header :: header}"></div>
 
-<main class="main-content">
-    <div class="container">
+	<main class="main-content">
+		<div class="container">
 
-        <!-- 뒤로가기 -->
-        <div class="back-nav">
-            <!-- ✅ list로 가는게 자연스럽다면 이렇게 -->
-            <a th:href="@{/store/list}" class="back-link">
-                <i class="bi bi-arrow-left"></i>
-                <span>가게 목록</span>
-            </a>
-        </div>
+			<!-- 뒤로가기 -->
+			<div class="back-nav">
+				<a th:href="@{/store/list}" class="back-link"> <i
+					class="bi bi-arrow-left"></i> <span>가게 목록</span>
+				</a>
+			</div>
 
-        <!-- 이미지 갤러리 -->
-        <section class="image-gallery">
-            <div class="gallery-main">
-                <img th:src="@{/images/store1-main.jpg}" alt="행복한 베이커리">
-                <button class="btn-favorite active">
-                    <i class="bi bi-heart-fill"></i>
-                </button>
-            </div>
+			<!-- ✅ 이미지 갤러리: JS가 채움 -->
+			<section class="image-gallery">
+				<div class="gallery-main">
+					<img id="mainImage" src="" alt="대표 이미지">
+					<button class="btn-favorite" id="favBtn">
+						<i class="bi bi-heart"></i>
+					</button>
+				</div>
 
-            <div class="gallery-grid">
-                <img th:src="@{/images/store1-1.jpg}" alt="행복한 베이커리 2">
-                <img th:src="@{/images/store1-2.jpg}" alt="행복한 베이커리 3">
-                <img th:src="@{/images/store1-3.jpg}" alt="행복한 베이커리 4">
-                <div class="gallery-more">
-                    <img th:src="@{/images/store1-4.jpg}" alt="행복한 베이커리 5">
-                    <div class="more-overlay">
-                        <span>+2</span>
-                    </div>
-                </div>
-            </div>
-        </section>
+				<div class="gallery-grid" id="subImages">
+					<!-- JS로 4장 채움 -->
+				</div>
+			</section>
 
-        <!-- 가게 정보 -->
-        <section class="store-info">
-            <div class="store-header">
-                <h1>행복한 베이커리</h1>
-                <span class="store-category">빵집</span>
-            </div>
+			<!-- ✅ 가게 정보: JS가 채움 -->
+			<section class="store-info">
+				<div class="store-header">
+					<h1 id="storeName">가게명</h1>
+					<span class="store-category" id="storeCategory">카테고리</span>
+				</div>
 
-            <div class="store-rating">
-                <div class="rating-stars">
-                    <i class="bi bi-star-fill"></i>
-                    <span class="rating-score">4.8</span>
-                </div>
-                <span class="review-count">리뷰 127</span>
-            </div>
+				<div class="store-rating">
+					<div class="rating-stars">
+						<i class="bi bi-star-fill"></i> <span class="rating-score"
+							id="ratingAvg">0.0</span>
+					</div>
+					<span class="review-count" id="reviewCount">리뷰 0</span>
+				</div>
 
-            <p class="store-description">
-                매일 아침 구운 신선한 빵을 합리적인 가격에 만나보세요. 마감 시간 전 남은 빵을 특가로 제공합니다.
-            </p>
+				<!-- (설명 컬럼이 DB에 없으면 JS에서 숨기거나 빈값 처리) -->
+				<p class="store-description" id="storeDesc" style="display: none;"></p>
 
-            <div class="store-details">
-                <div class="detail-item">
-                    <i class="bi bi-geo-alt"></i>
-                    <div>
-                        <span class="detail-label">주소</span>
-                        <span class="detail-value">서울시 강남구 테헤란로 123</span>
-                    </div>
-                </div>
+				<div class="store-details">
+					<div class="detail-item">
+						<i class="bi bi-geo-alt"></i>
+						<div>
+							<span class="detail-label">주소</span> <span class="detail-value"
+								id="storeAddress">-</span>
+						</div>
+					</div>
 
-                <div class="detail-item">
-                    <i class="bi bi-telephone"></i>
-                    <div>
-                        <span class="detail-label">전화번호</span>
-                        <span class="detail-value">02-1234-5678</span>
-                    </div>
-                </div>
-            </div>
-        </section>
+					<div class="detail-item">
+						<i class="bi bi-clock"></i>
+						<div>
+							<span class="detail-label">영업시간</span> <span class="detail-value"
+								id="storeHours">-</span>
+						</div>
+					</div>
+				</div>
+			</section>
 
-        <!-- 지도 -->
-        <section class="map-section">
-            <h2>위치</h2>
-            <div class="map-placeholder">
-                <i class="bi bi-geo-alt"></i>
-                <p>지도 API 영역</p>
-                <span>서울시 강남구 테헤란로 123</span>
-            </div>
-        </section>
+			<!-- ✅ 지도: 일단 텍스트만 JS로 -->
+			<section class="map-section">
+				<h2>위치</h2>
+				<div class="map-placeholder">
+					<i class="bi bi-geo-alt"></i>
+					<p>지도 API 영역</p>
+					<span id="mapAddress">-</span>
+				</div>
+			</section>
 
-        <!-- 할인 상품 목록 -->
-        <section class="products-section">
-            <h2>할인 상품 목록</h2>
-            <div class="product-grid">
+			<!-- ✅ 할인 상품 목록: JS가 리스트 생성 -->
+			<section class="products-section">
+				<h2>할인 상품 목록</h2>
+				<div class="product-grid" id="itemsGrid">
+					<!-- JS로 product-card 반복 생성 -->
+				</div>
+			</section>
 
-                <div class="product-card">
-                    <div class="product-image">
-                        <img th:src="@{/images/product1.jpg}" alt="크루아상 5개 세트">
-                        <span class="discount-badge">40%</span>
-                    </div>
-                    <div class="product-info">
-                        <h3>크루아상 5개 세트</h3>
-                        <div class="product-price">
-                            <span class="discount-price">9,000원</span>
-                            <span class="original-price">15,000원</span>
-                        </div>
-                        <div class="product-meta">
-                            <div class="meta-item">
-                                <i class="bi bi-box"></i>
-                                <span>재고 3개</span>
-                            </div>
-                            <div class="meta-item time">
-                                <i class="bi bi-clock"></i>
-                                <span>3시간 남음</span>
-                            </div>
-                        </div>
-                        <button class="btn-reserve">예약하기</button>
-                    </div>
-                </div>
+			<!-- ✅ 리뷰 섹션: 지금은 리뷰 API 붙이기 전이므로 카운트만 맞춰둠 -->
+			<section class="reviews-section">
+				<div class="reviews-header">
+					<h2 id="reviewsTitle">리뷰 (0)</h2>
+					<button class="btn-write-review" onclick="openReviewModal()">
+						<i class="bi bi-pencil"></i> 리뷰 작성
+					</button>
+				</div>
 
-                <div class="product-card">
-                    <div class="product-image">
-                        <img th:src="@{/images/product2.jpg}" alt="소금빵 10개">
-                        <span class="discount-badge">50%</span>
-                    </div>
-                    <div class="product-info">
-                        <h3>소금빵 10개</h3>
-                        <div class="product-price">
-                            <span class="discount-price">6,000원</span>
-                            <span class="original-price">12,000원</span>
-                        </div>
-                        <div class="product-meta">
-                            <div class="meta-item">
-                                <i class="bi bi-box"></i>
-                                <span>재고 5개</span>
-                            </div>
-                            <div class="meta-item time">
-                                <i class="bi bi-clock"></i>
-                                <span>3시간 남음</span>
-                            </div>
-                        </div>
-                        <button class="btn-reserve">예약하기</button>
-                    </div>
-                </div>
+				<div class="reviews-list" id="reviewsList">
+					<!-- 리뷰 API 붙이면 JS로 채우기 -->
+				</div>
 
-                <div class="product-card">
-                    <div class="product-image">
-                        <img th:src="@{/images/product3.jpg}" alt="케이크 조각 (딸기)">
-                        <span class="discount-badge">40%</span>
-                    </div>
-                    <div class="product-info">
-                        <h3>케이크 조각 (딸기)</h3>
-                        <div class="product-price">
-                            <span class="discount-price">3,600원</span>
-                            <span class="original-price">6,000원</span>
-                        </div>
-                        <div class="product-meta">
-                            <div class="meta-item">
-                                <i class="bi bi-box"></i>
-                                <span>재고 8개</span>
-                            </div>
-                            <div class="meta-item time">
-                                <i class="bi bi-clock"></i>
-                                <span>5시간 남음</span>
-                            </div>
-                        </div>
-                        <button class="btn-reserve">예약하기</button>
-                    </div>
-                </div>
+				<button class="btn-load-more" id="reviewsMoreBtn"
+					style="display: none;">
+					더보기 <i class="bi bi-chevron-down"></i>
+				</button>
+			</section>
 
-            </div>
-        </section>
+		</div>
+	</main>
 
-        <!-- 리뷰 섹션 -->
-        <section class="reviews-section">
-            <div class="reviews-header">
-                <h2>리뷰 (127)</h2>
-                <button class="btn-write-review" onclick="openReviewModal()">
-                    <i class="bi bi-pencil"></i>
-                    리뷰 작성
-                </button>
-            </div>
+	<!-- ✅ 리뷰 작성 모달 -->
+	<div id="reviewModal" class="modal review-modal" onclick="handleModalClick(event)">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3>리뷰 작성</h3>
+				<button type="button" class="modal-close"
+					onclick="closeReviewModal()">×</button>
+			</div>
 
-            <!-- 리뷰 목록 (일단 정적 유지) -->
-            <div class="reviews-list">
-                <!-- ... 기존 그대로 두셔도 됩니다. 이미지 src만 th:src로 바꾸면 끝 -->
-                <div class="review-item">
-                    <div class="review-header">
-                        <span class="review-author">이지은</span>
-                        <div class="review-rating">
-                            <div class="rating-stars">
-                                <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
-                            </div>
-                            <span class="review-date">2026년 2월 25일</span>
-                        </div>
-                    </div>
+			<div class="modal-body">
+				<label>제목</label> <input id="reviewTitle" type="text"
+					placeholder="제목을 입력하세요" /> <label style="margin-top: 12px;">내용</label>
+				<textarea id="reviewContent" rows="4" placeholder="내용을 입력하세요"></textarea>
+				<div class="counter">
+					<span id="currentCount">0</span>/500
+				</div>
 
-                    <div class="review-images">
-                        <img th:src="@{/images/review1.jpg}" alt="리뷰 이미지">
-                    </div>
+				<label style="margin-top: 12px;">별점</label>
+				<div class="stars">
+					<i class="bi bi-star star-btn"></i> <i class="bi bi-star star-btn"></i>
+					<i class="bi bi-star star-btn"></i> <i class="bi bi-star star-btn"></i>
+					<i class="bi bi-star star-btn"></i> <span class="rating-value">5.0</span>
+				</div>
 
-                    <div class="review-content">
-                        <p class="review-text">
-                            빵이 정말 신선하고 맛있어요! ...
-                        </p>
-                        <button class="btn-show-more" onclick="toggleReviewText(this)">
-                            더보기 <i class="bi bi-chevron-down"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
+				<label style="margin-top: 12px;">사진(선택)</label> <input
+					id="imageInput" type="file" accept="image/*" />
+				<div id="imagePreview" style="display: none; margin-top: 8px;">
+					<img id="previewImage" style="max-width: 100%;" />
+					<button type="button" onclick="removeImage()">삭제</button>
+				</div>
+			</div>
 
-            <button class="btn-load-more">
-                더보기 <i class="bi bi-chevron-down"></i>
-            </button>
-        </section>
+			<div class="modal-footer">
+				<button type="button" class="btn" onclick="closeReviewModal()">취소</button>
+				<button type="button" class="btn primary" onclick="submitReview()">등록</button>
+			</div>
+		</div>
+	</div>
 
-    </div>
-</main>
+	<div th:replace="~{fragments/footer :: footer}"></div>
 
-<!-- ✅ footer fragment 붙이기 -->
-<div th:replace="~{fragments/footer :: footer}"></div>
 
-<!-- ✅ js 경로도 @{} -->
-<script th:src="@{/js/script.js}"></script>
-<script th:src="@{/js/detail.js}"></script>
-
-<!-- ✅ 컨트롤러에서 model.addAttribute("storeId", storeId) 해준 값 -->
-<script th:inline="javascript">
-    const storeId = /*[[${storeId}]]*/ 0;
-</script>
-
+	<!-- ✅ storeId는 컨트롤러에서 model에 넣어둔 값 -->
+	<script th:inline="javascript"> const storeId = /*[[${storeId}]]*/ 0;</script>
+	<script th:src="@{/js/detail.js}"></script>
 </body>
 </html>

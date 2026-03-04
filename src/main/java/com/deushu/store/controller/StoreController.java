@@ -19,10 +19,7 @@ public class StoreController {
    // 가게 상세 페이지
    @GetMapping("/{storeId}")
    public String storeDetail(@PathVariable("storeId") Long storeId, Model model) {
-
-       // JS에서 API 호출할 수 있도록 storeId만 넘겨줌
        model.addAttribute("storeId", storeId);
-
        return "store/detail";
    }
 }

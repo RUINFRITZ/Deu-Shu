@@ -5,6 +5,7 @@
 
 <mapper namespace="com.deushu.store.mapper.StoreMapper">
 
+    <!-- 1) 가게 기본 정보 -->
     <select id="findStoreInfo" parameterType="long"
             resultType="com.deushu.store.dto.StoreDetailResponse$StoreInfo">
         SELECT
@@ -19,17 +20,17 @@
             CAST(s.close_time AS CHAR) AS closeTime
         FROM stores s
         WHERE s.id = #{storeId}
-          AND s.deleted_at IS NULL
     </select>
 
-    <select id="findStoreImages" parameterType="long" resultType="string">
-        SELECT si.image_url
-        FROM store_images si
-        WHERE si.store_id = #{storeId}
-          AND si.deleted_at IS NULL
-        ORDER BY si.sort_order ASC, si.id ASC
-    </select>
+	  <!-- 2) 가게 이미지 목록 -->
+	<select id="findStoreImages" parameterType="long" resultType="string">
+    SELECT si.image_url
+    FROM store_images si
+    WHERE si.store_id = #{storeId}
+    ORDER BY si.sort_order ASC, si.created_at ASC
+</select>
 
+    <!-- 3) 리뷰 평점/개수 -->
     <select id="findRatingInfo" parameterType="long"
             resultType="com.deushu.store.dto.StoreDetailResponse$RatingInfo">
         SELECT
@@ -37,9 +38,9 @@
             COUNT(*) AS count
         FROM reviews r
         WHERE r.store_id = #{storeId}
-          AND r.deleted_at IS NULL
     </select>
 
+    <!-- 4) 판매중 상품 목록 -->
     <select id="findSellingItems" parameterType="long"
             resultType="com.deushu.store.dto.StoreDetailResponse$ItemInfo">
         SELECT
@@ -53,7 +54,6 @@
             i.thumbnail_url AS thumbnailUrl
         FROM items i
         WHERE i.store_id = #{storeId}
-          AND i.deleted_at IS NULL
           AND i.expire_at > NOW()
           AND i.stock > 0
         ORDER BY i.expire_at ASC
