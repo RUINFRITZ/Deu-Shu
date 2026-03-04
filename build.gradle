@@ -47,13 +47,14 @@ dependencies {
  implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
  
      // =========================================================================
-    // 2. 外部API非同期通信およびJSONパース (パクさん領域: トランザクション・決済)
+    // 2. 外部API非同期通信およびJSONパース (パクさん領域: トランザクション・決済) caffein cache 追加
     // =========================================================================
     // PortOne等の外部決済サーバーとのノンブロッキング(Non-blocking)通信を担うWebClient
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
     // 決済サーバーからの複雑なJSONレスポンスをJavaオブジェクト(DTO)へ直列化・反直列化するパーサー
     implementation 'com.google.code.gson:gson'
-
+	implementation 'org.springframework.boot:spring-boot-starter-cache'
+	implementation 'com.github.ben-manes.caffeine:caffeine'
     // =========================================================================
     // 3. JWTベースの無状態(Stateless)認証トークン (べさん領域: 権限管理)
     // =========================================================================
