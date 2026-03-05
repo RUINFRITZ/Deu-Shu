@@ -25,7 +25,17 @@ public class SecurityConfig {
         http
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/main/**", "/mypage", "/list/**").permitAll()
-                .requestMatchers("/api/auth/login", "/api/auth/signup", "/api/auth/logout", "/api/auth/me", "/api/auth/update", "/api/auth/withdraw").permitAll()
+                .requestMatchers(
+                    "/api/auth/login",
+                    "/api/auth/signup",
+                    "/api/auth/logout",
+                    "/api/auth/me",
+                    "/api/auth/update",
+                    "/api/auth/withdraw",
+                    "/api/auth/find-email",
+                    "/api/auth/verify-identity",
+                    "/api/auth/reset-password"
+                ).permitAll()
                 .anyRequest().authenticated()
             )
             .csrf(csrf -> csrf.disable());
