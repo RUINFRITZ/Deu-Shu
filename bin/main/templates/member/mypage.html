@@ -869,10 +869,11 @@ function handleSaveAll() {
     if (!lastNameKana || !firstNameKana) { alert('フリガナを入力してください'); return; }
     if (!phone)                          { alert('電話番号を入力してください'); return; }
 
-    // 비밀번호 변경 시 — 현재/새 비밀번호 중 하나라도 입력했으면 둘 다 필요
-    // (둘 다 비어있으면 비밀번호 변경 안 함 → 이름/전화번호만 수정)
-    if (currentPw && !newPw)  { alert('新しいパスワードを入力してください'); return; }
-    if (newPw && !currentPw)  { alert('現在のパスワードを入力してください'); return; }
+    // 현재 비밀번호 입력 시 새 비밀번호도 반드시 입력해야 함
+    if (currentPw && !newPw) { alert('新しいパスワードを入力してください'); return; }
+    // 새 비밀번호 입력 시 현재 비밀번호도 반드시 입력해야 함
+    if (newPw && !currentPw) { alert('現在のパスワードを入力してください'); return; }
+    // 새 비밀번호와 확인 비밀번호 일치 여부 확인
     if (newPw && newPw !== newPwConfirm) { alert('新しいパスワードが一致しません'); return; }
 
     fetch('/api/auth/update', {
@@ -883,17 +884,8 @@ function handleSaveAll() {
     .then(function(res) { return res.json(); })
     .then(function(data) {
         if (data.success) {
-            // 비밀번호 변경 여부에 따라 다른 토스트 메시지 표시
-            var toastMsg = (currentPw && newPw)
-                ? 'パスワードと情報が更新されました'
-                : '情報が更新されました';
-
-            // 토스트를 먼저 띄운 후 모달 닫기 (토스트가 가려지지 않도록)
-            showToast(toastMsg, 'success');
-            setTimeout(function() {
-                closeEditModal();
-            }, 300);
-
+            closeEditModal();
+            showToast('情報が更新されました', 'success');
             // 화면 정보 즉시 갱신
             document.getElementById('infoName').textContent  = lastName + ' ' + firstName;
             document.getElementById('infoKana').textContent  = lastNameKana + ' ' + firstNameKana;
