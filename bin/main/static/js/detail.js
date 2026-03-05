@@ -148,7 +148,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!storeId) return;
 
-    fetch(`/api/stores/${storeId}`)
+    fetch(`/api/stores/detail/${storeId}`)
         .then(res => {
             if (!res.ok) throw new Error("상세 조회 실패");
             return res.json();

@@ -38,7 +38,7 @@ public class StoreApiController {
 
     private final StoreService storeService;
     
-    @GetMapping("/{storeId}")
+    @GetMapping("/detail/{storeId}")
     public StoreDetailResponse getStoreDetail(@PathVariable("storeId") Long storeId) {
         return storeService.getStoreDetail(storeId);
     }
