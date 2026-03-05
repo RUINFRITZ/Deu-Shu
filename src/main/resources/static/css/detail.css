@@ -884,203 +884,158 @@ img {
 }
 
 /* ============================================
-   예약 사이드바 패널
-   detail.css 하단에 추가하세요
+   cart-sidebar.css  (v3)
+   reservation-sidebar.css 교체용
 ============================================ */
 
 /* ── 오버레이 ── */
 .reservation-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.45);
+    background: rgba(0,0,0,.45);
     z-index: 1000;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.35s ease;
+    transition: opacity .35s ease;
 }
-.reservation-overlay.active {
-    opacity: 1;
-    pointer-events: auto;
-}
+.reservation-overlay.active { opacity:1; pointer-events:auto; }
 
-/* ── 사이드바 패널 ── */
+/* ── 패널 ── */
 .reservation-panel {
     position: fixed;
-    top: 0;
-    right: 0;
-    width: min(440px, 100vw);
+    top: 0; right: 0;
+    width: min(460px,100vw);
     height: 100dvh;
     background: var(--white);
-    box-shadow: -8px 0 40px rgba(0, 0, 0, 0.18);
+    box-shadow: -8px 0 40px rgba(0,0,0,.18);
     z-index: 1001;
     display: flex;
     flex-direction: column;
     transform: translateX(100%);
-    transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform .38s cubic-bezier(.4,0,.2,1);
     border-radius: 1.25rem 0 0 1.25rem;
     overflow: hidden;
 }
-.reservation-panel.open {
-    transform: translateX(0);
-}
+.reservation-panel.open { transform: translateX(0); }
 
 /* ── 헤더 ── */
 .rp-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1.25rem 1.5rem;
+    padding: 1.125rem 1.25rem;
     border-bottom: 1px solid var(--gray-200);
-    background: var(--white);
     flex-shrink: 0;
 }
 .rp-header h3 {
     font-size: 1.125rem;
     font-weight: 700;
     color: var(--gray-900);
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+.rp-cart-badge {
+    background: var(--primary-color);
+    color: var(--white);
+    font-size: .6875rem;
+    font-weight: 700;
+    min-width: 1.375rem;
+    height: 1.375rem;
+    border-radius: 99px;
+    padding: 0 .35rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 .rp-close {
-    width: 2.25rem;
-    height: 2.25rem;
+    width: 2.25rem; height: 2.25rem;
     border-radius: var(--radius-md);
     border: 1px solid var(--gray-200);
     background: var(--white);
-    font-size: 1.125rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    font-size: 1rem;
+    display: flex; align-items: center; justify-content: center;
     color: var(--gray-600);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all .2s;
 }
-.rp-close:hover {
-    background: var(--gray-100);
-    border-color: var(--gray-300);
-}
+.rp-close:hover { background: var(--gray-100); }
 
-/* ── 스크롤 본문 ── */
+/* ── 본문 스크롤 ── */
 .rp-body {
     flex: 1;
     overflow-y: auto;
-    padding: 1.5rem;
+    padding: 1.25rem;
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1rem;
     scrollbar-width: thin;
     scrollbar-color: var(--gray-300) transparent;
 }
 .rp-body::-webkit-scrollbar { width: 4px; }
-.rp-body::-webkit-scrollbar-thumb {
-    background: var(--gray-300);
-    border-radius: 99px;
-}
+.rp-body::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 99px; }
 
-/* ── 상품 정보 ── */
-.rp-item-card {
+/* ── 장바구니 아이템 ── */
+.rp-cart-item {
     display: flex;
-    gap: 1rem;
+    gap: .875rem;
     align-items: flex-start;
-    background: var(--gray-50);
-    border: 1px solid var(--gray-200);
-    border-radius: var(--radius-lg);
-    padding: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--gray-100);
 }
-.rp-item-img {
-    width: 5rem;
-    height: 5rem;
+.rp-cart-item:last-child { border-bottom: none; padding-bottom: 0; }
+.rp-cart-item-img {
+    width: 4rem; height: 4rem;
     border-radius: var(--radius-md);
     object-fit: cover;
     flex-shrink: 0;
     background: var(--gray-200);
 }
-.rp-item-info {
+.rp-cart-item-info {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 0.375rem;
+    gap: .375rem;
 }
-.rp-item-name {
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--gray-900);
-    line-height: 1.4;
-}
-.rp-item-desc {
-    font-size: 0.8125rem;
-    color: var(--gray-500);
-    line-height: 1.5;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-.rp-item-badges {
+.rp-cart-item-name { font-size: .9375rem; font-weight: 600; color: var(--gray-900); }
+.rp-cart-item-price { font-size: .8125rem; color: var(--gray-500); }
+.rp-cart-item-right {
     display: flex;
-    gap: 0.375rem;
-    flex-wrap: wrap;
-    margin-top: 0.25rem;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: .5rem;
+    flex-shrink: 0;
+    min-height: 4rem;
 }
-.rp-badge {
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 0.2rem 0.5rem;
-    border-radius: 99px;
-}
-.rp-badge.discount {
-    background: #fff7ed;
-    color: var(--primary-color);
-}
-.rp-badge.stock {
-    background: #f0fdf4;
-    color: #16a34a;
-}
+.rp-cart-remove { color: var(--gray-400); font-size: .875rem; cursor: pointer; padding: .25rem; transition: color .15s; }
+.rp-cart-remove:hover { color: #ef4444; }
+.rp-cart-line-total { font-size: .9375rem; font-weight: 700; color: var(--gray-900); }
 
-/* ── 구분선 ── */
-.rp-divider {
-    border: none;
-    border-top: 1px solid var(--gray-200);
-    margin: 0;
-}
-
-/* ── 수량 선택 ── */
-.rp-qty-section label {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--gray-700);
-    display: block;
-    margin-bottom: 0.75rem;
-}
+/* ── 수량 컨트롤 (공통) ── */
 .rp-qty-control {
     display: flex;
     align-items: center;
-    gap: 0;
     border: 1.5px solid var(--gray-300);
     border-radius: var(--radius-lg);
     overflow: hidden;
     width: fit-content;
 }
 .rp-qty-btn {
-    width: 2.75rem;
-    height: 2.75rem;
-    font-size: 1.25rem;
+    width: 2.75rem; height: 2.75rem;
+    font-size: 1.125rem;
     color: var(--gray-700);
     background: var(--gray-50);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex; align-items: center; justify-content: center;
     cursor: pointer;
-    transition: background 0.15s;
+    transition: background .15s;
     user-select: none;
-    flex-shrink: 0;
 }
 .rp-qty-btn:hover { background: var(--gray-100); }
 .rp-qty-btn:active { background: var(--gray-200); }
-.rp-qty-btn.disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-}
+.rp-qty-btn.disabled { opacity: .35; cursor: not-allowed; pointer-events: none; }
 .rp-qty-num {
-    width: 3.5rem;
+    width: 3.25rem;
     text-align: center;
     font-size: 1.125rem;
     font-weight: 700;
@@ -1088,115 +1043,305 @@ img {
     background: var(--white);
     border-left: 1.5px solid var(--gray-300);
     border-right: 1.5px solid var(--gray-300);
-    padding: 0.5rem 0;
-    pointer-events: none;
+    padding: .5rem 0;
     line-height: 1.75rem;
 }
-.rp-stock-info {
-    margin-top: 0.625rem;
-    font-size: 0.8125rem;
-    color: var(--gray-500);
+
+/* 카드 / 패널 내 작은 사이즈 */
+.rp-qty-sm .rp-qty-btn { width: 2rem; height: 2rem; font-size: .875rem; }
+.rp-qty-sm .rp-qty-num { width: 2.5rem; font-size: .9375rem; padding: .25rem 0; line-height: 1.5rem; }
+
+/* ── 비어있음 ── */
+.rp-cart-empty {
+    flex: 1;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 0.25rem;
+    justify-content: center;
+    gap: .75rem;
+    padding: 4rem 0;
+    color: var(--gray-400);
 }
-.rp-stock-info i { color: var(--primary-color); }
+.rp-cart-empty i { font-size: 3rem; opacity: .4; }
+.rp-cart-empty p { font-size: .9375rem; }
+
+/* ── 푸터 ── */
+.rp-footer {
+    padding: 1rem 1.25rem;
+    border-top: 1px solid var(--gray-200);
+    background: var(--white);
+    flex-shrink: 0;
+    flex-direction: column;
+    gap: .75rem;
+}
 
 /* ── 가격 요약 ── */
 .rp-price-section {
     background: #fff7ed;
     border: 1px solid #fed7aa;
     border-radius: var(--radius-lg);
-    padding: 1.125rem 1.25rem;
+    padding: 1rem 1.125rem;
     display: flex;
     flex-direction: column;
-    gap: 0.625rem;
+    gap: .5rem;
 }
 .rp-price-row {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    font-size: 0.875rem;
+    font-size: .875rem;
 }
 .rp-price-row .label { color: var(--gray-600); }
 .rp-price-row .value { font-weight: 500; color: var(--gray-800); }
-.rp-price-row .value.strike {
-    text-decoration: line-through;
-    color: var(--gray-400);
-}
+.rp-price-row .value.strike { text-decoration: line-through; color: var(--gray-400); }
 .rp-price-row .value.save { color: #16a34a; font-weight: 600; }
 .rp-price-total {
     display: flex;
     justify-content: space-between;
     align-items: center;
     border-top: 1px solid #fed7aa;
-    padding-top: 0.75rem;
-    margin-top: 0.125rem;
+    padding-top: .625rem;
 }
-.rp-price-total .label {
-    font-size: 0.9375rem;
-    font-weight: 700;
-    color: var(--gray-900);
-}
-.rp-price-total .total-value {
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: var(--primary-color);
-}
+.rp-price-total .label { font-size: .9375rem; font-weight: 700; color: var(--gray-900); }
+.rp-price-total .total-value { font-size: 1.375rem; font-weight: 800; color: var(--primary-color); }
 
-/* ── 하단 푸터 (결제 버튼) ── */
-.rp-footer {
-    padding: 1rem 1.5rem;
-    border-top: 1px solid var(--gray-200);
-    background: var(--white);
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.625rem;
-}
+/* ── 결제 버튼 ── */
 .btn-pay {
-    width: 100%;
-    height: 3.25rem;
+    width: 100%; height: 3.25rem;
     background: var(--primary-color);
     color: var(--white);
-    font-size: 1rem;
-    font-weight: 700;
+    font-size: 1rem; font-weight: 700;
     border-radius: var(--radius-lg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    transition: background 0.2s, transform 0.1s;
+    display: flex; align-items: center; justify-content: center;
+    gap: .5rem;
+    transition: background .2s, transform .1s;
 }
 .btn-pay:hover { background: var(--primary-dark); }
-.btn-pay:active { transform: scale(0.98); }
-.btn-pay:disabled {
-    background: var(--gray-300);
-    cursor: not-allowed;
-    transform: none;
-}
+.btn-pay:active { transform: scale(.98); }
+.btn-pay:disabled { background: var(--gray-300); cursor: not-allowed; transform: none; }
 .rp-footer-note {
     text-align: center;
-    font-size: 0.75rem;
+    font-size: .75rem;
     color: var(--gray-400);
+    display: flex; align-items: center; justify-content: center;
+    gap: .25rem;
+}
+
+/* ============================================
+   상품 카드 - 수량 + 담기 영역
+============================================ */
+.card-add-row {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 0.25rem;
+    gap: .5rem;
+    margin-top: .25rem;
 }
+
+/* 담기 버튼 */
+.btn-add-cart-card {
+    flex: 1;
+    height: 2rem;
+    background: var(--gray-900);
+    color: var(--white);
+    font-size: .8125rem;
+    font-weight: 700;
+    border-radius: var(--radius-md);
+    display: flex; align-items: center; justify-content: center;
+    gap: .3rem;
+    transition: background .2s, transform .1s;
+    white-space: nowrap;
+}
+.btn-add-cart-card:hover { background: var(--gray-700); }
+.btn-add-cart-card:active { transform: scale(.97); }
+
+/* 담긴 상태 */
+.btn-add-cart-card.in-cart {
+    background: #16a34a;
+}
+.btn-add-cart-card.in-cart:hover { background: #15803d; }
 
 /* ── 모바일 ── */
 @media (max-width: 520px) {
     .reservation-panel {
         border-radius: 1rem 1rem 0 0;
-        top: auto;
-        bottom: 0;
-        right: 0;
-        width: 100vw;
-        height: 92dvh;
+        top: auto; bottom: 0;
+        width: 100vw; height: 92dvh;
         transform: translateY(100%);
     }
     .reservation-panel.open { transform: translateY(0); }
+}
+
+/* ============================================
+   플로팅 장바구니 탭 버튼 (페이지 오른쪽 고정)
+============================================ */
+.cart-float-tab {
+    position: fixed;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 999;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .375rem;
+
+    width: 3.25rem;
+    padding: 1rem .5rem;
+    border-radius: 1rem 0 0 1rem;
+
+    background: rgba(249, 115, 22, 0.15);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(249, 115, 22, 0.3);
+    border-right: none;
+
+    cursor: pointer;
+    transition: background .25s, width .25s, box-shadow .25s;
+    box-shadow: -4px 0 20px rgba(249, 115, 22, 0.12);
+
+    /* 패널이 열려있을 때 숨김 처리용 */
+    pointer-events: auto;
+}
+.cart-float-tab:hover {
+    background: rgba(249, 115, 22, 0.28);
+    box-shadow: -6px 0 28px rgba(249, 115, 22, 0.22);
+}
+.cart-float-tab.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-50%) translateX(100%);
+    transition: opacity .25s, transform .3s;
+}
+
+/* 아이콘 */
+.cart-float-tab .cft-icon {
+    position: relative;
+    font-size: 1.375rem;
+    color: var(--primary-color);
+    line-height: 1;
+}
+
+/* 뱃지 (아이콘 위 우측) */
+.cart-float-tab .cft-badge {
+    position: absolute;
+    top: -.45rem;
+    right: -.55rem;
+    background: var(--primary-color);
+    color: var(--white);
+    font-size: .625rem;
+    font-weight: 800;
+    min-width: 1.1rem;
+    height: 1.1rem;
+    border-radius: 99px;
+    padding: 0 .2rem;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+.cart-float-tab .cft-badge.show {
+    display: inline-flex;
+}
+
+/* 세로 라벨 */
+.cart-float-tab .cft-label {
+    writing-mode: vertical-rl;
+    font-size: .6875rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    letter-spacing: .05em;
+    line-height: 1;
+    opacity: .85;
+}
+
+/* 총금액 (담긴 게 있을 때만 표시) */
+.cart-float-tab .cft-price {
+    writing-mode: vertical-rl;
+    font-size: .6875rem;
+    font-weight: 800;
+    color: var(--primary-dark);
+    letter-spacing: -.01em;
+    line-height: 1;
+    display: none;
+}
+.cart-float-tab .cft-price.show { display: block; }
+
+@media (max-width: 520px) {
+    /* 모바일: 하단 고정 버튼으로 변경 */
+    .cart-float-tab {
+        top: auto;
+        bottom: 1.5rem;
+        right: 1rem;
+        transform: none;
+        flex-direction: row;
+        width: auto;
+        padding: .75rem 1.25rem;
+        border-radius: 99px;
+        border: 1px solid rgba(249,115,22,.35);
+        gap: .5rem;
+        box-shadow: 0 4px 24px rgba(249,115,22,.25);
+    }
+    .cart-float-tab.hidden {
+        transform: translateY(120%);
+    }
+    .cart-float-tab .cft-label,
+    .cart-float-tab .cft-price {
+        writing-mode: horizontal-tb;
+        font-size: .8125rem;
+    }
+}
+
+/* ============================================
+   detail-map.css  (리스트 페이지 지도 스타일 통일)
+   detail.css 하단에 추가하세요
+============================================ */
+
+/* ── 지도 컨테이너 ── */
+#leafletMap {
+    width: 100%;
+    height: 24rem;
+    border-radius: var(--radius-lg);
+    z-index: 0;
+}
+
+/* Leaflet z-index 충돌 방지 */
+.leaflet-pane         { z-index: 1 !important; }
+.leaflet-top,
+.leaflet-bottom       { z-index: 2 !important; }
+
+/* ── 팝업 래퍼 (리스트 페이지와 동일) ── */
+.leaflet-popup-content-wrapper {
+    border-radius: 0.75rem !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12) !important;
+}
+
+/* ── 팝업 텍스트 클래스 (리스트 페이지 list.html 과 동일 클래스명) ── */
+.map-popup-title {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #2F2F2F;
+}
+.map-popup-sub {
+    font-size: 0.78rem;
+    color: #6B6B6B;
+    margin-top: 2px;
+}
+.map-popup-price {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #4F7F68;
+    margin-top: 4px;
+}
+
+/* ── 줌 컨트롤 보정 ── */
+.leaflet-control-zoom a {
+    color: #4F7F68 !important;
+    font-weight: 700 !important;
+}
+.leaflet-control-zoom a:hover {
+    color: #4F7F68 !important;
+    background: #e8f4ef !important;
 }
 
 /* ============================================
