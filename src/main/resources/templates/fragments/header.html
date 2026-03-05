@@ -12,64 +12,66 @@
 
 <!-- PC 네비게이션 메뉴 -->
 <nav class="nav-desktop">
-<!--  리스트 페이지로 지역명 파라미터 전달-->
+
     <!-- 都心: 千代田・中央・港 -->
     <div class="nav-item">
-        <a th:href="@{/list(region='toshin', radius=2)}" class="nav-link">都心</a>
+        <a th:href="@{/area/toshin}" class="nav-link">都心</a>
         <div class="dropdown">
-            <a th:href="@{/list(region='chiyoda', radius=2)}">千代田区</a>
-            <a th:href="@{/list(region='chuo', radius=2)}">中央区</a>
-            <a th:href="@{/list(region='minato', radius=2)}">港区</a>
+            <a th:href="@{/area/chiyoda}">千代田区</a>
+            <a th:href="@{/area/chuo}">中央区</a>
+            <a th:href="@{/area/minato}">港区</a>
         </div>
     </div>
 
     <!-- 城南: 品川・目黒・大田・世田谷 -->
     <div class="nav-item">
-        <a th:href="@{/list(region='jonan', radius=2)}" class="nav-link">城南</a>
+        <a th:href="@{/area/jonan}" class="nav-link">城南</a>
         <div class="dropdown">
-            <a th:href="@{/list(region='shinagawa', radius=2)}">品川区</a>
-            <a th:href="@{/list(region='meguro', radius=2)}">目黒区</a>
-            <a th:href="@{/list(region='ota', radius=2)}">大田区</a>
-            <a th:href="@{/list(region='setagaya', radius=2)}">世田谷区</a>
+            <a th:href="@{/area/shinagawa}">品川区</a>
+            <a th:href="@{/area/meguro}">目黒区</a>
+            <a th:href="@{/area/ota}">大田区</a>
+            <a th:href="@{/area/setagaya}">世田谷区</a>
         </div>
     </div>
 
     <!-- 城西: 新宿・渋谷・中野・杉並・練馬 -->
     <div class="nav-item">
-        <a th:href="@{/list(region='josei', radius=2)}" class="nav-link">城西</a>
+        <a th:href="@{/area/josei}" class="nav-link">城西</a>
         <div class="dropdown">
-            <a th:href="@{/list(region='shinjuku', radius=2)}">新宿区</a>
-            <a th:href="@{/list(region='shibuya', radius=2)}">渋谷区</a>
-            <a th:href="@{/list(region='nakano', radius=2)}">中野区</a>
-            <a th:href="@{/list(region='suginami', radius=2)}">杉並区</a>
-            <a th:href="@{/list(region='nerima', radius=2)}">練馬区</a>
+            <a th:href="@{/area/shinjuku}">新宿区</a>
+            <a th:href="@{/area/shibuya}">渋谷区</a>
+            <a th:href="@{/area/nakano}">中野区</a>
+            <a th:href="@{/area/suginami}">杉並区</a>
+            <a th:href="@{/area/nerima}">練馬区</a>
         </div>
     </div>
 
     <!-- 城北: 文京・豊島・北・板橋・足立 -->
     <div class="nav-item">
-        <a th:href="@{/list(region='johoku', radius=2)}" class="nav-link">城北</a>
+        <a th:href="@{/area/johoku}" class="nav-link">城北</a>
         <div class="dropdown">
-            <a th:href="@{/list(region='bunkyo', radius=2)}">文京区</a>
-            <a th:href="@{/list(region='toshima', radius=2)}">豊島区</a>
-            <a th:href="@{/list(region='kita', radius=2)}">北区</a>
-            <a th:href="@{/list(region='itabashi', radius=2)}">板橋区</a>
-            <a th:href="@{/list(region='adachi', radius=2)}">足立区</a>
+            <a th:href="@{/area/bunkyo}">文京区</a>
+            <a th:href="@{/area/toshima}">豊島区</a>
+            <a th:href="@{/area/kita}">北区</a>
+            <a th:href="@{/area/itabashi}">板橋区</a>
+            <a th:href="@{/area/adachi}">足立区</a>
         </div>
     </div>
 
     <!-- 城東: 台東・墨田・江東・葛飾・江戸川 -->
     <div class="nav-item">
-        <a th:href="@{/list(region='joto', radius=2)}" class="nav-link">城東</a>
+        <a th:href="@{/area/joto}" class="nav-link">城東</a>
         <div class="dropdown">
-            <a th:href="@{/list(region='taito', radius=2)}">台東区</a>
-            <a th:href="@{/list(region='sumida', radius=2)}">墨田区</a>
-            <a th:href="@{/list(region='koto', radius=2)}">江東区</a>
-            <a th:href="@{/list(region='katsushika', radius=2)}">葛飾区</a>
-            <a th:href="@{/list(region='edogawa', radius=2)}">江戸川区</a>
+            <a th:href="@{/area/taito}">台東区</a>
+            <a th:href="@{/area/sumida}">墨田区</a>
+            <a th:href="@{/area/koto}">江東区</a>
+            <a th:href="@{/area/katsushika}">葛飾区</a>
+            <a th:href="@{/area/edogawa}">江戸川区</a>
         </div>
     </div>
+
 </nav>
+
  
         <!-- 헤더 오른쪽: 로그인 버튼 + 모바일 메뉴 버튼 -->
         <div class="header-actions">
@@ -155,9 +157,9 @@
         <button class="btn-primary-full" onclick="handleUserLogin()">ログイン</button>
 
         <div class="sub-links">
-            <a href="#">メールを探す</a>
+            <a href="#" onclick="openFindEmailModal(); return false;">メールを探す</a>
             <span class="sep">|</span>
-            <a href="#">パスワード再設定</a>
+            <a href="#" onclick="openResetPwModal(); return false;">パスワード再設定</a>
             <span class="sep">|</span>
             <button class="link-biz" onclick="switchToBiz()">ビジネス ログイン/登録</button>
         </div>
@@ -180,6 +182,7 @@
             </button>
         </div>
     </div>
+
     <!-- [패널 2] 일반회원 회원가입 — API: POST /api/auth/signup -->
     <div id="panelRegister" class="modal-body-wrap" style="display:none;">
 
@@ -460,6 +463,317 @@
 <script th:src="@{/js/script.js}"></script>
 
 
+
+
+<!-- 비밀번호 재설정 모달 -->
+<div class="auth-overlay" id="resetPwOverlay" onclick="if(event.target===this) closeResetPwModal()" style="display:none; align-items:center; justify-content:center;">
+    <div class="auth-modal" style="max-width:420px; width:90%; padding:2rem; border-radius:12px; background:#fff;">
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+            <h2 style="font-size:1.2rem; font-weight:700;">パスワード再設定</h2>
+            <button onclick="closeResetPwModal()" style="background:none; border:none; font-size:1.4rem; cursor:pointer;">×</button>
+        </div>
+
+        <!-- STEP 1: 본인 확인 입력 -->
+        <div id="resetPwStep1">
+            <p style="font-size:0.85rem; color:#666; margin-bottom:1.2rem;">
+                登録情報を入力して本人確認を行ってください
+            </p>
+            <div style="margin-bottom:0.9rem;">
+                <label style="display:block; font-size:0.85rem; margin-bottom:0.3rem;">メールアドレス</label>
+                <input type="email" id="resetEmail" placeholder="登録済みのメールアドレス"
+                    style="width:100%; padding:0.6rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-bottom:0.9rem;">
+                <div>
+                    <label style="display:block; font-size:0.85rem; margin-bottom:0.3rem;">姓（漢字）</label>
+                    <input type="text" id="resetLastName" placeholder="田中"
+                        style="width:100%; padding:0.6rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
+                </div>
+                <div>
+                    <label style="display:block; font-size:0.85rem; margin-bottom:0.3rem;">名（漢字）</label>
+                    <input type="text" id="resetFirstName" placeholder="一郎"
+                        style="width:100%; padding:0.6rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
+                </div>
+            </div>
+            <div style="margin-bottom:1.2rem;">
+                <label style="display:block; font-size:0.85rem; margin-bottom:0.3rem;">電話番号</label>
+                <input type="tel" id="resetPhone" placeholder="例：09012345678"
+                    style="width:100%; padding:0.6rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
+            </div>
+            <p id="resetStep1Msg" style="color:#e53e3e; font-size:0.85rem; margin-bottom:0.8rem; display:none;"></p>
+            <button onclick="handleResetVerify()"
+                style="width:100%; padding:0.75rem; background:#2d6a4f; color:#fff; border:none; border-radius:6px; font-size:1rem; cursor:pointer; font-weight:600;">
+                本人確認
+            </button>
+        </div>
+
+        <!-- STEP 2: 새 비밀번호 입력 (본인 확인 통과 후 표시) -->
+        <div id="resetPwStep2" style="display:none;">
+            <p style="font-size:0.85rem; color:#2d6a4f; font-weight:600; margin-bottom:1.2rem;">
+                ✔ 本人確認が完了しました。新しいパスワードを設定してください。
+            </p>
+            <div style="margin-bottom:0.9rem;">
+                <label style="display:block; font-size:0.85rem; margin-bottom:0.3rem;">新しいパスワード</label>
+                <input type="password" id="resetNewPw" placeholder="新しいパスワードを入力"
+                    oninput="checkResetPwStrength(this.value)"
+                    style="width:100%; padding:0.6rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
+                <!-- 비밀번호 강도 바 -->
+                <div class="pw-strength-bar">
+                    <div class="pw-strength-fill" id="resetPwStrengthFill"></div>
+                </div>
+            </div>
+            <div style="margin-bottom:1.2rem;">
+                <label style="display:block; font-size:0.85rem; margin-bottom:0.3rem;">新しいパスワード（確認）</label>
+                <input type="password" id="resetNewPwConfirm" placeholder="もう一度入力"
+                    style="width:100%; padding:0.6rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
+            </div>
+            <p id="resetStep2Msg" style="color:#e53e3e; font-size:0.85rem; margin-bottom:0.8rem; display:none;"></p>
+            <button onclick="handleResetSubmit()"
+                style="width:100%; padding:0.75rem; background:#2d6a4f; color:#fff; border:none; border-radius:6px; font-size:1rem; cursor:pointer; font-weight:600;">
+                パスワードを変更する
+            </button>
+        </div>
+
+
+
+    </div>
+</div>
+
+<script>
+// 비밀번호 재설정용 강도 바 갱신
+function checkResetPwStrength(val) {
+    applyStrengthBar('resetPwStrengthFill', calcPwStrength(val));
+}
+
+// 비밀번호 재설정 모달 열기
+function openResetPwModal() {
+    // 전체 초기화
+    document.getElementById('resetEmail').value = '';
+    document.getElementById('resetLastName').value = '';
+    document.getElementById('resetFirstName').value = '';
+    document.getElementById('resetPhone').value = '';
+    document.getElementById('resetNewPw').value = '';
+    applyStrengthBar('resetPwStrengthFill', 0); // 강도 바 초기화
+    document.getElementById('resetNewPwConfirm').value = '';
+    document.getElementById('resetStep1Msg').style.display = 'none';
+    document.getElementById('resetStep2Msg').style.display = 'none';
+    document.getElementById('resetPwStep1').style.display = 'block';
+    document.getElementById('resetPwStep2').style.display = 'none';
+    // 모달 표시
+    document.getElementById('resetPwOverlay').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+// 비밀번호 재설정 모달 닫기
+function closeResetPwModal() {
+    document.getElementById('resetPwOverlay').style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+// STEP 1: 본인 확인 (이메일 + 이름 + 전화번호)
+// 서버에서 일치 여부만 확인 → 통과하면 STEP 2로 이동
+function handleResetVerify() {
+    var email     = document.getElementById('resetEmail').value.trim();
+    var lastName  = document.getElementById('resetLastName').value.trim();
+    var firstName = document.getElementById('resetFirstName').value.trim();
+    var phone     = document.getElementById('resetPhone').value.trim();
+    var msgEl     = document.getElementById('resetStep1Msg');
+
+    if (!email || !lastName || !firstName || !phone) {
+        msgEl.textContent = 'すべての項目を入力してください';
+        msgEl.style.display = 'block';
+        return;
+    }
+
+    msgEl.style.display = 'none';
+
+    // 본인 확인용으로 newPw를 임시값으로 전송 (서버에서 일치 여부만 확인)
+    // 실제 비밀번호 변경은 STEP 2에서 진행
+    fetch('/api/auth/verify-identity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            email: email,
+            lastName: lastName,
+            firstName: firstName,
+            phone: phone
+        })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+        if (data.success) {
+            // 본인 확인 통과 → STEP 2로
+            document.getElementById('resetPwStep1').style.display = 'none';
+            document.getElementById('resetPwStep2').style.display = 'block';
+        } else {
+            msgEl.textContent = data.message || '入力情報が一致しません';
+            msgEl.style.display = 'block';
+        }
+    })
+    .catch(function() {
+        msgEl.textContent = 'サーバーエラーが発生しました';
+        msgEl.style.display = 'block';
+    });
+}
+
+// STEP 2: 새 비밀번호 실제 저장
+function handleResetSubmit() {
+    var newPw        = document.getElementById('resetNewPw').value;
+    var newPwConfirm = document.getElementById('resetNewPwConfirm').value;
+    var msgEl        = document.getElementById('resetStep2Msg');
+
+    if (!newPw || !newPwConfirm) {
+        msgEl.textContent = '新しいパスワードを入力してください';
+        msgEl.style.display = 'block';
+        return;
+    }
+    if (newPw !== newPwConfirm) {
+        msgEl.textContent = 'パスワードが一致しません';
+        msgEl.style.display = 'block';
+        return;
+    }
+    if (newPw.length < 8) {
+        msgEl.textContent = 'パスワードは8文字以上で入力してください';
+        msgEl.style.display = 'block';
+        return;
+    }
+
+    msgEl.style.display = 'none';
+
+    // 본인 확인 정보 + 새 비밀번호 함께 전송
+    fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            email:     document.getElementById('resetEmail').value.trim(),
+            lastName:  document.getElementById('resetLastName').value.trim(),
+            firstName: document.getElementById('resetFirstName').value.trim(),
+            phone:     document.getElementById('resetPhone').value.trim(),
+            newPw:     newPw
+        })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+        if (data.success) {
+            // 바로 모달 닫고 토스트 + 로그인 화면 열기
+            closeResetPwModal();
+            showToast('パスワードが変更されました。再度ログインしてください。', 'success');
+            openModal('user');
+            showPanel('panelLogin');
+            setTabActive('tabLogin');
+        } else {
+            msgEl.textContent = data.message || 'パスワードの変更に失敗しました';
+            msgEl.style.display = 'block';
+        }
+    })
+    .catch(function() {
+        msgEl.textContent = 'サーバーエラーが発生しました';
+        msgEl.style.display = 'block';
+    });
+}
+</script>
+
+<!-- 이메일 찾기 모달 -->
+<div class="auth-overlay" id="findEmailOverlay" onclick="if(event.target===this) closeFindEmailModal()" style="display:none; align-items:center; justify-content:center;">
+    <div class="auth-modal" style="max-width:400px; width:90%; padding:2rem; border-radius:12px; background:#fff;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+            <h2 style="font-size:1.2rem; font-weight:700;">メールアドレスを探す</h2>
+            <button onclick="closeFindEmailModal()" style="background:none; border:none; font-size:1.4rem; cursor:pointer;">×</button>
+        </div>
+
+        <!-- 입력 폼 -->
+        <div id="findEmailForm">
+            <div style="margin-bottom:1rem;">
+                <label style="display:block; font-size:0.85rem; margin-bottom:0.3rem;">お名前（漢字）</label>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+                    <input type="text" id="findLastName" placeholder="姓（例：山田）" style="padding:0.6rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
+                    <input type="text" id="findFirstName" placeholder="名（例：太郎）" style="padding:0.6rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
+                </div>
+            </div>
+            <div style="margin-bottom:1.2rem;">
+                <label style="display:block; font-size:0.85rem; margin-bottom:0.3rem;">電話番号</label>
+                <input type="tel" id="findPhone" placeholder="例：09012345678" style="width:100%; padding:0.6rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
+            </div>
+            <!-- 오류 메시지 -->
+            <p id="findEmailMsg" style="color:#e53e3e; font-size:0.85rem; margin-bottom:0.8rem; display:none;"></p>
+            <button onclick="handleFindEmail()" style="width:100%; padding:0.75rem; background:#2d6a4f; color:#fff; border:none; border-radius:6px; font-size:1rem; cursor:pointer; font-weight:600;">
+                探す
+            </button>
+        </div>
+
+        <!-- 결과 화면 (찾은 후 표시) -->
+        <div id="findEmailResult" style="display:none; text-align:center;">
+            <p style="font-size:0.95rem; color:#555; margin-bottom:1rem;">登録されているメールアドレス</p>
+            <p id="foundEmail" style="font-size:1.2rem; font-weight:700; color:#2d6a4f; margin-bottom:1.5rem;"></p>
+            <button onclick="closeFindEmailModal()" style="width:100%; padding:0.75rem; background:#2d6a4f; color:#fff; border:none; border-radius:6px; font-size:1rem; cursor:pointer; font-weight:600;">
+                閉じる
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// 이메일 찾기 모달 열기
+function openFindEmailModal() {
+    // 입력값 초기화
+    document.getElementById('findLastName').value = '';
+    document.getElementById('findFirstName').value = '';
+    document.getElementById('findPhone').value = '';
+    document.getElementById('findEmailMsg').style.display = 'none';
+    document.getElementById('findEmailForm').style.display = 'block';
+    document.getElementById('findEmailResult').style.display = 'none';
+    // 모달 표시
+    document.getElementById('findEmailOverlay').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+// 이메일 찾기 모달 닫기
+function closeFindEmailModal() {
+    document.getElementById('findEmailOverlay').style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+// 이메일 찾기 요청 — POST /api/auth/find-email
+function handleFindEmail() {
+    var lastName  = document.getElementById('findLastName').value.trim();
+    var firstName = document.getElementById('findFirstName').value.trim();
+    var phone     = document.getElementById('findPhone').value.trim();
+    var msgEl     = document.getElementById('findEmailMsg');
+
+    // 입력값 검증
+    if (!lastName || !firstName || !phone) {
+        msgEl.textContent = 'すべての項目を入力してください';
+        msgEl.style.display = 'block';
+        return;
+    }
+
+    msgEl.style.display = 'none';
+
+    fetch('/api/auth/find-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lastName: lastName, firstName: firstName, phone: phone })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+        if (data.success) {
+            // 찾기 성공 → 결과 화면으로 전환
+            document.getElementById('foundEmail').textContent = data.email;
+            document.getElementById('findEmailForm').style.display = 'none';
+            document.getElementById('findEmailResult').style.display = 'block';
+        } else {
+            // 찾기 실패 → 에러 메시지 표시
+            msgEl.textContent = data.message || '一致する会員情報が見つかりません';
+            msgEl.style.display = 'block';
+        }
+    })
+    .catch(function() {
+        msgEl.textContent = 'サーバーエラーが発生しました';
+        msgEl.style.display = 'block';
+    });
+}
+</script>
 </body>
 </html>
 </html>
