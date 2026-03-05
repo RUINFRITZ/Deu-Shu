@@ -26,6 +26,7 @@ public class IndexController {
 	public String index(){
 	return	"index";
 	}
+    
     // 마이페이지
     @GetMapping("/mypage")
     public String mypage() {
