@@ -129,7 +129,6 @@ var currentMode = 'user';
    모달 제어
 ============================================================= */
 
-/* 모달 열기 — mode: 'user' 또는 'biz' */
 function openModal(mode) {
     currentMode = mode || 'user';
     document.body.style.overflow = 'hidden';
@@ -142,20 +141,17 @@ function openModal(mode) {
     }
 }
 
-/* 모달 닫기 */
 function closeModal() {
     document.getElementById('authOverlay').classList.remove('active');
     document.body.style.overflow = '';
 }
 
-/* 오버레이 클릭 시 닫기 (모달 내부 클릭은 무시) */
 function handleOverlayClick(e) {
     if (e.target === document.getElementById('authOverlay')) {
         closeModal();
     }
 }
 
-/* ESC 키로 모달 닫기 */
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeModal();
 });
@@ -165,7 +161,6 @@ document.addEventListener('keydown', function(e) {
    탭 전환
 ============================================================= */
 
-/* 현재 모드에 따라 탭 버튼 동적 생성 */
 function buildTabs() {
     var header = document.getElementById('tabHeader');
     if (currentMode === 'user') {
@@ -179,7 +174,6 @@ function buildTabs() {
     }
 }
 
-/* 활성 탭 변경 */
 function setTabActive(activeId) {
     document.querySelectorAll('.tab-btn').forEach(function(btn) {
         btn.classList.remove('active');
@@ -197,14 +191,13 @@ function showPanel(panelId) {
     if (target) target.style.display = 'block';
     document.getElementById('authModal').scrollTop = 0;
 }
-/* 일반 회원 모드로 전환 */
+
 function switchToUser() {
     currentMode = 'user';
     buildTabs();
     showPanel('panelLogin');
 }
 
-/* 비즈니스 모드로 전환 */
 function switchToBiz() {
     currentMode = 'biz';
     buildTabs();
@@ -233,8 +226,7 @@ function togglePw(inputId, btn) {
     }
 }
 
-/* 비밀번호 강도 계산 (0~4점)
-   조건: 8자 이상 / 영문 포함 / 숫자 포함 / 특수문자 포함 */
+/* 비밀번호 강도 계산 (0~4점) */
 function calcPwStrength(val) {
     var score = 0;
     if (val.length >= 8)           score++;
@@ -244,7 +236,6 @@ function calcPwStrength(val) {
     return score;
 }
 
-/* 강도 바 UI 업데이트 */
 function applyStrengthBar(fillId, score) {
     var fill = document.getElementById(fillId);
     if (!fill) return;
@@ -254,17 +245,14 @@ function applyStrengthBar(fillId, score) {
     fill.style.background = colors[score];
 }
 
-/* 일반 회원 비밀번호 강도 체크 */
 function checkPwStrength(val) {
     applyStrengthBar('pwStrengthFill', calcPwStrength(val));
 }
 
-/* 비즈니스 회원 비밀번호 강도 체크 */
 function checkBizPwStrength(val) {
     applyStrengthBar('bizPwStrengthFill', calcPwStrength(val));
 }
 
-/* 일반 회원 비밀번호 일치 확인 */
 function checkPwMatch() {
     var pw  = document.getElementById('regPw').value;
     var cpw = document.getElementById('regPwConfirm').value;
@@ -273,7 +261,6 @@ function checkPwMatch() {
     setInputState('regPwConfirm', cpw ? (match ? 'is-ok' : 'is-error') : '');
 }
 
-/* 비즈니스 회원 비밀번호 일치 확인 */
 function checkBizPwMatch() {
     var pw  = document.getElementById('bizRegPw').value;
     var cpw = document.getElementById('bizRegPwC').value;
@@ -287,7 +274,6 @@ function checkBizPwMatch() {
    유효성 검사 공통 헬퍼
 ============================================================= */
 
-/* 필드 메시지 표시 — type: 'error' | 'ok' */
 function showFieldMsg(msgId, text, type) {
     type = type || 'error';
     var el = document.getElementById(msgId);
@@ -296,7 +282,6 @@ function showFieldMsg(msgId, text, type) {
     el.className = 'field-msg ' + (text ? type + ' show' : '');
 }
 
-/* 입력 필드 상태 설정 — state: 'is-ok' | 'is-error' | '' */
 function setInputState(inputId, state) {
     var el = document.getElementById(inputId);
     if (!el) return;
@@ -304,29 +289,24 @@ function setInputState(inputId, state) {
     if (state) el.classList.add(state);
 }
 
-/* 필드 오류 상태 초기화 */
 function clearFieldError(inputId) {
     setInputState(inputId, '');
     showFieldMsg(inputId + 'Msg', '');
 }
 
-/* 이메일 형식 검사 */
 function isValidEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-/* 전화번호 형식 검사 (10~15자리, 숫자/하이픈 허용) */
 function isValidPhone(phone) {
     return /^[\d\-+]{10,15}$/.test(phone.replace(/\s/g, ''));
 }
 
 
 /* =============================================================
-   사업자번호 조회
-   실제 구현 시: GET /api/business/verify?number=xxx
+   사업자번호 조회 — 실제 구현 시: GET /api/business/verify?number=xxx
 ============================================================= */
 
-/* 사업자번호 조회 및 대표자명 대조 */
 function verifyBusinessNumber() {
     var num          = document.getElementById('bizRegBizNum').value.trim();
     var okNote       = document.getElementById('bizVerifyOk');
@@ -380,7 +360,6 @@ function verifyBusinessNumber() {
         return;
     }
 
-    /* 조회 성공 — 점포명/주소 자동 입력 */
     bizVerified = true;
     setInputState('bizRegBizNum', 'is-ok');
     showFieldMsg('bizRegBizNumMsg', '');
@@ -392,7 +371,6 @@ function verifyBusinessNumber() {
     sa.classList.add('is-ok');
 }
 
-/* 사업자번호 조회 결과 초기화 */
 function clearBizVerify() {
     bizVerified = false;
     document.getElementById('bizVerifyOk').classList.remove('show');
@@ -406,7 +384,6 @@ function clearBizVerify() {
 
 /* =============================================================
    폼 제출 핸들러
-   실제 구현 시 fetch() 또는 axios로 API 호출
 ============================================================= */
 
 /* 일반 회원 로그인 — POST /api/auth/login */
@@ -414,6 +391,7 @@ function handleUserLogin() {
     var email = document.getElementById('loginEmail').value.trim();
     var pw    = document.getElementById('loginPw').value;
     var ok = true;
+
     if (!email || !isValidEmail(email)) {
         setInputState('loginEmail', 'is-error');
         showFieldMsg('loginEmailMsg', '正しいメールアドレスを入力してください');
