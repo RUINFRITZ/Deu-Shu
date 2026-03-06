@@ -83,7 +83,7 @@ public class StoreService {
             + " + ':' + "
             + "(#centerLng  != null ? #centerLng  : 'NONE')"
             + " + ':' + "
-            + "(#radius     != null ? #radius : 2000)"
+            + "(#radius     != null ? #radius : 1000)"
     )
     public List<StoreMapDto> getStorePins(LocalDate targetDate,
                                           Double centerLat,

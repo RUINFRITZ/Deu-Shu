@@ -14,6 +14,17 @@
     <!-- Leaflet CSS -->
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       crossorigin=""/>
+      
+    <!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link
+	href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap"
+	rel="stylesheet">
+
+<!-- Bootstrap Icons -->
+<link
+	href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css"
+	rel="stylesheet"> 
 
     <link rel="stylesheet" th:href="@{/css/style.css}">
 
@@ -159,6 +170,7 @@
         #store-list-container {
             overflow-y: auto;
             max-height: 480px;
+            min-height: 120px;   /* ← 추가: 빈 상태에서도 컨테이너 높이 확보 */
             scroll-behavior: smooth;
         }
         #store-list-container::-webkit-scrollbar { width: 4px; }
@@ -433,7 +445,7 @@
 
                             <!-- 무한스크롤 센티넬 -->
                             <div id="scroll-sentinel"></div>
-                            <div id="scroll-loader" class="d-flex justify-content-center">
+                            <div id="scroll-loader" class="justify-content-center">
                                 <div class="spinner-sage"></div>
                             </div>
                             <div id="list-end-msg" class="text-center">
@@ -622,15 +634,20 @@
         );
     }
 
-    /* ── 카드 클릭 → 지도 핀 포커스 ── */
+  
+ // ── 카드 클릭 → 지도 핀 포커스 ──
+    let isProgrammaticMove = false;
+ 
     function focusMapPin(cardEl) {
         const id  = parseInt(cardEl.dataset.storeId, 10);
         const lat = parseFloat(cardEl.dataset.lat);
         const lng = parseFloat(cardEl.dataset.lng);
-        if (lat && lng) map.flyTo([lat, lng], 16, { animate: true, duration: 0.8 });
+        if (lat && lng) {
+            isProgrammaticMove = true;
+            map.flyTo([lat, lng], 16, { animate: true, duration: 0.8 });
+        }
         if (markerMap[id]) markerMap[id].openPopup();
     }
-
     /* ── 지도 핀 전체 교체 (필터/이동 후 사용) ── */
     function replacePins(pins) {
         Object.values(markerMap).forEach(m => map.removeLayer(m));
@@ -647,9 +664,15 @@
     let moveTimer = null;
 
     map.on('moveend', function () {
+    	 //카드 클릭으로 인한 이동이면 리스트 갱신 skip
+        if (isProgrammaticMove) {
+            isProgrammaticMove = false;
+            return;
+        }
+
         clearTimeout(moveTimer);
         moveTimer = setTimeout(async () => {
-            const bounds = map.getBounds();
+        	const bounds = map.getBounds();
             const sw     = bounds.getSouthWest();
             const ne     = bounds.getNorthEast();
             const center = map.getCenter();
@@ -700,7 +723,12 @@
      * 기존 카드 전체 삭제 후 page=0부터 다시 로드
      */
     function resetListForNewRegion(lat, lng, radius) {
-        /* 기존 카드 제거 (sentinel 이전 노드만 삭제, sentinel 중복 선언 제거) */
+        // ✅ 상태 변수 갱신
+        listCenterLat = lat;
+        listCenterLng = lng;
+        listRadius    = radius;
+    	
+    	/* 기존 카드 제거 (sentinel 이전 노드만 삭제, sentinel 중복 선언 제거) */
         let child = listContainer.firstChild;
         while (child && child !== sentinel) {
             const next = child.nextSibling;
@@ -714,11 +742,9 @@
         loader.style.display  = 'none';
         endMsg.style.display  = 'none';
 
-        /* [버그 2 수정] observer 재등록 - unobserve 상태 복원 */
         observer.observe(sentinel);
 
-        /* 첫 페이지 즉시 로드 */
-        loadNextPage(lat, lng, radius);
+        loadNextPage();
     }
 
 
@@ -851,7 +877,12 @@
     let isFetching  = false;
     let isListEnd   = false;
     const PAGE_SIZE = 10;
-
+    
+ // ✅ 현재 리스트 기준 좌표/반경 상태 변수 (loadNextPage가 공유)
+    let listCenterLat = REGION_LAT;
+    let listCenterLng = REGION_LNG;
+    let listRadius    = INIT_RADIUS;   // null이면 반경 제한 없음
+    
     const sentinel      = document.getElementById('scroll-sentinel');
     const loader        = document.getElementById('scroll-loader');
     const endMsg        = document.getElementById('list-end-msg');
@@ -888,84 +919,61 @@
         </div>`;
     }
 
+    /* ✅ loadNextPage: 파라미터 제거, 상태 변수 사용 */
     async function loadNextPage() {
-
         if (isFetching || isListEnd) return;
-
         isFetching = true;
-
-        // 로딩 표시
         loader.style.display = 'flex';
 
         try {
-
-            const url = `/api/stores?page=${currentPage}&size=${PAGE_SIZE}`
-                      + `&centerLat=${REGION_LAT}&centerLng=${REGION_LNG}`;
+            // ✅ 상태 변수 사용 (하드코딩된 REGION_LAT/LNG 제거)
+            let url = `/api/stores?page=${currentPage}&size=${PAGE_SIZE}`
+                    + `&centerLat=${listCenterLat}&centerLng=${listCenterLng}`;
+            if (listRadius) url += `&radius=${listRadius}`;   // ✅ radius도 반영
 
             const resp = await fetch(url);
             if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-
             const data = await resp.json();
 
-            // 데이터가 없는 경우
             if (!data.content || data.content.length === 0) {
                 isListEnd = true;
                 loader.style.display = 'none';
+                const hasAnyCard = document.querySelectorAll('#store-list-container .store-card').length > 0;
+                if (!hasAnyCard) endMsg.textContent = '現在ご利用可能な店舗がありません';
                 endMsg.style.display = 'block';
                 observer.unobserve(sentinel);
                 return;
             }
 
             data.content.forEach(store => {
-
                 sentinel.insertAdjacentHTML('beforebegin', buildCardHtml(store));
-
                 if (!markerMap[store.id]) {
-                    const marker = L.marker(
-                        [store.lat, store.lng],
-                        { icon: createMarkerIcon(store.totalStock) }
-                    )
-                    .bindPopup(buildPopup(store))
-                    .addTo(map);
-
+                    const marker = L.marker([store.lat, store.lng], { icon: createMarkerIcon(store.totalStock) })
+                        .bindPopup(buildPopup(store))
+                        .addTo(map);
                     markerMap[store.id] = marker;
                 }
-
             });
 
             currentPage++;
 
-            // 마지막 페이지 체크
             if (data.last === true || data.content.length < PAGE_SIZE) {
-
                 isListEnd = true;
-
-                // 로딩 숨김
                 loader.style.display = 'none';
-
-                // 끝 메시지 표시
                 endMsg.style.display = 'block';
-
-                // observer 중지
                 observer.unobserve(sentinel);
-
-                return;
             }
 
         } catch (err) {
-
             console.error('[InfiniteScroll] 오류:', err);
-
-            loader.style.display = 'none';
-
+            isListEnd = true;
+            observer.unobserve(sentinel);
+            const hasAnyCard = document.querySelectorAll('#store-list-container .store-card').length > 0;
+            if (!hasAnyCard) endMsg.textContent = '現在ご利用可能な店舗がありません';
+            endMsg.style.display = 'block';
         } finally {
-
             isFetching = false;
-
-            // 다음 요청을 위해 loader 숨김
-            if (!isListEnd) {
-                loader.style.display = 'none';
-            }
+            if (!isListEnd) loader.style.display = 'none';
         }
     }
 
@@ -975,7 +983,15 @@
         { root: listContainer, rootMargin: '0px', threshold: 0 }
     );
     observer.observe(sentinel);
+	
+ // ▼ 추가: 서버 렌더링 카드가 없으면 observer 대기 없이 즉시 호출
+    const initialCards = document.querySelectorAll('#store-list-container .store-card').length;
+    if (initialCards === 0) {
+        // 아무 가게도 없을 수 있으므로 바로 첫 로드 실행
+        loadNextPage();
+    }
 
+    
     /* ── 즐겨찾기 토글 (팝업 하트 버튼) ── */
     async function toggleFavoriteFromPopup(button) {
         const storeId = button.getAttribute('data-store-id');
