@@ -38,6 +38,10 @@ public class StoreApiController {
 
     private final StoreService storeService;
     
+    @GetMapping("/detail/{storeId}")
+    public StoreDetailResponse getStoreDetail(@PathVariable("storeId") Long storeId) {
+        return storeService.getStoreDetail(storeId);
+    }
 
     // ──────────────────────────────────────────────────────────────
     // FR-M01 + FR-M02  마감 할인 가게 핀 리스트 조회

@@ -8,17 +8,17 @@ import lombok.Data;
 
 @Data
 public class StoreEntity {
-	/**
-	 * 店舗カテゴリ種別 (stores.category と 1:1 対応)
-	 */
-	public enum StoreCategory {
-	    BAKERY,
-	    SUSHI,
-	    LUNCHBOX,
-	    CAFE,
-	    SIDEDISH
-	}
-	
+   /**
+    * 店舗カテゴリ種別 (stores.category と 1:1 対応)
+    */
+   public enum StoreCategory {
+       BAKERY,
+       SUSHI,
+       LUNCHBOX,
+       CAFE,
+       SIDEDISH
+   }
+   
     /**
      * 店舗ID (PK)
      * DB: stores.id
