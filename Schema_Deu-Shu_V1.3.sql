@@ -1,22 +1,22 @@
 -- =========================================================================
--- [ ドゥーシュー DB Schema V1.2 ]
+-- [ ドゥーシュー DB Schema V1.3 ]
 -- =========================================================================
 
 -- 1. 会員テーブル (Members) - べさん担当領域
 CREATE TABLE members (
-id              BIGINT       AUTO_INCREMENT PRIMARY KEY,
-email           VARCHAR(100) NOT NULL UNIQUE  COMMENT 'ログインID (Email)',
-password        VARCHAR(255) NOT NULL         COMMENT 'BCrypt暗号化パスワード',
-last_name       VARCHAR(50)  NOT NULL         COMMENT '姓（実名認証用）',
-first_name      VARCHAR(50)  NOT NULL         COMMENT '名（実名認証用）',
-last_name_kana  VARCHAR(50)  NOT NULL         COMMENT '姓フリガナ（カタカナ全角）',
-first_name_kana VARCHAR(50)  NOT NULL         COMMENT '名フリガナ（カタカナ全角）',
-phone           VARCHAR(20)  NOT NULL UNIQUE  COMMENT '電話番号',
-role            ENUM('ROLE_USER', 'ROLE_OWNER', 'ROLE_ADMIN') NOT NULL DEFAULT 'ROLE_USER' COMMENT '権限階層',
-esg_point       INT          NOT NULL DEFAULT 0 COMMENT '仮想の木を育てるESGエコポイント',
-created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '登録日時',
-updated_at      DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-deleted_at      DATETIME     DEFAULT NULL     COMMENT '論理削除フラグ（NULL以外は退会・停止アカウント）'
+	id              BIGINT       AUTO_INCREMENT PRIMARY KEY,
+	email           VARCHAR(100) NOT NULL UNIQUE  COMMENT 'ログインID (Email)',
+	password        VARCHAR(255) NOT NULL         COMMENT 'BCrypt暗号化パスワード',
+	last_name       VARCHAR(50)  NOT NULL         COMMENT '姓（実名認証用）',
+	first_name      VARCHAR(50)  NOT NULL         COMMENT '名（実名認証用）',
+	last_name_kana  VARCHAR(50)  NOT NULL         COMMENT '姓フリガナ（カタカナ全角）',
+	first_name_kana VARCHAR(50)  NOT NULL         COMMENT '名フリガナ（カタカナ全角）',
+	phone           VARCHAR(20)  NOT NULL 	      COMMENT '電話番号',
+	role            ENUM('ROLE_USER', 'ROLE_OWNER', 'ROLE_ADMIN') NOT NULL DEFAULT 'ROLE_USER' COMMENT '権限階層',
+	esg_point       INT          NOT NULL DEFAULT 0 COMMENT '仮想の木を育てるESGエコポイント',
+	created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '登録日時',
+	updated_at      DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	deleted_at      DATETIME     DEFAULT NULL     COMMENT '論理削除フラグ（NULL以外は退会・停止アカウント）'
 );
 
 -- 2. 店舗テーブル (Stores) - ゴさん・べさん連携領域
