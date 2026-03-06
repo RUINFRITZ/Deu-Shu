@@ -7,8 +7,6 @@ import lombok.Data;
 @AllArgsConstructor
 public class FavoriteResponse {
     private boolean favorited;
-<<<<<<< Updated upstream
+
 }
-=======
-}
->>>>>>> Stashed changes
+
