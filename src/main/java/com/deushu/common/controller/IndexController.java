@@ -27,6 +27,12 @@ public class IndexController {
 	return	"index";
 	}
     
+    // 마이페이지
+    @GetMapping("/mypage")
+    public String mypage() {
+        return "member/mypage";
+    }
+    
 	@GetMapping("/list")
 	public String storeList(@RequestParam(name="region") String region,
 							@RequestParam(name="radius") double radius,	Model model) {

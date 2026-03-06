@@ -5,6 +5,7 @@
 # 1. コンパイル済みのアウトプット（ビルド結果物）はバージョン管理から除外する
 target/
 build/
+bin/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/

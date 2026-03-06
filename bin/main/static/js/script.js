@@ -5,6 +5,94 @@
 
 
 /* =============================================================
+   토스트 알림
+============================================================= */
+
+function showToast(message, type) {
+    type = type || 'success';
+    var wrap = document.getElementById('toastWrap');
+    if (!wrap) return;
+
+    var toast = document.createElement('div');
+    toast.className = 'toast ' + type;
+    toast.innerHTML =
+        '<div class="toast-icon"><i class="bi bi-' + (type === 'success' ? 'check-lg' : 'exclamation-lg') + '"></i></div>' +
+        '<span class="toast-msg">' + message + '</span>' +
+        '<button class="toast-close" onclick="this.parentElement.remove()"><i class="bi bi-x"></i></button>';
+
+    wrap.appendChild(toast);
+
+    setTimeout(function() {
+        toast.classList.add('hide');
+        setTimeout(function() { toast.remove(); }, 350);
+    }, 3000);
+}
+
+/* =============================================================
+   헤더 로그인 상태 반영
+============================================================= */
+
+function updateHeaderAuth() {
+    fetch('/api/auth/me')
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+        var heroCta = document.getElementById('heroCta');
+        if (data.success) {
+            document.getElementById('btnAuthGuest').style.display = 'none';
+            document.getElementById('userMenuWrap').style.display = 'block';
+            var name = (data.lastName || '') + (data.firstName || '');
+            if (!name) name = data.email;
+            document.getElementById('headerUserName').textContent = name;
+            // 메인페이지 히어로 버튼 숨기기
+            if (heroCta) heroCta.style.display = 'none';
+        } else {
+            document.getElementById('btnAuthGuest').style.display = '';
+            document.getElementById('userMenuWrap').style.display = 'none';
+            if (heroCta) heroCta.style.display = '';
+        }
+    })
+    .catch(function() {
+        document.getElementById('btnAuthGuest').style.display = '';
+        document.getElementById('userMenuWrap').style.display = 'none';
+    });
+}
+
+function handleLogout() {
+    fetch('/api/auth/logout', { method: 'POST' })
+    .then(function() {
+        showToast('ログアウトしました', 'success');
+        setTimeout(function() { location.reload(); }, 1000);
+    })
+    .catch(function() { location.reload(); });
+}
+
+// 페이지 로드 시 로그인 상태 확인
+document.addEventListener('DOMContentLoaded', function() {
+    updateHeaderAuth();
+
+    // 유저 메뉴 드롭다운 JS 제어 (CSS hover 대신 사용 — 토스트 겹침 문제 방지)
+    var menu = document.getElementById('userMenuWrap');
+    if (!menu) return;
+    var dropdown = document.getElementById('userDropdown');
+    var timer;
+
+    function openDropdown() {
+        clearTimeout(timer);
+        dropdown.style.display = 'block';
+    }
+    function closeDropdown() {
+        timer = setTimeout(function() {
+            dropdown.style.display = 'none';
+        }, 150);
+    }
+
+    menu.addEventListener('mouseenter', openDropdown);
+    menu.addEventListener('mouseleave', closeDropdown);
+    dropdown.addEventListener('mouseenter', openDropdown);
+    dropdown.addEventListener('mouseleave', closeDropdown);
+});
+
+/* =============================================================
    Mock 데이터 — 사업자번호 조회용 임시 DB
    실제 구현 시: GET /api/business/verify?number=xxx 로 대체
    응답 형식: { status, last_name, first_name, store_name, address }
@@ -41,7 +129,6 @@ var currentMode = 'user';
    모달 제어
 ============================================================= */
 
-/* 모달 열기 — mode: 'user' 또는 'biz' */
 function openModal(mode) {
     currentMode = mode || 'user';
     document.body.style.overflow = 'hidden';
@@ -54,20 +141,17 @@ function openModal(mode) {
     }
 }
 
-/* 모달 닫기 */
 function closeModal() {
     document.getElementById('authOverlay').classList.remove('active');
     document.body.style.overflow = '';
 }
 
-/* 오버레이 클릭 시 닫기 (모달 내부 클릭은 무시) */
 function handleOverlayClick(e) {
     if (e.target === document.getElementById('authOverlay')) {
         closeModal();
     }
 }
 
-/* ESC 키로 모달 닫기 */
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeModal();
 });
@@ -77,7 +161,6 @@ document.addEventListener('keydown', function(e) {
    탭 전환
 ============================================================= */
 
-/* 현재 모드에 따라 탭 버튼 동적 생성 */
 function buildTabs() {
     var header = document.getElementById('tabHeader');
     if (currentMode === 'user') {
@@ -91,7 +174,6 @@ function buildTabs() {
     }
 }
 
-/* 활성 탭 변경 */
 function setTabActive(activeId) {
     document.querySelectorAll('.tab-btn').forEach(function(btn) {
         btn.classList.remove('active');
@@ -99,7 +181,6 @@ function setTabActive(activeId) {
     document.getElementById(activeId).classList.add('active');
 }
 
-/* 선택한 패널만 표시, 나머지 숨김 */
 function showPanel(panelId) {
     var allPanels = ['panelLogin', 'panelRegister', 'panelBizLogin', 'panelBizRegister'];
     allPanels.forEach(function(id) {
@@ -111,21 +192,18 @@ function showPanel(panelId) {
     document.getElementById('authModal').scrollTop = 0;
 }
 
-/* 일반 회원 모드로 전환 */
 function switchToUser() {
     currentMode = 'user';
     buildTabs();
     showPanel('panelLogin');
 }
 
-/* 비즈니스 모드로 전환 */
 function switchToBiz() {
     currentMode = 'biz';
     buildTabs();
     showPanel('panelBizLogin');
 }
 
-/* 비즈니스 회원가입 패널로 이동 */
 function switchToBizReg() {
     showPanel('panelBizRegister');
     setTabActive('tabBizReg');
@@ -136,7 +214,6 @@ function switchToBizReg() {
    비밀번호 기능
 ============================================================= */
 
-/* 비밀번호 표시/숨김 토글 */
 function togglePw(inputId, btn) {
     var input = document.getElementById(inputId);
     var icon  = btn.querySelector('i');
@@ -149,8 +226,7 @@ function togglePw(inputId, btn) {
     }
 }
 
-/* 비밀번호 강도 계산 (0~4점)
-   조건: 8자 이상 / 영문 포함 / 숫자 포함 / 특수문자 포함 */
+/* 비밀번호 강도 계산 (0~4점) */
 function calcPwStrength(val) {
     var score = 0;
     if (val.length >= 8)           score++;
@@ -160,7 +236,6 @@ function calcPwStrength(val) {
     return score;
 }
 
-/* 강도 바 UI 업데이트 */
 function applyStrengthBar(fillId, score) {
     var fill = document.getElementById(fillId);
     if (!fill) return;
@@ -170,17 +245,14 @@ function applyStrengthBar(fillId, score) {
     fill.style.background = colors[score];
 }
 
-/* 일반 회원 비밀번호 강도 체크 */
 function checkPwStrength(val) {
     applyStrengthBar('pwStrengthFill', calcPwStrength(val));
 }
 
-/* 비즈니스 회원 비밀번호 강도 체크 */
 function checkBizPwStrength(val) {
     applyStrengthBar('bizPwStrengthFill', calcPwStrength(val));
 }
 
-/* 일반 회원 비밀번호 일치 확인 */
 function checkPwMatch() {
     var pw  = document.getElementById('regPw').value;
     var cpw = document.getElementById('regPwConfirm').value;
@@ -189,7 +261,6 @@ function checkPwMatch() {
     setInputState('regPwConfirm', cpw ? (match ? 'is-ok' : 'is-error') : '');
 }
 
-/* 비즈니스 회원 비밀번호 일치 확인 */
 function checkBizPwMatch() {
     var pw  = document.getElementById('bizRegPw').value;
     var cpw = document.getElementById('bizRegPwC').value;
@@ -203,7 +274,6 @@ function checkBizPwMatch() {
    유효성 검사 공통 헬퍼
 ============================================================= */
 
-/* 필드 메시지 표시 — type: 'error' | 'ok' */
 function showFieldMsg(msgId, text, type) {
     type = type || 'error';
     var el = document.getElementById(msgId);
@@ -212,7 +282,6 @@ function showFieldMsg(msgId, text, type) {
     el.className = 'field-msg ' + (text ? type + ' show' : '');
 }
 
-/* 입력 필드 상태 설정 — state: 'is-ok' | 'is-error' | '' */
 function setInputState(inputId, state) {
     var el = document.getElementById(inputId);
     if (!el) return;
@@ -220,29 +289,24 @@ function setInputState(inputId, state) {
     if (state) el.classList.add(state);
 }
 
-/* 필드 오류 상태 초기화 */
 function clearFieldError(inputId) {
     setInputState(inputId, '');
     showFieldMsg(inputId + 'Msg', '');
 }
 
-/* 이메일 형식 검사 */
 function isValidEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-/* 전화번호 형식 검사 (10~15자리, 숫자/하이픈 허용) */
 function isValidPhone(phone) {
     return /^[\d\-+]{10,15}$/.test(phone.replace(/\s/g, ''));
 }
 
 
 /* =============================================================
-   사업자번호 조회
-   실제 구현 시: GET /api/business/verify?number=xxx
+   사업자번호 조회 — 실제 구현 시: GET /api/business/verify?number=xxx
 ============================================================= */
 
-/* 사업자번호 조회 및 대표자명 대조 */
 function verifyBusinessNumber() {
     var num          = document.getElementById('bizRegBizNum').value.trim();
     var okNote       = document.getElementById('bizVerifyOk');
@@ -296,7 +360,6 @@ function verifyBusinessNumber() {
         return;
     }
 
-    /* 조회 성공 — 점포명/주소 자동 입력 */
     bizVerified = true;
     setInputState('bizRegBizNum', 'is-ok');
     showFieldMsg('bizRegBizNumMsg', '');
@@ -308,7 +371,6 @@ function verifyBusinessNumber() {
     sa.classList.add('is-ok');
 }
 
-/* 사업자번호 조회 결과 초기화 */
 function clearBizVerify() {
     bizVerified = false;
     document.getElementById('bizVerifyOk').classList.remove('show');
@@ -322,7 +384,6 @@ function clearBizVerify() {
 
 /* =============================================================
    폼 제출 핸들러
-   실제 구현 시 fetch() 또는 axios로 API 호출
 ============================================================= */
 
 /* 일반 회원 로그인 — POST /api/auth/login */
@@ -330,6 +391,7 @@ function handleUserLogin() {
     var email = document.getElementById('loginEmail').value.trim();
     var pw    = document.getElementById('loginPw').value;
     var ok = true;
+
     if (!email || !isValidEmail(email)) {
         setInputState('loginEmail', 'is-error');
         showFieldMsg('loginEmailMsg', '正しいメールアドレスを入力してください');
@@ -341,8 +403,26 @@ function handleUserLogin() {
         ok = false;
     }
     if (!ok) return;
-    alert('[デモ送信]\nPOST /api/auth/login\n{ email: "' + email + '", password: "***" }');
-    closeModal();
+
+    fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, password: pw })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+        if (data.success) {
+            closeModal();
+            showToast('ログインしました', 'success');
+            updateHeaderAuth();
+        } else {
+            setInputState('loginPw', 'is-error');
+            showFieldMsg('loginPwMsg', data.message || 'ログインに失敗しました');
+        }
+    })
+    .catch(function() {
+        showFieldMsg('loginPwMsg', 'サーバーエラーが発生しました');
+    });
 }
 
 /* 일반 회원 가입 — POST /api/auth/signup */
@@ -356,34 +436,93 @@ function handleUserRegister() {
     var firstKana = document.getElementById('regFirstNameKana').value.trim();
     var phone     = document.getElementById('regPhone').value.trim();
     var ok = true;
-    if (!email || !isValidEmail(email))  { setInputState('regEmail', 'is-error');        showFieldMsg('regEmailMsg', '正しいメールアドレスを入力してください'); ok = false; }
-    if (calcPwStrength(pw) < 2)          { setInputState('regPw', 'is-error');            ok = false; }
-    if (pw !== pwC || !pwC)              { setInputState('regPwConfirm', 'is-error');     showFieldMsg('regPwConfirmMsg', 'パスワードが一致しません'); ok = false; }
-    if (!lastName || !firstName)         { setInputState('regLastName', 'is-error');      showFieldMsg('regLastNameMsg', '姓・名をご入力ください'); ok = false; }
-    if (!lastKana || !firstKana)         { setInputState('regLastNameKana', 'is-error');  showFieldMsg('regLastNameKanaMsg', 'フリガナをご入力ください'); ok = false; }
-    if (!phone || !isValidPhone(phone))  { setInputState('regPhone', 'is-error');         showFieldMsg('regPhoneMsg', '正しい電話番号を入力してください'); ok = false; }
+
+    if (!email || !isValidEmail(email))  { setInputState('regEmail', 'is-error');       showFieldMsg('regEmailMsg', '正しいメールアドレスを入力してください'); ok = false; }
+    if (calcPwStrength(pw) < 2)          { setInputState('regPw', 'is-error');           ok = false; }
+    if (pw !== pwC || !pwC)              { setInputState('regPwConfirm', 'is-error');    showFieldMsg('regPwConfirmMsg', 'パスワードが一致しません'); ok = false; }
+    if (!lastName || !firstName)         { setInputState('regLastName', 'is-error');     showFieldMsg('regLastNameMsg', '姓・名をご入力ください'); ok = false; }
+    if (!lastKana || !firstKana)         { setInputState('regLastNameKana', 'is-error'); showFieldMsg('regLastNameKanaMsg', 'フリガナをご入力ください'); ok = false; }
+    if (!phone || !isValidPhone(phone))  { setInputState('regPhone', 'is-error');        showFieldMsg('regPhoneMsg', '正しい電話番号を入力してください'); ok = false; }
     if (!ok) return;
-    alert('[デモ送信]\nPOST /api/auth/signup\n{ email: "' + email + '", role: "ROLE_USER" }');
-    closeModal();
+
+    fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            email:         email,
+            password:      pw,
+            lastName:      lastName,
+            firstName:     firstName,
+            lastNameKana:  lastKana,
+            firstNameKana: firstKana,
+            phone:         phone
+        })
+    })
+    .then(function(res) {
+        var status = res.status;
+        return res.text().then(function(text) {
+            try {
+                return { status: status, data: JSON.parse(text) };
+            } catch(e) {
+                return { status: status, data: null, raw: text };
+            }
+        });
+    })
+    .then(function(result) {
+        if (result.data && result.data.success) {
+            showToast('会員登録が完了しました', 'success');
+            showPanel('panelLogin');
+            setTabActive('tabLogin');
+        } else if (result.data && result.data.message) {
+            showFieldMsg('regEmailMsg', result.data.message);
+        } else {
+            showFieldMsg('regEmailMsg', 'エラー [HTTP ' + result.status + '] サーバーに接続できません');
+        }
+    })
+    .catch(function(err) {
+        showFieldMsg('regEmailMsg', 'ネットワークエラー: ' + err.message);
+    });
 }
 
-/* 비즈니스 로그인 — POST /api/auth/login (ROLE_OWNER 확인) */
+/* 비즈니스 로그인 — POST /api/auth/login (백엔드 미구현, 프론트만 연결) */
 function handleBizLogin() {
     var email = document.getElementById('bizLoginEmail').value.trim();
     var pw    = document.getElementById('bizLoginPw').value;
     var ok = true;
+
     if (!email || !isValidEmail(email)) {
         setInputState('bizLoginEmail', 'is-error');
         showFieldMsg('bizLoginEmailMsg', '正しいメールアドレスを入力してください');
         ok = false;
     }
-    if (!pw) { ok = false; }
+    if (!pw) {
+        setInputState('bizLoginPw', 'is-error');
+        showFieldMsg('bizLoginEmailMsg', 'パスワードを入力してください');
+        ok = false;
+    }
     if (!ok) return;
-    alert('[デモ送信]\nPOST /api/auth/login\n{ email: "' + email + '", role: "ROLE_OWNER" }');
-    closeModal();
+
+    fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, password: pw })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+        if (data.success) {
+            closeModal();
+            location.reload();
+        } else {
+            setInputState('bizLoginEmail', 'is-error');
+            showFieldMsg('bizLoginEmailMsg', data.message || 'ログインに失敗しました');
+        }
+    })
+    .catch(function() {
+        showFieldMsg('bizLoginEmailMsg', 'サーバーエラーが発生しました');
+    });
 }
 
-/* 비즈니스 회원 가입 — POST /api/auth/signup/owner */
+/* 비즈니스 회원 가입 — POST /api/auth/signup/owner (백엔드 미구현, 프론트만 연결) */
 function handleBizRegister() {
     if (!bizVerified) {
         setInputState('bizRegBizNum', 'is-error');
@@ -391,13 +530,20 @@ function handleBizRegister() {
         document.getElementById('authModal').scrollTop = 0;
         return;
     }
+
     var email     = document.getElementById('bizRegEmail').value.trim();
     var pw        = document.getElementById('bizRegPw').value;
     var pwC       = document.getElementById('bizRegPwC').value;
     var lastName  = document.getElementById('bizRegLastName').value.trim();
     var firstName = document.getElementById('bizRegFirstName').value.trim();
+    var lastKana  = document.getElementById('bizRegLastNameKana').value.trim();
+    var firstKana = document.getElementById('bizRegFirstNameKana').value.trim();
+    var phone     = document.getElementById('bizRegPhone').value.trim();
     var bizNum    = document.getElementById('bizRegBizNum').value.trim();
+    var storeName = document.getElementById('bizRegStoreName').value.trim();
+    var storeAddr = document.getElementById('bizRegStoreAddress').value.trim();
     var ok = true;
+
     if (!email || !isValidEmail(email)) {
         setInputState('bizRegEmail', 'is-error');
         showFieldMsg('bizRegEmailMsg', '正しいメールアドレスを入力してください');
@@ -409,6 +555,34 @@ function handleBizRegister() {
         ok = false;
     }
     if (!ok) return;
-    alert('[デモ送信]\nPOST /api/auth/signup/owner\n{ email: "' + email + '", business_number: "' + bizNum + '", role: "ROLE_OWNER" }');
-    closeModal();
+
+    fetch('/api/auth/signup/owner', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            email:          email,
+            password:       pw,
+            lastName:       lastName,
+            firstName:      firstName,
+            lastNameKana:   lastKana,
+            firstNameKana:  firstKana,
+            phone:          phone,
+            businessNumber: bizNum,
+            storeName:      storeName,
+            storeAddress:   storeAddr
+        })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+        if (data.success) {
+            alert('ビジネス登録が完了しました。ログインしてください。');
+            showPanel('panelBizLogin');
+            setTabActive('tabBizLogin');
+        } else {
+            showFieldMsg('bizRegEmailMsg', data.message || 'ビジネス登録に失敗しました');
+        }
+    })
+    .catch(function() {
+        showFieldMsg('bizRegEmailMsg', 'サーバーエラーが発生しました');
+    });
 }
