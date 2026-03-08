@@ -7,7 +7,7 @@
 閉店間際に売れ残った食品を見つめる店主の悩みを、お財布事情の厳しい若者への安価な食事提供へと変換し、世界的に深刻化する食品ロス（Food Loss）問題を持続可能なIT技術で解決します。
 
 
-##  2. 技術スタック (Tech Stack)
+## 🛠 2. 技術スタック (Tech Stack)
 
 ### Backend (コア・フレームワーク)
 <p>
@@ -29,6 +29,7 @@
   <img src="https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white" alt="HTML5">
   <img src="https://img.shields.io/badge/Thymeleaf-3.5.11-005F0F?style=for-the-badge&logo=thymeleaf&logoColor=white" alt="Thymeleaf">
   <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" alt="JavaScript">
+  <img src="https://img.shields.io/badge/Bootstrap-5.3-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white" alt="Bootstrap 5.3">
 </p>
 
 ### Infra & External API (外部連携・最適化)
