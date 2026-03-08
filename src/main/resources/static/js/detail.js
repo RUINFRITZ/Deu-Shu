@@ -549,25 +549,21 @@ function updateCartBadge() {
 
 function onClickPay() {
     if (!_cart.length) return;
-    const payload = {
-        storeId,
-        items: _cart.map(c => ({
-            itemId:     c.id,
-            quantity:   c.quantity,
-            orderPrice: c.discountPrice
-        }))
-    };
-    console.log('[결제 페이로드]', payload);
-    // TODO: 결제 API 연동 시 주석 해제
-    // fetch('/api/orders', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify(payload)
-    // }).then(res => res.json()).then(data => {
-    //     localStorage.removeItem(CART_KEY);
-    //     window.location.href = `/orders/${data.orderId}`;
-    // });
-    alert(`${_cart.length}개 상품 결제 요청!\n(결제 API 연동 예정)`);
+
+    // 1. バックエンド(OrderCreateRequestDto)が要求するフォーマットにデータを変換
+    const cartItems = _cart.map(c => ({
+        itemId: c.id,
+        quantity: c.quantity
+        // orderPriceはバックエンドで安全に再計算されるため、フロントからは送信不要です
+    }));
+
+    // 2. フロントエンドでの合計計算金額（サーバーで検証されます）
+    const totalPrice = _cart.reduce((s, c) => s + c.discountPrice * c.quantity, 0);
+
+    console.log('[決済リクエスト準備完了]', { storeId, cartItems, totalPrice });
+
+    // 3. パクさんが作成した PortOne 決済メイン関数を呼び出し
+    processCheckout(cartItems, totalPrice, storeId);
 }
 
 // ============================================
@@ -666,5 +662,125 @@ function resetCardQty(card) {
     if (btn) {
         btn.classList.remove('in-cart');
         btn.innerHTML = '<i class="bi bi-bag-plus"></i> 담기';
+    }
+}
+
+/*
+ * 決済実行のメイン関数
+ * 1. バックエンドに注文を生成(排他制御による在庫確保)
+ * 2. 成功時、PortOneの決済窓口を呼び出し
+ */
+async function processCheckout(cartItems, totalPrice, storeId) {
+	// 0. 未ログイン状態の防御コード
+    const userNameElement = document.getElementById('headerUserName');
+    if (!userNameElement || !userNameElement.innerText) { // isUserLoggedIn() の代替案
+        showToast('決済を行うにはログインが必要です。', 'error');
+        openModal('user');
+        return;
+    }
+
+    try {
+        // =====================================================================
+        // STEP 1: バックエンドの注文生成APIを呼び出し（ここで悲観的ロックが発動します）
+        // =====================================================================
+        const orderRequest = {
+            storeId: storeId,
+            cartItems: cartItems,
+            totalPrice: totalPrice
+        };
+
+        // 先ほどパクさんが作成した /api/v1/orders へのPOSTリクエスト
+        const orderResponse = await fetch('/api/v1/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(orderRequest)
+        });
+
+        const orderData = await orderResponse.json();
+
+        if (!orderData.isSuccess) {
+            // 在庫不足(Lost Update防御)などのエラー時はここで弾かれます
+            showToast(orderData.message || '注文の生成に失敗しました。', 'error');
+            return;
+        }
+
+        // サーバーから発行された「決済待機(PAYMENT_PENDING)」状態の注文ID
+        const pendingOrderId = orderData.data;
+
+        // =====================================================================
+        // STEP 2: PortOne (旧 Iamport) 決済モジュールの呼び出し
+        // =====================================================================
+        // 管理者コンソールで発行された「ショップ識別コード(Store ID)」で初期化
+        IMP.init("imp41118237");
+
+        // 決済リクエストオブジェクトの構成
+        const paymentData = {
+            pg: "tosspayments", // テスト用カカオペイ（最速でテスト可能）
+            pay_method: "card",
+            merchant_uid: `ORDER_${pendingOrderId}_${new Date().getTime()}`, // 加盟店側の固有注文番号
+            name: "ドゥーシュー マルトク割引商品", // 決済窓口に表示される商品名
+            amount: totalPrice, // 実際の決済金額
+            buyer_email: document.getElementById('headerUserName').innerText + "@test.com", // テスト用
+            buyer_name: document.getElementById('headerUserName').innerText,
+        };
+		
+        // 決済窓口のレンダリングとコールバック関数の登録
+		IMP.request_pay(paymentData, async function (rsp) {
+		            
+            // [デバッグ用] PortOneからの応答をすべてコンソールに出力します
+            console.log("========== [PortOne 決済応答データ] ==========");
+            console.log(JSON.stringify(rsp, null, 2));
+            console.log("==============================================");
+
+			// 🚨 [核心] Toss Payments等で 'success' フィールドが欠落するPG独自のバグ(Edge Case)を防御します。
+            // error_msg が存在せず、imp_uid (決済番号) がきちんと発給されていれば「成功」とみなします。
+            const isPaymentSuccessful = rsp.success || (rsp.imp_uid && !rsp.error_msg && !rsp.error_code);
+
+            if (isPaymentSuccessful) {
+                console.log(`✅ 決済成功を感知！ imp_uid: ${rsp.imp_uid}, orderId: ${pendingOrderId}`);
+                console.log("🔄 バックエンド(Spring)へ検証APIをリクエストします...");
+                
+                // STEP 3: 決済成功時、バックエンドに最終検証(Validation)を要請
+                verifyPayment(rsp.imp_uid, pendingOrderId);
+            } else {
+                console.error(`❌ 決済失敗またはキャンセル: ${rsp.error_msg || '理由不明'}`);
+                showToast(`決済がキャンセルされました: ${rsp.error_msg || '残高不足、またはユーザーキャンセル'}`, 'error');
+            }
+        });
+
+    } catch (error) {
+        console.error("決済プロセス中にエラーが発生しました:", error);
+        showToast('サーバーとの通信に失敗しました。', 'error');
+    }
+}
+
+/*
+ * PortOneでの決済完了後、金額改ざんを防ぐためのバックエンド検証要請
+ */
+async function verifyPayment(impUid, orderId) {
+    try {
+        const verifyRes = await fetch(`/api/v1/orders/${orderId}/payment`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ impUid: impUid })
+        });
+
+        const verifyData = await verifyRes.json();
+
+        if (verifyData.isSuccess) {
+            // トーストメッセージを表示
+            showToast('決済が正常に完了しました！マイページへ移動します。', 'success');
+            
+            // ユーザーがメッセージを読む時間(1.5秒)を与えてからマイページへリダイレクト
+            setTimeout(() => {
+                window.location.href = '/mypage';
+            }, 1500);
+            
+        } else {
+            showToast(verifyData.message || '決済の検証に失敗しました。', 'error');
+        }
+    } catch (error) {
+        console.error("検証プロセス中にエラーが発生:", error);
+        showToast('サーバー通信エラーが発生しました。', 'error');
     }
 }
