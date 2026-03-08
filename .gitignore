@@ -20,7 +20,7 @@ bin/
 *.launch
 *.iml
 .vscode/
-.properties
+*.properties
 
 # 3. OSの隠しファイル・キャッシュファイルを除外する
 .DS_Store
