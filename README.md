@@ -1,27 +1,56 @@
-# ドゥーシュー (Deu-Shu) / JSL26期-チームプロジェクト
+#  ドゥーシュー (Deu-Shu) 
+> **「どうしよう…」という店舗オーナーの悩みを、「드슈(どうぞ)」という温かい提案へ。** > 廃棄されるはずだった食品を救い、地球に仮想の木を植える生活密着型ESG（ライフ・インテグレーテッドESG）プラットフォームです。
 
-> [cite_start]**「どうしよう…」というオーナーの悩みを「드슈(どうぞ)」という温かい提案へ。** [cite: 1]
-> [cite_start]廃棄される食品を救い、地球に仮想の木を植える生活密着型ESGプラットフォームです。 [cite: 1]
+##  1. プロジェクトの背景とビジョン (Background & Vision)
+「ドゥーシュー (Deu-Shu)」は、韓国・大田（テジョン）地方の温かい方言「드슈(召し上がってください)」と、日本語の「どうしよう（もったいない）」という言葉遊びを掛け合わせたネーミングです。
+閉店間際に売れ残った食品を見つめる店主の悩みを、お財布事情の厳しい若者への安価な食事提供へと変換し、世界的に深刻化する食品ロス（Food Loss）問題を持続可能なIT技術で解決します。
 
-## [cite_start]1. チーム「JSLアベンジャーズ」の開発メンバー (Team Roles) [cite: 1]
-- [cite_start]**パク・ユンジョン (PM)**: コアトランザクション制御、決済(PortOne)連動、ESGスケジューラー [cite: 1]
-- [cite_start]**ゴ・ジュンソン**: LBS(位置情報)マップシミュレーション、データキャッシュ(Caffeine)最適化 [cite: 1]
-- [cite_start]**ベ・ボムジュ**: 認証/認可(Spring Security)、セッション管理、ユーザー/オーナーの権限分離 [cite: 1]
-- [cite_start]**ユ・インジェ**: UI/UX設計、S3メディア処理、無限スクロールレビュー、グローバル例外処理 [cite: 1]
+##  2. チーム「JSLアベンジャーズ」の開発メンバーと役割 (Team Roles)
+各々の得意分野（トランザクション、LBS、UI/UX、DB設計）を持つ4人のエンジニアが集結しました。
 
-## [cite_start]2. 技術スタック (Tech Stack) [cite: 1]
-- [cite_start]**Backend**: Java 17, Spring Boot 3.x, MyBatis, Spring Security [cite: 1]
-- [cite_start]**Database**: MySQL 8.0 [cite: 1]
-- [cite_start]**Frontend**: HTML5, Thymeleaf, JavaScript, Kakao/Leaflet Map API [cite: 1]
-- [cite_start]**Infra/Others**: GitHub, AWS S3, PortOne API [cite: 1]
+- **パク・ユンジョン (PM)**: 
+  - プロジェクト総括・DBスキーマ設計・Gitブランチ戦略管理
+  - コアトランザクション制御（在庫のPessimistic Lock排他制御）
+  - PortOne APIを用いた決済連動、ESGポイント付与スケジューラー
+- **ゴ・ジュンソン**: 
+  - LBS(位置情報)マップシミュレーション（Naver Map UIスタイル）
+  - Caffeine Cacheを活用した周辺割引店舗リストのローディング最適化
+- **ベ・ボムジュ**: 
+  - Spring Securityを用いた認証/認可アーキテクチャ設計
+  - セッションベースのログイン処理およびユーザー/オーナーの権限（Role）分離実装
+  - 事業者番号検証およびマイページ機能
+- **ユ・インジェ**: 
+  - UI/UX全体設計（モダンなレイアウト適用）およびS3メディア処理
+  - 無限スクロールを適用したレビュー・商品リストの実装
+  - @ControllerAdviceを用いたグローバル例外処理の構築
 
-## [cite_start]3. コア機能 (Core Features) [cite: 1]
-1. [cite_start]**LBSマップ割引店舗検索**: ユーザーの現在地に基づき、現在割引中の商品がある店舗のみをピンで表示します。 [cite: 1]
-2. [cite_start]**トランザクション＆決済制御**: 在庫の仮押さえと決済時の悲観的ロック(Pessimistic Lock)により、オーバーブッキングを防ぎます。 [cite: 1]
-3. [cite_start]**ESGエコシステム**: 商品受け取り完了時、サーバー上に仮想の木を育てるESGエコポイントを付与します。 [cite: 1]
-4. [cite_start]**セキュアなレビューシステム**: 実際の購入者(UUID認証完了者)のみがレビューを作成できるようDBレベルで強制します。 [cite: 1]
+## 🛠 3. 技術スタック (Tech Stack)
+- **Backend**: Java 17, Spring Boot 3.x, MyBatis, Spring Security
+- **Database**: MySQL 8.0
+- **Frontend**: HTML5, Thymeleaf, JavaScript, Kakao/Leaflet Map API, Bootstrap
+- **Infra/Others**: GitHub, AWS S3, PortOne API, Caffeine Cache
 
-## [cite_start]4. ブランチ戦略 (Branch Strategy) [cite: 1]
-- [cite_start]`main`: 本番リリース用（直接Push不可、PR承認必須） [cite: 1]
-- [cite_start]`develop`: 開発統合用（全メンバーのコードをマージ・テストする基盤） [cite: 1]
-- [cite_start]`feature/*`: 各ドメインごとの機能開発用 (例: `feature/login`, `feature/mvt-map`) [cite: 1]
+##  4. コア機能とアーキテクチャの工夫 (Core Features & Architecture)
+
+### 1) LBSマップと動的キャッシング
+ユーザーの現在地（GPS）を基準に、現在割引中の商品がある店舗のみをピンで表示します。同一地域の繰り返し照会に対するトラフィック負荷を下げるため、**Caffeine Cache**を適用しローディング速度を最適化しています。
+
+### 2) トランザクション＆決済の厳密な制御
+タベテ（TABETE）のようなタイムセール環境でのオーバーブッキングを防ぐため、注文生成時の在庫仮確保（先占）と決済承認時の**悲観的ロック(Pessimistic Lock)**を実装。未決済時の自動キャンセル等、例外状況のロールバック(Rollback)を厳密に制御しています。
+
+### 3) 堅牢なDB設計によるデータ整合性担保
+- **Soft Delete制約**: 退会したユーザーのメールアドレス再加入を防ぐため、`deleted_at`による論理削除とUNIQUE制約を併用し悪意のあるアビューズを遮断。
+- **セキュアなレビューシステム**: 実際の購入者のみがレビューを作成できるよう、レビューテーブルに `order_id` (UNIQUE) を必須外部キーとして設定。DBレベル（CHECK制約）で不正な星評価や허위レビューを強制的に防ぎます。
+- **画像レイテンシの最適化**: マップ上のピンやリスト用の代表画像1枚は店舗テーブルに非正規化（Denormalization）して配置し、JOIN負荷を最小化。詳細な複数画像は別テーブルで管理する二元化アーキテクチャを採用しました。
+
+### 4) ESGエコシステム（仮想の木育成）
+単なる割引プラットフォームにとどまらず、商品の受け取りが完了（食品ロス削減）するたびに、サーバー上にユーザー個人の「仮想の木」を育てるESGエコポイント（炭素削減量比例）が付与されるゲーミフィケーションを導入しています。
+
+##  5. チームのグラウンドルールとブランチ戦略 (Team Rules & Branch Strategy)
+私たちはドメイン駆動のパッケージ構造（Package by Feature）を採用し、Git Conflictを最小限に抑えながら開発を進めています。
+
+- **ブランチ戦略**: 
+  - `main`: 本番リリース用（直接Push禁止・罰金制度あり、PR承認必須）
+  - `develop`: 開発統合用（全メンバーのコードを毎日Pullしてマージする基盤）
+  - `feature/*`: 各ドメインごとの機能開発用 (例: `feature/payment`, `feature/lbs-map`)
+- **コミット＆共有**: 毎朝ブランチをPullし、作業後Commit & Pushを実施。トラブルシューティングは30分以内に解決できなければ即時チームに共有します。
