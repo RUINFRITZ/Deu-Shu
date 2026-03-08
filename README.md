@@ -1,11 +1,47 @@
 #  ドゥーシュー (Deu-Shu) 
 > **「どうしよう…」という店舗オーナーの悩みを、「드슈(どうぞ)」という温かい提案へ。** > 廃棄されるはずだった食品を救い、地球に仮想の木を植える生活密着型ESG（ライフ・インテグレーテッドESG）プラットフォームです。
 
+
 ##  1. プロジェクトの背景とビジョン (Background & Vision)
 「ドゥーシュー (Deu-Shu)」は、韓国・大田（テジョン）地方の温かい方言「드슈(召し上がってください)」と、日本語の「どうしよう（もったいない）」という言葉遊びを掛け合わせたネーミングです。
 閉店間際に売れ残った食品を見つめる店主の悩みを、お財布事情の厳しい若者への安価な食事提供へと変換し、世界的に深刻化する食品ロス（Food Loss）問題を持続可能なIT技術で解決します。
 
-##  2. チーム「JSLアベンジャーズ」の開発メンバーと役割 (Team Roles)
+
+##  2. 技術スタック (Tech Stack)
+
+### Backend (コア・フレームワーク)
+<p>
+  <img src="https://img.shields.io/badge/Java-17-007396?style=for-the-badge&logo=java&logoColor=white" alt="Java 17">
+  <img src="https://img.shields.io/badge/SpringBoot-3.5.11-6DB33F?style=for-the-badge&logo=springboot&logoColor=white" alt="Spring Boot">
+  <img src="https://img.shields.io/badge/SpringSecurity-3.5.11-6DB33F?style=for-the-badge&logo=springsecurity&logoColor=white" alt="Spring Security">
+  <img src="https://img.shields.io/badge/SpringWebFlux-3.5.11-6DB33F?style=for-the-badge&logo=spring&logoColor=white" alt="Spring WebFlux">
+</p>
+
+### Database & ORM (データ永続化)
+<p>
+  <img src="https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL">
+  <img src="https://img.shields.io/badge/MyBatis_Starter-3.0.3-000000?style=for-the-badge" alt="MyBatis 3.0.3">
+  <img src="https://img.shields.io/badge/Caffeine_Cache-Included-007396?style=for-the-badge" alt="Caffeine Cache">
+</p>
+
+### Frontend & Template (画面レンダリング)
+<p>
+  <img src="https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white" alt="HTML5">
+  <img src="https://img.shields.io/badge/Thymeleaf-3.5.11-005F0F?style=for-the-badge&logo=thymeleaf&logoColor=white" alt="Thymeleaf">
+  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" alt="JavaScript">
+</p>
+
+### Infra & External API (外部連携・最適化)
+<p>
+  <img src="https://img.shields.io/badge/Amazon_S3-2.25.66-569A31?style=for-the-badge&logo=amazons3&logoColor=white" alt="AWS S3 2.25.66">
+  <img src="https://img.shields.io/badge/JJWT-0.11.5-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white" alt="JWT 0.11.5">
+  <img src="https://img.shields.io/badge/Mapbox_Vector_Tile-3.1.0-000000?style=for-the-badge&logo=mapbox&logoColor=white" alt="Mapbox Vector Tile 3.1.0">
+  <img src="https://img.shields.io/badge/Protobuf_Java-3.21.12-000000?style=for-the-badge" alt="Protobuf 3.21.12">
+  <img src="https://img.shields.io/badge/Gson-Included-000000?style=for-the-badge" alt="Gson">
+</p>
+
+
+##  3. チーム「JSLアベンジャーズ」の開発メンバーと役割 (Team Roles)
 各々の得意分野（トランザクション、LBS、UI/UX、DB設計）を持つ4人のエンジニアが集結しました。
 
 - **パク・ユンジョン (PM)**: 
@@ -24,11 +60,6 @@
   - 無限スクロールを適用したレビュー・商品リストの実装
   - @ControllerAdviceを用いたグローバル例外処理の構築
 
-## 🛠 3. 技術スタック (Tech Stack)
-- **Backend**: Java 17, Spring Boot 3.x, MyBatis, Spring Security
-- **Database**: MySQL 8.0
-- **Frontend**: HTML5, Thymeleaf, JavaScript, Kakao/Leaflet Map API, Bootstrap
-- **Infra/Others**: GitHub, AWS S3, PortOne API, Caffeine Cache
 
 ##  4. コア機能とアーキテクチャの工夫 (Core Features & Architecture)
 
@@ -45,6 +76,7 @@
 
 ### 4) ESGエコシステム（仮想の木育成）
 単なる割引プラットフォームにとどまらず、商品の受け取りが完了（食品ロス削減）するたびに、サーバー上にユーザー個人の「仮想の木」を育てるESGエコポイント（炭素削減量比例）が付与されるゲーミフィケーションを導入しています。
+
 
 ##  5. チームのグラウンドルールとブランチ戦略 (Team Rules & Branch Strategy)
 私たちはドメイン駆動のパッケージ構造（Package by Feature）を採用し、Git Conflictを最小限に抑えながら開発を進めています。
