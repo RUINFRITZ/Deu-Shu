@@ -106,7 +106,7 @@
          공통 SQL 조각
     ══════════════════════════════════════════════════════════════ -->
 
-    <!-- Haversine 공식: centerLat/centerLng이 있으면 거리(km) 계산 -->
+    <!-- 하버사인 공식: centerLat/centerLng이 있으면 거리(km) 계산 -->
     <sql id="distanceCalc">
         <choose>
             <when test="centerLat != null and centerLng != null">
