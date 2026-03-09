@@ -1,17 +1,32 @@
 package com.deushu.member.controller;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.deushu.member.domain.MemberEntity;
 import com.deushu.member.domain.MemberEntity.LoginRequest;
 import com.deushu.member.mapper.MemberRepository;
+
 import jakarta.servlet.http.HttpSession;
 import lombok.Data;
-import org.springframework.dao.DuplicateKeyException;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
-import java.util.Map;
 
 // 인증 관련 API 컨트롤러 (회원가입 / 로그인 / 로그아웃 / 정보수정 / 탈퇴)
 @RestController
@@ -123,6 +138,25 @@ public class AuthController {
         }
 
         session.setAttribute("memberId", 회원.getId());
+        
+        // =====================================================================
+        // Spring Security コンテキストとの強制同期ブリッジコード
+        // =====================================================================
+        // ユーザーの権限(ROLE_USERなど)をSecurityが理解できる形(GrantedAuthority)に変換
+        List<GrantedAuthority> authorities = 
+                Collections.singletonList(new SimpleGrantedAuthority(회원.getRole()));
+        
+        // パスワードは既に検証済みなのでnullを渡し、プリンシパルとしてPK(会員ID)を登録
+        Authentication authentication = 
+                new UsernamePasswordAuthenticationToken(회원.getId(), null, authorities);
+        
+        // Securityのグローバルコンテキストに認証完了オブジェクトをセット
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        
+        // 以降のAPIリクエストでも認証状態を維持できるよう、セッションにContextを明示的に保存
+        session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, 
+                SecurityContextHolder.getContext());
+        // =====================================================================
 
         result.put("success", true);
         result.put("message", "ログイン成功");

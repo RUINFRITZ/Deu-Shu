@@ -164,3 +164,32 @@ CREATE TABLE complaints (
     FOREIGN KEY (reporter_id) REFERENCES members(id) ON DELETE CASCADE,
     FOREIGN KEY (target_store_id) REFERENCES stores(id) ON DELETE CASCADE
 );
+
+-- =========================================================================
+-- [ ドゥーシュー ] デモ用のダミーデータ挿入スクリプト (V1.3 スキーマ準拠)
+-- （韓国語：[ 드슈 ] 데모용 더미 데이터 삽입 스크립트 (V1.3 스키마 준수)）
+-- トランザクションの競合状態（Race Condition）を再現するため、在庫1個の商品を作成します。
+-- （韓国語：트랜잭션의 경합 상태(Race Condition)를 재현하기 위해, 재고 1개인 상품을 생성합니다.）
+-- =========================================================================
+
+-- ステップ1: 店舗を所有するためのオーナー会員（ROLE_OWNER）を1名生成します。
+-- （韓国語：스텝 1: 점포를 소유하기 위한 점주 회원(ROLE_OWNER)을 1명 생성합니다.）
+INSERT INTO members (email, password, last_name, first_name, last_name_kana, first_name_kana, phone, role) 
+VALUES ('owner@demo.com', '$2a$10$dummyBcryptHashValue...', '山田', '太郎', 'ヤマダ', 'タロウ', '090-1111-2222', 'ROLE_OWNER');
+
+-- ステップ2: 生成したオーナー(id=1を想定)に紐づく店舗（寿司屋）を生成します。
+-- （韓国語：스텝 2: 생성한 점주(id=1 가정)에 종속된 점포(스시집)를 생성합니다.）
+INSERT INTO stores (owner_id, name, business_number, category, address, lat, lng, open_time, close_time) 
+VALUES (1, 'すし屋のドゥーシュー', '123-45-67890', 'SUSHI', '東京都千代田区丸の内1-1-1', 35.681236, 139.767125, '10:00:00', '22:00:00');
+
+-- ステップ3: デモの核心となる、在庫が「1個」しかない割引商品を登録します。
+-- （韓国語：스텝 3: 데모의 핵심이 되는, 재고가 '1개'밖에 없는 할인 상품을 등록합니다.）
+INSERT INTO items (store_id, name, original_price, discount_price, discount_rate, stock, expire_at) 
+VALUES (1, '特上サーモン寿司セット（残り1点）', 2000, 1000, 50, 1, DATE_ADD(NOW(), INTERVAL 3 HOUR));
+
+-- ステップ4: 複数商品決済（カート機能）のテスト用に、在庫に余裕のある商品をもう一つ登録します。
+-- （韓国語：스텝 4: 다중 상품 결제(장바구니 기능) 테스트용으로, 재고에 여유가 있는 상품을 하나 더 등록합니다.）
+INSERT INTO items (store_id, name, original_price, discount_price, discount_rate, stock, expire_at) 
+VALUES (1, '自家製玉子焼き', 500, 300, 40, 10, DATE_ADD(NOW(), INTERVAL 3 HOUR));
+
+commit;

@@ -20,7 +20,8 @@ bin/
 *.launch
 *.iml
 .vscode/
-.properties
+*.properties
+**/application.properties
 
 # 3. OSの隠しファイル・キャッシュファイルを除外する
 .DS_Store
@@ -34,3 +35,4 @@ application-local.yml
 
 # 5. ログファイル
 *.log
+src/main/resources/application.properties
