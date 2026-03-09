@@ -5,20 +5,20 @@
 <mapper namespace="com.deushu.store.mapper.StoreMapper">
 
   <!-- 1) 가게 기본 정보 -->
-    <select id="findStoreInfo" parameterType="long"
-            resultType="com.deushu.store.dto.StoreDetailResponse$StoreInfo">
-        SELECT
-            s.id,
-            s.name,
-            s.category,
-            s.address,
-            s.lat,
-            s.lng,
-            s.thumbnail_url AS thumbnailUrl,
-            CAST(s.open_time AS CHAR)  AS openTime,
-            CAST(s.close_time AS CHAR) AS closeTime
-        FROM stores s
-        WHERE s.id = #{storeId}
+   <select id="findByStoreId" resultType="com.deushu.review.dto.ReviewListResponse">
+        SELECT 
+            r.id, 
+            CONCAT(m.last_name, ' ', m.first_name) AS memberName, r.title, 
+            r.content, 
+            r.rating, 
+            r.photo_url AS photoUrl, 
+            r.created_at AS createdAt 
+        FROM reviews r 
+        JOIN members m ON m.id = r.member_id 
+        WHERE r.store_id = #{storeId} 
+          AND r.deleted_at IS NULL 
+        ORDER BY r.created_at DESC 
+        LIMIT 20
     </select>
 
 	  <!-- 2) 가게 이미지 목록 -->

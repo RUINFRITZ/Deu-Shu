@@ -113,6 +113,9 @@ function toggleReviewText(button) {
 // 상세 데이터 로딩
 // ============================================
 document.addEventListener("DOMContentLoaded", () => {
+    // 장바구니 패널 DOM 삽입 (body 존재 보장 후)
+    injectPanel();
+
     if (!storeId) return;
 
     fetch(`/api/stores/${storeId}`)
@@ -127,76 +130,51 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ============================================
-// renderStore - API 응답 구조에 맞게 파싱
+// renderStore - 새 HTML 구조(슬라이더 + 가게 정보 패널)에 맞게 파싱
 // ============================================
 function renderStore(data) {
 
-    // ── API 응답 구조 정규화 ──
-    // /api/stores/{id} 응답은 flat 구조이므로 내부에서 분리
     const store = {
-        name:         data.name,
-        category:     data.category,
-        address:      data.address,
-        lat:          data.lat,
-        lng:          data.lng,
-        openTime:     data.openTime  || "",
-        closeTime:    data.closeTime || "",
-        thumbnailUrl: data.thumbnailUrl
+        name:      data.name      ?? '-',
+        category:  data.category  ?? '-',
+        address:   data.address   ?? '-',
+        lat:       data.lat,
+        lng:       data.lng,
+        openTime:  data.openTime  ?? '',
+        closeTime: data.closeTime ?? '',
+        phone:     data.phone     ?? '-',
     };
-
-    const images = data.imageUrls || [];
-
-    const rating = {
-        avg:   data.avgRating   ?? 0,
-        count: data.reviewCount ?? 0
-    };
-
-    const items = data.items || [];
+    // 슬라이더: 가게 이미지만 표시 (썸네일 제외, store_images 기반)
+    const images = (data.imageUrls ?? []).filter(Boolean);
+    const rating = { avg: data.avgRating ?? 0, count: data.reviewCount ?? 0 };
+    const items  = data.items ?? [];
 
     // ========================
     // 가게 기본 정보
     // ========================
-    document.getElementById("storeName").textContent    = store.name;
-    document.getElementById("storeCategory").textContent = store.category;
-    document.getElementById("storeAddress").textContent  = store.address;
-    document.getElementById("storeHours").textContent    = `${store.openTime} ~ ${store.closeTime}`;
-    document.getElementById("ratingAvg").textContent     = Number(rating.avg).toFixed(1);
-    document.getElementById("reviewCount").textContent   = `리뷰 ${rating.count}`;
-    document.getElementById("reviewsTitle").textContent  = `리뷰 (${rating.count})`;
+    document.getElementById('storeName').textContent     = store.name;
+    document.getElementById('storeCategory').textContent = store.category;
+    document.getElementById('storeAddress').textContent  = store.address;
+    document.getElementById('storeHours').textContent    =
+        store.openTime && store.closeTime ? `${store.openTime} ~ ${store.closeTime}` : '-';
+    document.getElementById('storePhone').textContent    = store.phone;
+    document.getElementById('ratingAvg').textContent     = Number(rating.avg).toFixed(1);
+    document.getElementById('reviewCount').textContent   = `리뷰 ${rating.count}건`;
+    document.getElementById('reviewsTitle').textContent  = `리뷰 (${rating.count})`;
 
     // ========================
-    // 이미지 갤러리
+    // 이미지 슬라이더
     // ========================
-    if (images.length > 0) {
-        document.getElementById("mainImage").src = images[0];
-
-        const subImagesDiv = document.getElementById("subImages");
-        subImagesDiv.innerHTML = "";
-        images.slice(1, 5).forEach(img => {
-            const imageTag = document.createElement("img");
-            imageTag.src = img;
-            subImagesDiv.appendChild(imageTag);
-        });
-    }
+    initSlider(images);
 
     // ========================
     // 지도 초기화
     // ========================
     const minDiscountPrice = items.length > 0
-        ? Math.min(...items.map(i => i.discountPrice))
-        : null;
-    const totalStock = items.reduce((sum, i) => sum + i.stock, 0);
-
-    initMap(
-        store.lat,
-        store.lng,
-        store.name,
-        store.category,
-        store.closeTime,
-        store.address,
-        minDiscountPrice,
-        totalStock
-    );
+        ? Math.min(...items.map(i => i.discountPrice)) : null;
+    const totalStock = items.reduce((s, i) => s + i.stock, 0);
+    initMap(store.lat, store.lng, store.name, store.category,
+            store.closeTime, store.address, minDiscountPrice, totalStock);
 
     // ========================
     // 상품 목록
@@ -204,9 +182,14 @@ function renderStore(data) {
     renderItems(items);
 
     // ========================
-    // 리뷰 로딩
+    // 리뷰 로딩 (미리보기 포함)
     // ========================
     loadReviews(storeId);
+
+    // ========================
+    // 즐겨찾기 초기 상태
+    // ========================
+    initFavBtn(data.favorited === true);
 }
 
 // ============================================
@@ -220,10 +203,13 @@ function loadReviews(storeId) {
         })
         .then(data => {
             const list = data.items || data || [];
-            renderReviews(Array.isArray(list) ? list : []);
+            const reviews = Array.isArray(list) ? list : [];
+            renderReviews(reviews);
         })
         .catch(err => console.error("리뷰 데이터 오류:", err));
 }
+
+
 
 // ============================================
 // 리뷰 렌더링
@@ -257,6 +243,7 @@ function renderReviews(reviews) {
 // 지도 (Leaflet) - 리스트 페이지 스타일 통일
 // ============================================
 let _map = null;
+let _marker = null;
 
 function _createDetailMarkerIcon(stock) {
     const color = stock === 0  ? '#D32F2F'
@@ -278,7 +265,7 @@ function _createDetailMarkerIcon(stock) {
     });
 }
 
-function _buildDetailPopup(name, category, closeTime, address, minDiscountPrice, totalStock) {
+function _buildDetailPopup(name, category, closeTime, address, minDiscountPrice, totalStock, lat, lng) {
     const stockBadge = totalStock === 0
         ? '<span style="color:#D32F2F;font-weight:700;">売り切れ</span>'
         : totalStock <= 5
@@ -295,7 +282,7 @@ function _buildDetailPopup(name, category, closeTime, address, minDiscountPrice,
             <div class="map-popup-sub">${escapeHtml(category)} · 閉店 ${escapeHtml(closeTime)}</div>
             <div class="map-popup-sub" style="margin-top:2px;">${escapeHtml(address)}</div>
             ${priceHtml}
-            <a href="https://www.openstreetmap.org/?mlat=${_map ? _map.getCenter().lat : 0}&mlon=${_map ? _map.getCenter().lng : 0}#map=16"
+            <a href="https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=16/${lat}/${lng}"
                target="_blank" rel="noopener"
                style="display:block;margin-top:8px;text-align:center;
                       background:#4F7F68;color:#fff;border-radius:6px;
@@ -317,6 +304,15 @@ function initMap(lat, lng, name, category, closeTime, address, minDiscountPrice,
 
     if (_map) {
         _map.setView([lat, lng], 16);
+        // 기존 마커 제거 후 재생성
+        if (_marker) _marker.remove();
+        const stock2 = totalStock ?? 99;
+        _marker = L.marker([lat, lng], { icon: _createDetailMarkerIcon(stock2) }).addTo(_map);
+        _marker.bindPopup(
+            _buildDetailPopup(name, category, closeTime, address, minDiscountPrice, stock2, lat, lng),
+            { maxWidth: 240 }
+        );
+        _marker.openPopup();
         return;
     }
 
@@ -340,13 +336,13 @@ function initMap(lat, lng, name, category, closeTime, address, minDiscountPrice,
     }).addTo(_map);
 
     const stock  = totalStock ?? 99;
-    const marker = L.marker([lat, lng], { icon: _createDetailMarkerIcon(stock) }).addTo(_map);
+    _marker = L.marker([lat, lng], { icon: _createDetailMarkerIcon(stock) }).addTo(_map);
 
-    marker.bindPopup(
-        _buildDetailPopup(name, category, closeTime, address, minDiscountPrice, stock),
+    _marker.bindPopup(
+        _buildDetailPopup(name, category, closeTime, address, minDiscountPrice, stock, lat, lng),
         { maxWidth: 240 }
     );
-    marker.openPopup();
+    _marker.openPopup();
 
     _map.on('click', () => {
         if (!_map.scrollWheelZoom.enabled()) _map.scrollWheelZoom.enable();
@@ -393,8 +389,8 @@ function cartChangeQty(itemId, delta) {
     renderCartPanel();
 }
 
-// ── 패널 DOM 삽입 ──
-(function injectPanel() {
+// ── 패널 DOM 삽입 (DOMContentLoaded 후 실행 보장) ──
+function injectPanel() {
     cartLoad();
 
     const overlay = document.createElement('div');
@@ -412,7 +408,6 @@ function cartChangeQty(itemId, delta) {
             <span class="cft-badge" id="cftBadge">0</span>
         </div>
         <span class="cft-label">장바구니</span>
-        <span class="cft-price" id="cftPrice">0원</span>
     `;
 
     const panel = document.createElement('div');
@@ -451,7 +446,7 @@ function cartChangeQty(itemId, delta) {
     document.body.appendChild(panel);
 
     updateCartBadge();
-})();
+}
 
 function openCart() {
     renderCartPanel();
@@ -547,27 +542,97 @@ function updateCartBadge() {
     }
 }
 
-function onClickPay() {
-    if (!_cart.length) return;
-    const payload = {
-        storeId,
-        items: _cart.map(c => ({
-            itemId:     c.id,
-            quantity:   c.quantity,
-            orderPrice: c.discountPrice
-        }))
-    };
-    console.log('[결제 페이로드]', payload);
-    // TODO: 결제 API 연동 시 주석 해제
-    // fetch('/api/orders', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify(payload)
-    // }).then(res => res.json()).then(data => {
-    //     localStorage.removeItem(CART_KEY);
-    //     window.location.href = `/orders/${data.orderId}`;
-    // });
-    alert(`${_cart.length}개 상품 결제 요청!\n(결제 API 연동 예정)`);
+ // 
+
+ function onClickPay() {
+     if (!_cart.length) return;
+
+     const cartItems = _cart.map(c => ({
+         itemId: c.id,
+         quantity: c.quantity
+     }));
+
+     const totalPrice = _cart.reduce((s, c) => s + c.discountPrice * c.quantity, 0);
+
+     console.log('[결제 요청 준비]', { storeId, cartItems, totalPrice });
+
+     processCheckout(cartItems, totalPrice, storeId);
+ } 
+
+// ============================================
+// PortOne 결제 메인 함수
+// ============================================
+
+async function processCheckout(cartItems, totalPrice, storeId) {
+    try {
+        const orderRes = await fetch('/api/v1/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ storeId, cartItems, totalPrice })
+        });
+
+        const orderData = await orderRes.json();
+
+        if (!orderData.isSuccess) {
+            alert(orderData.message || '주문 생성에 실패했습니다.');
+            return;
+        }
+
+        const pendingOrderId = orderData.data;
+
+        IMP.init("imp41118237");
+
+        const paymentData = {
+            pg: "tosspayments",
+            pay_method: "card",
+            merchant_uid: `ORDER_${pendingOrderId}_${Date.now()}`,
+            name: "Deu-Shu 마감 할인 상품",
+            amount: totalPrice,
+            buyer_name: document.getElementById('headerUserName')?.innerText || ''
+        };
+
+        IMP.request_pay(paymentData, async function(rsp) {
+
+            console.log('[PortOne 응답]', rsp);
+
+            const success = rsp.success || (rsp.imp_uid && !rsp.error_msg && !rsp.error_code);
+
+            if (success) {
+                verifyPayment(rsp.imp_uid, pendingOrderId);
+            } else {
+                alert(`결제가 취소되었습니다: ${rsp.error_msg || '알 수 없는 오류'}`);
+            }
+
+        });
+
+    } catch (err) {
+        console.error('[결제 오류]', err);
+        alert('서버 통신 오류가 발생했습니다.');
+    }
+}
+
+// ============================================
+// 결제 검증 (금액 위변조 방지)
+// ============================================
+async function verifyPayment(impUid, orderId) {
+    try {
+        const res = await fetch(`/api/v1/orders/${orderId}/payment`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ impUid })
+        });
+        const data = await res.json();
+        if (data.isSuccess) {
+            alert('결제가 완료되었습니다! 마이페이지로 이동합니다.');
+            localStorage.removeItem(CART_KEY);
+            setTimeout(() => { window.location.href = '/mypage'; }, 1000);
+        } else {
+            alert(data.message || '결제 검증에 실패했습니다.');
+        }
+    } catch (err) {
+        console.error('[검증 오류]', err);
+        alert('결제 검증 중 오류가 발생했습니다.');
+    }
 }
 
 // ============================================
@@ -668,3 +733,167 @@ function resetCardQty(card) {
         btn.innerHTML = '<i class="bi bi-bag-plus"></i> 담기';
     }
 }
+// ============================================
+// 즐겨찾기
+// ============================================
+
+/**
+ * 하트 버튼 초기 상태 설정
+ * - API 응답의 favorited(boolean) 값으로 아이콘 초기화
+ * - 비로그인 or 즐겨찾기 안 한 상태: bi-heart (빈 하트)
+ * - 즐겨찾기 한 상태:                 bi-heart-fill (채워진 하트)
+ */
+function initFavBtn(favorited) {
+    const btn  = document.getElementById('favBtn');
+    if (!btn) return;
+
+    _setFavState(btn, favorited);
+
+    // 클릭 이벤트 (중복 등록 방지 — 클론 교체)
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+    newBtn.addEventListener('click', handleFavClick);
+}
+
+/**
+ * 즐겨찾기 버튼 클릭
+ * POST /api/stores/{storeId}/favorite/toggle
+ */
+async function handleFavClick() {
+    const btn = document.getElementById('favBtn');
+    if (!btn || btn.dataset.loading === 'true') return;
+
+    btn.dataset.loading = 'true';
+
+    try {
+        const res = await fetch(`/api/stores/${storeId}/favorite/toggle`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        const json = await res.json();
+
+        if (res.status === 401 || json.success === false) {
+            // 비로그인 → 로그인 페이지 이동
+            alert('즐겨찾기는 로그인 후 이용할 수 있습니다.');
+            window.location.href = '/';
+            return;
+        }
+
+        _setFavState(btn, json.favorited);
+
+    } catch (err) {
+        console.error('[즐겨찾기] 오류:', err);
+    } finally {
+        btn.dataset.loading = 'false';
+    }
+}
+
+/**
+ * 하트 아이콘 + aria 상태 반영
+ */
+function _setFavState(btn, favorited) {
+    const icon = btn.querySelector('i');
+    if (!icon) return;
+
+    if (favorited) {
+        icon.className = 'bi bi-heart-fill';
+        btn.classList.add('active');
+        btn.setAttribute('aria-label', '즐겨찾기 해제');
+    } else {
+        icon.className = 'bi bi-heart';
+        btn.classList.remove('active');
+        btn.setAttribute('aria-label', '즐겨찾기 추가');
+    }
+}
+
+// ============================================
+// 이미지 슬라이더
+// ============================================
+let _sliderImages = [];
+let _sliderIdx    = 0;
+
+function initSlider(images) {
+    _sliderImages = images;
+    _sliderIdx    = 0;
+
+    const track = document.getElementById('sliderTrack');
+    const dots  = document.getElementById('sliderDots');
+    if (!track) return;
+
+    // will-change: transform 을 평소엔 꺼둠
+    // → store-hero 안에서 fixed 포지셔닝 컨텍스트 깨지는 버그 방지
+    track.style.willChange = 'auto';
+
+    // 이미지 없으면 빈 상태 유지
+    if (!images.length) return;
+
+    // 이미지 삽입
+    track.innerHTML = '';
+    images.forEach(src => {
+        const img = document.createElement('img');
+        img.src = src;
+        img.alt = '가게 이미지';
+        img.onerror = () => { img.style.background = 'var(--gray-200)'; img.removeAttribute('src'); };
+        track.appendChild(img);
+    });
+
+    // 도트 생성
+    if (dots) {
+        dots.innerHTML = '';
+        images.forEach((_, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'slider-dot' + (i === 0 ? ' active' : '');
+            btn.onclick = () => sliderGoTo(i);
+            dots.appendChild(btn);
+        });
+    }
+
+    // 이미지 1장이면 버튼·도트 숨김
+    const showNav = images.length > 1;
+    const prev = document.getElementById('sliderPrev');
+    const next = document.getElementById('sliderNext');
+    if (prev) prev.style.display = showNav ? '' : 'none';
+    if (next) next.style.display = showNav ? '' : 'none';
+    if (dots) dots.style.display = showNav ? '' : 'none';
+
+    _sliderGo(0);
+}
+
+function sliderMove(delta) {
+    if (!_sliderImages.length) return;
+    sliderGoTo((_sliderIdx + delta + _sliderImages.length) % _sliderImages.length);
+}
+
+function sliderGoTo(idx) {
+    _sliderIdx = idx;
+    _sliderGo(idx);
+}
+
+function _sliderGo(idx) {
+    const track = document.getElementById('sliderTrack');
+    if (!track) return;
+    // 전환 중에만 will-change 켜고, 완료 후 꺼서 fixed 컨텍스트 보호
+    track.style.willChange = 'transform';
+    track.style.transform = `translateX(-${idx * 100}%)`;
+    track.addEventListener('transitionend', () => {
+        track.style.willChange = 'auto';
+    }, { once: true });
+    document.querySelectorAll('.slider-dot').forEach((d, i) => {
+        d.classList.toggle('active', i === idx);
+    });
+}
+
+// 터치 스와이프
+(function initSwipe() {
+    let startX = 0;
+    document.addEventListener('DOMContentLoaded', () => {
+        const slider = document.getElementById('storeSlider');
+        if (!slider) return;
+        slider.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, { passive: true });
+        slider.addEventListener('touchend',   e => {
+            const diff = startX - e.changedTouches[0].clientX;
+            if (Math.abs(diff) > 40) sliderMove(diff > 0 ? 1 : -1);
+        });
+    });
+})();
