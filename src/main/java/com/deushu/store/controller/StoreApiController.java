@@ -5,7 +5,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -235,9 +237,10 @@ public class StoreApiController {
      * 비로그인 또는 GUEST이면 null 반환.
      */
     private Long extractMemberId(UserDetails userDetails) {
-        if (userDetails == null) return null;
-        // TODO: CustomUserDetails 구현 후 실제 ID 추출 로직으로 교체
-        // 예: ((CustomUserDetails) userDetails).getMemberId()
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) return null;
+        Object principal = auth.getPrincipal();
+        if (principal instanceof Long) return (Long) principal;
         return null;
     }
 }

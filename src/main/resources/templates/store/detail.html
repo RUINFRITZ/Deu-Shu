@@ -171,55 +171,70 @@
     </div>
 </main>
 
-<!-- 리뷰 작성 모달 (Bootstrap .modal 충돌 방지: review-modal-wrap 사용) -->
+<!-- 리뷰 작성 모달 (2단계: 주문 선택 → 리뷰 작성) -->
 <div id="reviewModal" class="review-modal-wrap" onclick="handleModalClick(event)">
     <div class="review-modal-box">
         <div class="modal-header">
-            <h3>리뷰 작성</h3>
+            <h3 id="reviewModalTitle">주문 선택</h3>
             <button type="button" class="modal-close" onclick="closeReviewModal()">×</button>
         </div>
-        <div class="modal-body">
-            <label>제목</label>
-            <input id="reviewTitle" type="text" placeholder="제목을 입력하세요"/>
-            <label style="margin-top:12px;">내용</label>
-            <textarea id="reviewContent" rows="4" placeholder="내용을 입력하세요"></textarea>
-            <div class="counter"><span id="currentCount">0</span>/500</div>
-            <label style="margin-top:12px;">별점</label>
-            <div class="stars">
-                <i class="bi bi-star star-btn"></i>
-                <i class="bi bi-star star-btn"></i>
-                <i class="bi bi-star star-btn"></i>
-                <i class="bi bi-star star-btn"></i>
-                <i class="bi bi-star star-btn"></i>
-                <span class="rating-value">5.0</span>
+
+        <!-- STEP 1: 주문 목록 -->
+        <div id="reviewStep1">
+            <div class="modal-body">
+                <p class="review-step-desc">리뷰를 작성할 주문을 선택해주세요.</p>
+                <div id="orderListBody">
+                    <p style="color:var(--gray-500);">불러오는 중...</p>
+                </div>
             </div>
-            <label style="margin-top:12px;">사진(선택)</label>
-            <input id="imageInput" type="file" accept="image/*"/>
-            <div id="imagePreview" style="display:none;margin-top:8px;">
-                <img id="previewImage" style="max-width:100%;"/>
-                <button type="button" onclick="removeImage()">삭제</button>
+            <div class="modal-footer">
+                <button type="button" class="btn" onclick="closeReviewModal()">닫기</button>
             </div>
         </div>
-        <div class="modal-footer">
-            <button type="button" class="btn" onclick="closeReviewModal()">취소</button>
-            <button type="button" class="btn primary" onclick="submitReview()">등록</button>
+
+        <!-- STEP 2: 리뷰 작성 폼 -->
+        <div id="reviewStep2" style="display:none;">
+            <div class="modal-body">
+                <label>제목</label>
+                <input id="reviewTitle" type="text" placeholder="제목을 입력하세요"/>
+                <label style="margin-top:12px;">내용</label>
+                <textarea id="reviewContent" rows="4" placeholder="내용을 입력하세요"></textarea>
+                <div class="counter"><span id="currentCount">0</span>/500</div>
+                <label style="margin-top:12px;">별점</label>
+                <div class="stars">
+                    <i class="bi bi-star star-btn"></i>
+                    <i class="bi bi-star star-btn"></i>
+                    <i class="bi bi-star star-btn"></i>
+                    <i class="bi bi-star star-btn"></i>
+                    <i class="bi bi-star star-btn"></i>
+                    <span class="rating-value">5.0</span>
+                </div>
+                <label style="margin-top:12px;">사진(선택)</label>
+                <input id="imageInput" type="file" accept="image/*"/>
+                <div id="imagePreview" style="display:none;margin-top:8px;">
+                    <img id="previewImage" style="max-width:100%;"/>
+                    <button type="button" onclick="removeImage()">삭제</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn" onclick="backToOrderList()">← 뒤로</button>
+                <button type="button" class="btn primary" onclick="submitReview()">등록</button>
+            </div>
         </div>
+
     </div>
 </div>
 
 <div th:replace="~{fragments/footer :: footer}"></div>
 
 <script th:inline="javascript">
-    const storeId = /*[[${storeId}]]*/ 0;
+    window.storeId = /*[[${storeId}]]*/ 0;
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <!-- 결제처리 로직 (PortOne / 구 Iamport) -->
 <script src="https://cdn.iamport.kr/v1/iamport.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script th:src="@{/js/detail.js}"></script>
-
-	<!-- 決済処理ロジック -->
-	<script src="https://cdn.iamport.kr/v1/iamport.js"></script>
 
 </body>
 </html>

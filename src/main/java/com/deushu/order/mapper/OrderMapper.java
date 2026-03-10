@@ -5,6 +5,7 @@ import com.deushu.order.domain.OrderEntity;
 import com.deushu.order.domain.OrderItemEntity;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import com.deushu.order.dto.MyOrderResponse;
 import java.util.List;
 
 @Mapper
@@ -32,4 +33,16 @@ public interface OrderMapper {
      * 決済成功時、またはキャンセル時のみ呼び出されます。
      */
     void updateOrderStatus(OrderEntity order);
+    
+    /**
+     * 해당 회원이 해당 가게에서 결제 완료(PAYMENT_COMPLETED)된 주문이 있는지 확인
+     * ReviewService에서 리뷰 작성 자격 검증용
+     */
+    boolean existsCompletedOrder(@Param("memberId") Long memberId,
+                                  @Param("storeId")  Long storeId);
+    
+    List<MyOrderResponse> findMyCompletedOrders(@Param("memberId") Long memberId,
+            @Param("storeId")  Long storeId);
+    
+    
 }
