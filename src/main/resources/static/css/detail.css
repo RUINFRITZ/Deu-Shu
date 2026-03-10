@@ -564,7 +564,7 @@ body {
    플로팅 장바구니 탭
 ════════════════════════════════════════ */
 .cart-float-tab {
-    position: fixed; right: 0; top: 50%; transform: translateY(-50%);
+    position: fixed; right: 0; top: 20%; transform: translateY(-50%);
     z-index: 9990; display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: .375rem;
     width: 3.25rem; padding: 1rem .5rem;

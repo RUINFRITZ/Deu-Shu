@@ -487,7 +487,6 @@ function cartChangeQty(itemId, delta) {
             <span class="cft-badge" id="cftBadge">0</span>
         </div>
         <span class="cft-label">장바구니</span>
-        <span class="cft-price" id="cftPrice">0원</span>
     `;
 
     const panel = document.createElement('div');
