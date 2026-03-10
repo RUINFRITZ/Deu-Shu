@@ -10,21 +10,79 @@
 
 function showToast(message, type) {
     type = type || 'success';
+
+    // wrap을 body 직계 자식으로 — 인라인 스타일로 완전 자립, 외부 CSS 영향 없음
     var wrap = document.getElementById('toastWrap');
-    if (!wrap) return;
+    if (!wrap) {
+        wrap = document.createElement('div');
+        wrap.id = 'toastWrap';
+        document.body.appendChild(wrap);
+    } else if (wrap.parentNode !== document.body) {
+        document.body.appendChild(wrap);
+    }
+    wrap.style.cssText =
+        'position:fixed;top:80px;right:20px;left:auto;z-index:99999;' +
+        'display:flex;flex-direction:column;gap:10px;pointer-events:none;width:300px;';
+
+    var colorMap = {
+        success: { bg:'#dcfce7', color:'#16a34a', border:'#16a34a', icon:'✓' },
+        error:   { bg:'#fee2e2', color:'#dc2626', border:'#dc2626', icon:'✕' },
+        info:    { bg:'#dbeafe', color:'#2563eb', border:'#2563eb', icon:'ℹ' }
+    };
+    var c     = colorMap[type] || colorMap.success;
+    var title = { success:'完了', error:'エラー', info:'お知らせ' }[type] || '完了';
 
     var toast = document.createElement('div');
-    toast.className = 'toast ' + type;
-    toast.innerHTML =
-        '<div class="toast-icon"><i class="bi bi-' + (type === 'success' ? 'check-lg' : 'exclamation-lg') + '"></i></div>' +
-        '<span class="toast-msg">' + message + '</span>' +
-        '<button class="toast-close" onclick="this.parentElement.remove()"><i class="bi bi-x"></i></button>';
+    toast.style.cssText =
+        'display:flex;align-items:flex-start;gap:12px;background:#fff;' +
+        'border:1px solid #e5e7eb;border-left:4px solid ' + c.border + ';' +
+        'border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.15);' +
+        'padding:14px 44px 14px 16px;pointer-events:auto;position:relative;' +
+        'font-family:"Noto Sans JP",sans-serif;' +
+        'opacity:0;transform:translateX(20px);transition:opacity 0.25s,transform 0.25s;';
 
+    var iconEl = document.createElement('div');
+    iconEl.style.cssText =
+        'width:28px;height:28px;border-radius:50%;background:' + c.bg + ';' +
+        'color:' + c.color + ';display:flex;align-items:center;justify-content:center;' +
+        'font-size:14px;font-weight:700;flex-shrink:0;margin-top:1px;';
+    iconEl.textContent = c.icon;
+
+    var body = document.createElement('div');
+    body.style.cssText = 'flex:1;min-width:0;';
+
+    var titleEl = document.createElement('div');
+    titleEl.style.cssText = 'font-size:13px;font-weight:700;color:#111827;margin-bottom:3px;';
+    titleEl.textContent = title;
+
+    var msgEl = document.createElement('div');
+    msgEl.style.cssText = 'font-size:13px;color:#6b7280;line-height:1.5;';
+    msgEl.textContent = message;
+
+    var closeBtn = document.createElement('button');
+    closeBtn.style.cssText =
+        'position:absolute;top:8px;right:10px;background:none;border:none;' +
+        'color:#9ca3af;cursor:pointer;font-size:18px;line-height:1;padding:0;';
+    closeBtn.textContent = '×';
+    closeBtn.onclick = function() { toast.remove(); };
+
+    body.appendChild(titleEl);
+    body.appendChild(msgEl);
+    toast.appendChild(iconEl);
+    toast.appendChild(body);
+    toast.appendChild(closeBtn);
     wrap.appendChild(toast);
 
+    // 슬라이드인 애니메이션
+    requestAnimationFrame(function() {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(0)';
+    });
+
     setTimeout(function() {
-        toast.classList.add('hide');
-        setTimeout(function() { toast.remove(); }, 350);
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(20px)';
+        setTimeout(function() { if (toast.parentNode) toast.remove(); }, 280);
     }, 3000);
 }
 
@@ -40,8 +98,7 @@ function updateHeaderAuth() {
         if (data.success) {
             document.getElementById('btnAuthGuest').style.display = 'none';
             document.getElementById('userMenuWrap').style.display = 'block';
-            var name = (data.lastName || '') + (data.firstName || '');
-            if (!name) name = data.email;
+           var name = String(data.memberId);
             document.getElementById('headerUserName').textContent = name;
             // 메인페이지 히어로 버튼 숨기기
             if (heroCta) heroCta.style.display = 'none';
@@ -60,8 +117,10 @@ function updateHeaderAuth() {
 function handleLogout() {
     fetch('/api/auth/logout', { method: 'POST' })
     .then(function() {
-        showToast('ログアウトしました', 'success');
-        setTimeout(function() { location.reload(); }, 1000);
+        // 로그아웃 성공 → 현재 페이지의 기존 파라미터를 유지하고 toast 파라미터 추가
+        var params = new URLSearchParams(window.location.search);
+        params.set('toast', 'logout');
+        location.href = location.pathname + '?' + params.toString();
     })
     .catch(function() { location.reload(); });
 }
@@ -70,22 +129,38 @@ function handleLogout() {
 document.addEventListener('DOMContentLoaded', function() {
     updateHeaderAuth();
 
+    // URL 파라미터 ?toast=login|logout|register 를 읽어서 토스트 표시
+    // 새로고침 후에도 토스트가 보이도록 하기 위한 방식
+    var params = new URLSearchParams(window.location.search);
+    var toast  = params.get('toast');
+    if (toast === 'login')    showToast('ログインしました', 'success');
+    if (toast === 'logout')   showToast('ログアウトしました', 'success');
+    if (toast === 'register') showToast('会員登録が完了しました', 'success');
+    if (toast === 'withdraw') showToast('退会が完了しました', 'info');
+
+    // 토스트 표시 후 URL에서 파라미터 제거 (주소창 깔끔하게)
+    if (toast) {
+        var cleanUrl = window.location.pathname;
+        window.history.replaceState(null, '', cleanUrl);
+    }
+
     // 유저 메뉴 드롭다운 JS 제어 (CSS hover 대신 사용 — 토스트 겹침 문제 방지)
     var menu = document.getElementById('userMenuWrap');
     if (!menu) return;
     var dropdown = document.getElementById('userDropdown');
     var timer;
 
-    function openDropdown() {
-        clearTimeout(timer);
-        dropdown.style.display = 'block';
-    }
-    function closeDropdown() {
-        timer = setTimeout(function() {
-            dropdown.style.display = 'none';
-        }, 150);
-    }
-
+	function openDropdown() {
+	    clearTimeout(timer);
+	    dropdown.style.visibility = 'visible';
+	    dropdown.style.maxHeight = dropdown.scrollHeight + 'px';
+	}
+	function closeDropdown() {
+	    timer = setTimeout(function() {
+	        dropdown.style.maxHeight = '0';
+	        dropdown.style.visibility = 'hidden';
+	    }, 150);
+	}
     menu.addEventListener('mouseenter', openDropdown);
     menu.addEventListener('mouseleave', closeDropdown);
     dropdown.addEventListener('mouseenter', openDropdown);
@@ -413,8 +488,10 @@ function handleUserLogin() {
     .then(function(data) {
         if (data.success) {
             closeModal();
-            showToast('ログインしました', 'success');
-            updateHeaderAuth();
+            // 로그인 성공 → 현재 페이지의 기존 파라미터를 유지하고 toast 파라미터 추가
+            var params = new URLSearchParams(window.location.search);
+            params.set('toast', 'login');
+            location.href = location.pathname + '?' + params.toString();
         } else {
             setInputState('loginPw', 'is-error');
             showFieldMsg('loginPwMsg', data.message || 'ログインに失敗しました');
@@ -586,3 +663,41 @@ function handleBizRegister() {
         showFieldMsg('bizRegEmailMsg', 'サーバーエラーが発生しました');
     });
 }
+// Nav 드롭다운
+    var navItems = document.querySelectorAll('#deushu-main-header .nav-item');
+    navItems.forEach(function (item) {
+        var trigger  = item.querySelector(':scope > a');
+        var dropdown = item.querySelector('.deushu-dropdown');
+        if (!trigger || !dropdown) return;
+
+        trigger.addEventListener('click', function (e) {
+            var isOpen = item.classList.contains('active');
+            navItems.forEach(function (other) {
+                other.classList.remove('active');
+                other.querySelector('.deushu-dropdown').classList.remove('open');
+            });
+            if (!isOpen) {
+                e.preventDefault();
+                item.classList.add('active');
+                dropdown.classList.add('open');
+            }
+        });
+    });
+
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('#deushu-main-header .nav-item')) {
+            navItems.forEach(function (item) {
+                item.classList.remove('active');
+                item.querySelector('.deushu-dropdown').classList.remove('open');
+            });
+        }
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            navItems.forEach(function (item) {
+                item.classList.remove('active');
+                item.querySelector('.deushu-dropdown').classList.remove('open');
+            });
+        }
+    });

@@ -935,6 +935,13 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('editFirstNameKana').value = data.firstNameKana || '';
         document.getElementById('editPhone').value         = data.phone         || '';
         document.getElementById('esgPoint').innerHTML = (data.esgPoint || 0) + '<span>pt</span>';
+
+        // URL 해시로 섹션 직접 이동 (헤더 드롭다운 연결용)
+        var hash = window.location.hash.replace('#', '');
+        if (hash) {
+            var targetBtn = document.querySelector('[onclick="switchSection(\'' + hash + '\', this)"]');
+            if (targetBtn) switchSection(hash, targetBtn);
+        }
     })
     .catch(function() {
         location.href = '/';
