@@ -5,6 +5,7 @@ import com.deushu.order.domain.OrderEntity;
 import com.deushu.order.domain.OrderItemEntity;
 import com.deushu.order.dto.OrderCreateRequestDto;
 import com.deushu.order.mapper.OrderMapper;
+import com.deushu.order.dto.MyOrderResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -85,4 +86,12 @@ public class OrderService {
         
         return newOrder.getId();
     }
+    
+    /*
+     * 내 결제 완료 주문 목록 조회
+     */
+    public List<MyOrderResponse> getMyCompletedOrders(Long memberId, Long storeId) {
+        return orderMapper.findMyCompletedOrders(memberId, storeId);
+    }
+    
 }

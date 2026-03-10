@@ -5,34 +5,39 @@
 
 <mapper namespace="com.deushu.review.mapper.ReviewMapper">
 
-	<select id="findByStoreId" resultType="com.deushu.review.dto.ReviewListResponse">
-        SELECT 
-            r.id, 
-            CONCAT(m.last_name, ' ', m.first_name) AS memberName, r.title, 
-            r.content, 
-            r.rating, 
-            r.photo_url AS photoUrl, 
-            r.created_at AS createdAt 
-        FROM reviews r 
-        JOIN members m ON m.id = r.member_id 
-        WHERE r.store_id = #{storeId} 
-          AND r.deleted_at IS NULL 
-        ORDER BY r.created_at DESC 
+    <!-- 리뷰 목록 조회 -->
+    <!-- resultType: ReviewListResponse$ReviewItem (inner class) -->
+    <select id="findByStoreId" resultType="com.deushu.review.dto.ReviewListResponse$ReviewItem">
+        SELECT
+            r.id,
+            CONCAT(m.last_name, ' ', m.first_name) AS memberName,
+            r.title,
+            r.content,
+            r.rating,
+            r.photo_url  AS photoUrl,
+            r.created_at AS createdAt
+        FROM reviews r
+        JOIN members m ON m.id = r.member_id
+        WHERE r.store_id = #{storeId}
+          AND r.deleted_at IS NULL
+        ORDER BY r.created_at DESC
         LIMIT 20
     </select>
 
-  <select id="existsByOrderId" parameterType="long" resultType="int">
-    SELECT COUNT(*)
-    FROM reviews
-    WHERE order_id = #{orderId}
-      AND deleted_at IS NULL
-  </select>
+    <!-- 주문당 1리뷰 중복 체크 -->
+    <select id="existsByOrderId" parameterType="long" resultType="int">
+        SELECT COUNT(*)
+        FROM reviews
+        WHERE order_id = #{orderId}
+          AND deleted_at IS NULL
+    </select>
 
-  <insert id="insert" parameterType="com.deushu.review.dto.ReviewCreateRequest">
-    INSERT INTO reviews
-      (member_id, store_id, order_id, title, content, photo_url, rating, created_at, deleted_at)
-    VALUES
-      (#{memberId}, #{storeId}, #{orderId}, #{title}, #{content}, #{photoUrl}, #{rating}, NOW(), NULL)
-  </insert>
+    <!-- 리뷰 등록 -->
+    <insert id="insert" parameterType="com.deushu.review.dto.ReviewCreateRequest">
+        INSERT INTO reviews
+            (member_id, store_id, order_id, title, content, photo_url, rating, created_at, deleted_at)
+        VALUES
+            (#{memberId}, #{storeId}, #{orderId}, #{title}, #{content}, #{photoUrl}, #{rating}, NOW(), NULL)
+    </insert>
 
 </mapper>

@@ -1,13 +1,18 @@
 package com.deushu.order.controller;
 
+import java.util.List;
+
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.deushu.common.response.ApiResponse;
+import com.deushu.order.dto.MyOrderResponse;
 import com.deushu.order.dto.OrderCreateRequestDto;
 import com.deushu.order.dto.PaymentVerifyRequestDto;
 import com.deushu.order.service.OrderService;
@@ -60,4 +65,18 @@ public class OrderController {
 
         return ApiResponse.onSuccess("決済の検証が完了し、注文が確定しました。");
     }
+    
+    /*
+     * 내 결제 완료 주문 목록 조회 (리뷰 작성용)
+     * GET /api/v1/orders/my?storeId=1
+     */
+    @GetMapping("/my")
+    public ApiResponse<List<MyOrderResponse>> getMyOrders(
+            @RequestParam("storeId") Long storeId,
+            @AuthenticationPrincipal Long memberId
+    ) {
+        List<MyOrderResponse> orders = orderService.getMyCompletedOrders(memberId, storeId);
+        return ApiResponse.onSuccess(orders);
+    }
+    
 }
