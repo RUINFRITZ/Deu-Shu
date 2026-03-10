@@ -168,12 +168,12 @@
 	    background: #fff;
 	    border: 1px solid var(--border);
 	    border-radius: 12px;
-	    padding: 1.8rem;
+	    padding: 1.0rem;
 	    margin-bottom: 1.2rem;
 	}
 	
 	.info-card-title {
-	    font-size: 0.8rem;
+	    font-size: 0.95rem;
 	    font-weight: 700;
 	    color: var(--light-gray);
 	    letter-spacing: 0.08em;
@@ -644,6 +644,10 @@
 	    align-items: stretch; /* カードの高さを揃える */
 	}
 	
+	.card-grid-container.single-col {
+	    grid-template-columns: 1fr;
+	}
+	
 	/* グリッド内のカードの余白調整 */
 	.card-grid-container .info-card {
 	    margin-bottom: 0 !important;
@@ -886,6 +890,8 @@
 </div>
 
 <script>
+const DEFAULT_ITEM_IMAGE = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIiB2aWV3Qm94PSIwIDAgMTUwIDE1MCI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIxNTAiIHJ4PSIxMCIgZmlsbD0iI0Y4RkFGRCIvPjxwYXRoIGQ9Ik05NiA1Mkg5MFY0NEM5MCAzNS4xNjM0IDgzLjI4NDMgMjggNzUgMjhDNjYuNzE1NyAyOCA2MCAzNS4xNjM0IDYwIDQ0VjUySDU0QzQ5LjU4MTcgNTIgNDYgNTUuNTgxNyA0NiA2MFYxMTBDNDYgMTE0LjQxOCA0OS41ODE3IDExOCA1NCAxMThIOTZDMTAwLjQxOCAxMTggMTA0IDExNC40MTggMTA0IDExMFY2MEMxMDQgNTUuNTgxNyAxMDAuNDE4IDUyIDk2IDUyWk04NCA0NFY1Mkg2NlY0NEM2NiAzOC40Nzc4IDcwLjA3NTQgMzQuNzI3MyA3NSAzNC43MzczQzc5LjkyNDYgMzQuNzM3MyA4NCAzOC40Nzc4IDg0IDQ0Wk04NiA1Mkg2NFY0NEM2NCAzNy4zNzI2IDY4LjkyNDkgMzIgNzUgMzJDODEuMDc1MSAzMiA4NiAzNy4zNzI2IDg2IDQ0VjUyWiIgZmlsbD0iI0E3RjNEMCIvPjxwYXRoIGQ9Ik05NiA1Nkg1NEM1MS43OTA5IDU2IDUwIDU3Ljc5MDkgNTAgNjBWMTEwQzUwIDExMi4yMDkgNTEuNzkwOSAxMTQgNTQgMTE0SDk2Qzk4LjIwOTEgMTE0IDEwMCAxMTIuMjA5IDEwMCAxMTBWNjBDMTAwIDU3Ljc5MDkgOTguMjA5MSA1NiA5NiA1NlpNNzUgOTQuNjI5QzczIDEwMCA3MiAxMDIuNzE0IDcyIDEwMi43MTRDNzIgMTAyLjcxNCA3MCAxMDMgNjguOTE0IDExNEM2Ny44Mjg1IDEyNSA3MCAxMzIgNzUgMTMyQzc5Ljk5OTIgMTMyIDgxLjk5OTEgMTI1IDgwLjk5ODggMTE0Qzc5Ljk5OTIgMTAzIDc4IDEwMi43MTQgNzggMTAyLjcxNEM3OCAxMDIuNzE0IDc3IDEwMCA3NSA5NC42Mjl6IiBmaWxsPSIjMDY1Zjg2IiBmaWxsLW9wYWNpdHk9IjAuMDUiLz48L3N2Zz4=';
+
 // 섹션 전환
 function switchSection(name, btn) {
     document.querySelectorAll('.mypage-section').forEach(function(s) {
@@ -1081,8 +1087,8 @@ function renderPickupOrders(orders) {
         return;
     }
 
-    // Grid コンテナを開く
-    let html = '<div class="card-grid-container">';
+    // Wide-Grid コンテナを開く
+    let html = '<div class="card-grid-container single-col">';
     
     orders.forEach(order => {
         const storeName = order.storeName || '店舗名不明';
@@ -1090,28 +1096,36 @@ function renderPickupOrders(orders) {
         const pickupCode = order.pickupCode || '';
         const orderTime = order.orderTime || '';
         const itemCount = order.itemCount > 1 ? `外 ${order.itemCount - 1}件` : '';
+        
+        const mainItemName = order.mainItemName || '商品名未定';
+        const displayItemName = order.itemCount > 1 ? `${mainItemName} 外 ${order.itemCount - 1}件` : mainItemName;
+        const imgUrl = order.imageUrl || DEFAULT_ITEM_IMAGE;
 
-        // 내용물(content) 파트와 하단 버튼(button) 파트를 명확히 분리하여 버튼 밀림 현상 방지.
         html += `
-            <div class="info-card" style="border-left: 4px solid var(--primary);">
+            <div class="info-card" style="border-left: 4px solid var(--primary); display: flex; flex-direction: column;">
                 
-                <div style="flex: 1;"> 
-                    <div class="info-card-title" style="margin-bottom: 0.5rem; color: var(--primary);">
-                        <i class="bi bi-shop"></i> ${storeName}
+                <div style="display: flex; gap: 1.5rem; margin-bottom: 1.0rem;">
+                    <div style="flex-shrink: 0;">
+                        <img src="${imgUrl}" alt="${mainItemName}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border);">
                     </div>
-                    <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--charcoal); margin-bottom: 0.3rem;">
-                        注文商品 ${itemCount}
-                    </h3>
-                    <p style="font-size: 0.85rem; color: var(--mid-gray); margin-bottom: 1rem;">
-                        決済時間: ${orderTime}<br>
-                        決済金額: <strong style="color:var(--charcoal); font-size:1rem;">${totalPrice}円</strong>
-                    </p>
+                    
+                    <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                        <div class="info-card-title" style="margin-bottom: 0.3rem; color: var(--primary);">
+                            <i class="bi bi-shop"></i> ${storeName}
+                        </div>
+                        <h3 style="font-size: 1.4rem; font-weight: 700; color: var(--charcoal); margin-bottom: 0.4rem;">
+                            ${displayItemName}
+                        </h3>
+                        <p style="font-size: 0.85rem; color: var(--mid-gray); margin: 0;">
+                            決済時間: ${orderTime} &nbsp;|&nbsp; 決済金額: <strong style="color:var(--charcoal); font-size:1rem;">${totalPrice}円</strong>
+                        </p>
+                    </div>
                 </div>
 
-                <div style="margin-top: auto; text-align: right; border-top: 1px solid #f3f4f6; padding-top: 1rem;">
-                    <button class="btn-save" style="padding: 1.2rem 1.8rem; font-size: 1.4rem;" 
+                <div style="border-top: 1px solid #f3f4f6; padding-top: 1rem; text-align: right;">
+                    <button class="btn-save" style="padding: 0.8rem 1.6rem; font-size: 1.22rem;" 
                             onclick="openQRModal('${pickupCode}', '${storeName}')">
-                        <i class="bi bi-qr-code-scan"></i> QR表示
+                        <i class="bi bi-qr-code-scan"></i> 受け取り用 QR表示
                     </button>
                 </div>
 
@@ -1119,7 +1133,6 @@ function renderPickupOrders(orders) {
         `;
     });
 
-    // Grid コンテナを閉じる
     html += '</div>';
     container.innerHTML = html;
 }
@@ -1227,15 +1240,16 @@ function renderOrderHistory(orders) {
             </div>`;
         return;
     }
-
-    // 🚨 Grid コンテナを開く
-    let html = '<div class="card-grid-container">';
+    let html = '<div class="card-grid-container single-col">';
     
     orders.forEach(order => {
         const storeName = order.storeName || '店舗名不明';
         const totalPrice = order.totalPrice ? order.totalPrice.toLocaleString() : '0';
         const orderTime = order.orderTime || '';
-        const itemCount = order.itemCount > 1 ? `外 ${order.itemCount - 1}件` : '';
+        
+        const mainItemName = order.mainItemName || '商品名未定';
+        const displayItemName = order.itemCount > 1 ? `${mainItemName} 外 ${order.itemCount - 1}件` : mainItemName;
+        const imgUrl = order.imageUrl || DEFAULT_ITEM_IMAGE;
         
         let statusBadge = '';
         if (order.orderStatus === 'PICKED_UP') {
@@ -1247,30 +1261,36 @@ function renderOrderHistory(orders) {
         }
 
         html += `
-            <div class="info-card">
+            <div class="info-card" style="display: flex; flex-direction: column;">
                 
-                <div style="flex: 1;">
-                    <div style="margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.5rem;">
-                        ${statusBadge}
-                        <span style="font-size:0.8rem; color:var(--mid-gray);">${orderTime}</span>
+                <div style="display: flex; gap: 1.5rem; margin-bottom: 1rem;">
+                    <div style="flex-shrink: 0;">
+                        <img src="${imgUrl}" alt="${mainItemName}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); opacity: ${order.orderStatus === 'PICKED_UP' ? '0.6' : '1'};">
                     </div>
-                    <div class="info-card-title" style="margin-bottom: 0.3rem; color: var(--charcoal); font-size: 1rem;">
-                        <i class="bi bi-shop"></i> ${storeName}
+                    
+                    <div style="flex: 1;">
+                        <div style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                            ${statusBadge}
+                            <span style="font-size:0.8rem; color:var(--mid-gray);">${orderTime}</span>
+                        </div>
+                        <div class="info-card-title" style="margin-bottom: 0.3rem; color: var(--charcoal); font-size: 0.9rem;">
+                            <i class="bi bi-shop"></i> ${storeName}
+                        </div>
+                        <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--charcoal); margin: 0;">
+                            ${displayItemName}
+                        </h3>
                     </div>
                 </div>
 
-                <div style="margin-top: auto; border-top: 1px solid #f3f4f6; padding-top: 0.8rem;">
-                    <p style="font-size: 0.9rem; color: var(--charcoal); font-weight: 500; margin: 0;">
-                        注文商品 ${itemCount} <br> 
-                        <strong style="font-size:1.1rem; color: var(--primary);">${totalPrice}円</strong>
-                    </p>
+                <div style="border-top: 1px solid #f3f4f6; padding-top: 0.8rem; text-align: right;">
+                    <span style="font-size: 0.95rem; color: var(--mid-gray); margin-right: 0.5rem;">合計金額:</span>
+                    <strong style="font-size:1.4rem; color: var(--charcoal);">${totalPrice}円</strong>
                 </div>
 
             </div>
         `;
     });
 
-    // Grid コンテナを閉じる
     html += '</div>';
     container.innerHTML = html;
 }

@@ -19,4 +19,7 @@ public class MyPageOrderResponseDto {
     private String orderStatus;    // 注文ステータス (PAYMENT_COMPLETED)
     private String orderTime;      // 決済時間 (HH:mm 形式)
     private Integer itemCount;     // 注文した商品種類の数 (例: ~外 N件用)
+    
+    private String mainItemName;	   // メイン商品名 (例: 鮭弁当)
+    private String imageUrl;		   // メイン商品のサムネイル画像URL
 }
