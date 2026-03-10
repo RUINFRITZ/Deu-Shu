@@ -92,4 +92,36 @@
         WHERE id = #{id}
     </update>
 
+	<select id="findTodayPickupOrders" parameterType="Long" resultType="com.deushu.order.dto.MyPageOrderResponseDto">
+        SELECT 
+            o.id            AS orderId,
+            s.name          AS storeName,
+            o.total_price   AS totalPrice,
+            o.pickup_code   AS pickupCode,
+            o.order_status  AS orderStatus,
+            DATE_FORMAT(o.created_at, '%H:%i') AS orderTime,
+            (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) AS itemCount
+        FROM orders o
+        JOIN stores s ON o.store_id = s.id
+        WHERE o.member_id = #{memberId}
+          AND o.order_status = 'PAYMENT_COMPLETED'
+          AND DATE(o.created_at) = CURDATE()
+        ORDER BY o.created_at DESC
+    </select>
+	
+	<select id="findAllOrderHistory" parameterType="Long" resultType="com.deushu.order.dto.MyPageOrderResponseDto">
+        SELECT 
+            o.id            AS orderId,
+            s.name          AS storeName,
+            o.total_price   AS totalPrice,
+            o.pickup_code   AS pickupCode,
+            o.order_status  AS orderStatus,
+            DATE_FORMAT(o.created_at, '%Y-%m-%d %H:%i') AS orderTime,
+            (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) AS itemCount
+        FROM orders o
+        JOIN stores s ON o.store_id = s.id
+        WHERE o.member_id = #{memberId}
+        ORDER BY o.created_at DESC
+    </select>	
+	
 </mapper>
