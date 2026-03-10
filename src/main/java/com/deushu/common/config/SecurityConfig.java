@@ -32,6 +32,17 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+            // モダールベースのAjaxログインを使用するためCSRFを無効化
+            .csrf(AbstractHttpConfigurer::disable)
+            
+            // デフォルトのフォームログイン（/loginへの強制リダイレクト）を無効化
+            // これにより、非ログイン時に自動でログインページに飛ばされる現象を防ぐ
+            .formLogin(AbstractHttpConfigurer::disable)
+            
+            // REST APIおよび独自セッション管理用の設定
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+            )
             
             // エンドポイント別のアクセス権限制御
             .authorizeHttpRequests(auth -> auth
