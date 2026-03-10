@@ -631,22 +631,32 @@
 	    background: var(--error);
 	    color: #fff;
 	}
+	
 	/* =============================================
-	   Card Greed Layout (2 x n)
+	   Card Grid Layout (厳密な 2 x n 配列)
+	   データが1件だけでも、必ず左側に半分のサイズで配置されます。
 	============================================= */
 	.card-grid-container {
 	    display: grid;
-	    /* 최소 너비를 300px에서 250px로 줄여 화면이 약간 좁아도 무조건 2열이 유지되도록 함 */
-	    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-	    gap: 1.5rem; /* 카드 사이의 간격 */
+	    /* [核心] auto-fit を外し、強制的に「1fr 1fr (1:1の比率)」で2列に固定します */
+	    grid-template-columns: 1fr 1fr;
+	    gap: 1.5rem; /* カード間の余白 */
+	    align-items: stretch; /* カードの高さを揃える */
 	}
 	
-	/* 그리드 안에 들어갈 카드의 하단 여백 제거 (그리드 gap으로 대체) */
+	/* グリッド内のカードの余白調整 */
 	.card-grid-container .info-card {
 	    margin-bottom: 0 !important;
 	    display: flex;
 	    flex-direction: column;
-	    height: 100%; /* 부모 그리드 셀의 높이에 꽉 차게 설정 */
+	    height: 100%;
+	}
+	
+	/* モバイルレスポンシブ対応: 画面幅が狭い場合は1列(1fr)に変更 */
+	@media screen and (max-width: 768px) {
+	    .card-grid-container {
+	        grid-template-columns: 1fr;
+	    }
 	}
 	</style>
 </head>
