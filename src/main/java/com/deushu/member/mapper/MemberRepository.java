@@ -1,7 +1,12 @@
 package com.deushu.member.mapper;
 
-import com.deushu.member.domain.MemberEntity;
+import java.util.List;
+
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import com.deushu.member.domain.MemberEntity;
+import com.deushu.order.dto.MyPageOrderResponseDto;
 
 @Mapper
 public interface MemberRepository {
@@ -26,4 +31,15 @@ public interface MemberRepository {
 
     // 회원 탈퇴 (논리삭제 — deleted_at 설정)
     void withdraw(Long id);
+    
+    // =====================================================================
+    // マイページ：本日のピックアップ対象注文を照会
+    // =====================================================================
+    List<MyPageOrderResponseDto> findTodayPickupOrders(@Param("memberId") Long memberId);
+    
+    // =====================================================================
+    // マイページ：ユーザーの全注文履歴を照会 (ステータス・日付問わず)
+    /* 過去の履歴も含まれるため、年月日(YYYY-MM-DD)までフォーマットします */
+    // =====================================================================
+    List<MyPageOrderResponseDto> findAllOrderHistory(@Param("memberId") Long memberId);
 }
