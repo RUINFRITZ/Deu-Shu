@@ -11,14 +11,7 @@ public class StoreEntity {
    /**
     * 店舗カテゴリ種別 (stores.category と 1:1 対応)
     */
-   public enum StoreCategory {
-       BAKERY,
-       SUSHI,
-       LUNCHBOX,
-       CAFE,
-       SIDEDISH
-   }
-   
+
     /**
      * 店舗ID (PK)
      * DB: stores.id
@@ -47,7 +40,7 @@ public class StoreEntity {
      * 業種カテゴリENUM
      * DB: stores.category (BAKERY, SUSHI, LUNCHBOX, CAFE, SIDEDISH)
      */
-    private StoreCategory category;
+    private String category;
 
     /**
      * 物理住所
@@ -102,5 +95,12 @@ public class StoreEntity {
      * DB: stores.deleted_at
      */
     private LocalDateTime deletedAt;
+    
+    // V1.4 추가: 가게 알림/설명 (오너가 직접 입력)
+    private String info;
+
+    // verify-business API 반환용
+    private String lastName;
+    private String firstName;
     
 }

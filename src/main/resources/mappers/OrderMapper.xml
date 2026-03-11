@@ -43,5 +43,51 @@
             updated_at = NOW()
         WHERE id = #{id}
     </update>
+    
+     <!-- ══════════════════════════════════════════════════════════════
+         ★ 신규 추가 1: pickupCode로 주문 단건 조회
+         OrderQrService.verifyPickup() / completePickup() 에서 사용
+    ══════════════════════════════════════════════════════════════ -->
+    <select id="findOrderByPickupCode"
+            parameterType="string"
+            resultType="com.deushu.order.domain.OrderEntity">
+        SELECT
+            id,
+            member_id   AS memberId,
+            store_id    AS storeId,
+            order_status AS orderStatus,
+            total_price  AS totalPrice,
+            pickup_code  AS pickupCode,
+            created_at   AS createdAt,
+            updated_at   AS updatedAt
+        FROM orders
+        WHERE pickup_code = #{pickupCode}
+        LIMIT 1
+    </select>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         ★ 신규 추가 2: 주문 상품 종류 수 조회
+         OrderQrService.verifyPickup() 에서 사용
+    ══════════════════════════════════════════════════════════════ -->
+    <select id="countOrderItems"
+            parameterType="long"
+            resultType="int">
+        SELECT COUNT(*)
+        FROM order_items
+        WHERE order_id = #{orderId}
+    </select>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         ★ 신규 추가 3: pickupCode 기반 주문 상태 변경
+         OrderQrService.completePickup() 에서 사용
+         PAYMENT_COMPLETED → PICKUP_COMPLETED
+    ══════════════════════════════════════════════════════════════ -->
+    <update id="updateStatusByPickupCode">
+        UPDATE orders
+        SET
+            order_status = #{status},
+            updated_at   = NOW()
+        WHERE pickup_code = #{pickupCode}
+    </update>
 
 </mapper>

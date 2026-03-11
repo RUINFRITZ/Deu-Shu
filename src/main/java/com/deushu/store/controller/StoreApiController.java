@@ -99,17 +99,17 @@ public class StoreApiController {
             @RequestParam(name="minLat") Double minLat,
             @RequestParam(name="maxLat") Double maxLat,
             @RequestParam(name="minLng") Double minLng,
-            @RequestParam(name="maxLng") Double maxLng) {
+            @RequestParam(name="maxLng") Double maxLng,
+            @ModelAttribute StoreFilterRequest filter) {
 
         Bbox bbox = new Bbox(minLat, maxLat, minLng, maxLng);
         if (!bbox.isValid()) {
             return ResponseEntity.badRequest().build();
         }
 
-        List<StoreMapDto> pins = storeService.getStorePinsByBbox(bbox);
+        List<StoreMapDto> pins = storeService.getStorePinsByBbox(bbox, filter);
         return ResponseEntity.ok(pins);
     }
-
     // ──────────────────────────────────────────────────────────────
     // FR-M03  가게 상세 정보 조회
     // GET /api/stores/{storeId}
@@ -132,24 +132,6 @@ public class StoreApiController {
         return ResponseEntity.ok(detail);
     }
 
-    // ──────────────────────────────────────────────────────────────
-    // FR-M04  필터 기반 가게 검색
-    // GET /api/stores/filter?category=BAKERY&minDiscountRate=30&...
-    // ──────────────────────────────────────────────────────────────
-
-    /**
-     * 사용자 필터 적용 시 지도 핀 업데이트용.
-     * 캐시 미적용 — 사용자별 실시간 조회.
-     *
-     * @param filter 카테고리, 할인율, 가격대, 마감시간, 위치 반경 등
-     */
-    @GetMapping("/filter")
-    public ResponseEntity<List<StoreMapDto>> filterStores(
-            @ModelAttribute StoreFilterRequest filter) {
-
-        List<StoreMapDto> result = storeService.filterStores(filter);
-        return ResponseEntity.ok(result);
-    }
 
     // ──────────────────────────────────────────────────────────────
     // [요구사항 3] 무한 스크롤 페이징 (radius 파라미터 추가)
@@ -170,14 +152,11 @@ public class StoreApiController {
      */
     @GetMapping
     public ResponseEntity<NearbyStoreResponse> getStoresByPage(
-            @RequestParam(name="page",      defaultValue = "0")  int    page,
-            @RequestParam(name="size",      defaultValue = "10") int    size,
-            @RequestParam(name="centerLat", required = false)    Double centerLat,
-            @RequestParam(name="centerLng", required = false)    Double centerLng,
-            @RequestParam(name="radius",    required = false)    Double radius) {
+            @RequestParam(name="page",      defaultValue = "0")  int page,
+            @RequestParam(name="size",      defaultValue = "10") int size,
+            @ModelAttribute StoreFilterRequest filter) {
 
-        NearbyStoreResponse response =
-            storeService.getStoresByPage(page, size, centerLat, centerLng, radius);
+        NearbyStoreResponse response = storeService.getStoresByPage(page, size, filter);
         return ResponseEntity.ok(response);
     }
 

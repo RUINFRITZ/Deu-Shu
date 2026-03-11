@@ -85,14 +85,20 @@
                     <span id="headerUserName"></span>様
                     <i class="bi bi-chevron-down" style="font-size:0.7rem;margin-left:2px;"></i>
                 </button>
-                <div class="user-dropdown" id="userDropdown">
-                    <a th:href="@{/mypage}" class="user-dropdown-item">
-                        <i class="bi bi-person"></i> マイページ
-                    </a>
-                    <button class="user-dropdown-item" onclick="handleLogout()">
-                        <i class="bi bi-box-arrow-right"></i> ログアウト
-                    </button>
-                </div>
+				<div class="user-dropdown" id="userDropdown">
+				    <!-- 일반 회원 마이페이지 (항상 표시) -->
+				    <a th:href="@{/mypage}" class="user-dropdown-item" id="dropdownMypageLink">
+				        <i class="bi bi-person"></i> マイページ
+				    </a>
+				    <!-- オーナーページ — ROLE_OWNER/ROLE_ADMIN 이면 updateHeaderAuth() 에서 display:flex 로 변경 -->
+				    <a th:href="@{/owner}" class="user-dropdown-item" id="dropdownOwnerLink"
+				       style="display:none;">
+				        <i class="bi bi-shop"></i> オーナーページ
+				    </a>
+				    <button class="user-dropdown-item" onclick="handleLogout()">
+				        <i class="bi bi-box-arrow-right"></i> ログアウト
+				    </button>
+				</div>
             </div>
             <!-- 모바일용 햄버거 버튼 -->
             <button class="btn-menu">
@@ -405,7 +411,7 @@
             </label>
             <div class="verify-row">
                 <input type="text" class="form-input" id="bizRegBizNum"
-                    placeholder="例: 1234567890"
+                    placeholder="例: 123-45-67890"
                     oninput="clearBizVerify()">
                 <button class="btn-verify" onclick="verifyBusinessNumber()">照合</button>
             </div>

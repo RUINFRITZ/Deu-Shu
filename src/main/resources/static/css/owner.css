@@ -1,0 +1,679 @@
+@charset "UTF-8";
+
+/* =====================================================================
+   사업자 페이지 (ownerPage) 전용 CSS
+   style.css 의 CSS 변수(--primary, --charcoal 등)를 활용하므로
+   반드시 style.css 가 먼저 로드되어야 합니다.
+===================================================================== */
+
+/* ── 레이아웃 ──────────────────────────────────────────────────────── */
+
+.owner-wrap {
+    max-width: 1200px;
+    margin: 2.5rem auto;
+    padding: 0 2rem;
+    display: flex;
+    gap: 2rem;
+    align-items: flex-start;
+}
+
+/* ── 사이드바 ───────────────────────────────────────────────────────── */
+
+.owner-sidebar {
+    width: 230px;
+    flex-shrink: 0;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    position: sticky;
+    top: 5rem;
+}
+
+.sidebar-profile {
+    background: linear-gradient(135deg, #1a472a 0%, #2d6a4f 100%);
+    padding: 1.5rem 1.2rem;
+    text-align: center;
+    color: #fff;
+}
+
+.sidebar-profile .profile-icon {
+    font-size: 2.8rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.9;
+}
+
+.sidebar-profile .profile-name {
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.sidebar-profile .profile-email {
+    font-size: 0.75rem;
+    opacity: 0.8;
+    margin-top: 0.2rem;
+    word-break: break-all;
+}
+
+.sidebar-profile .profile-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.25);
+    border-radius: 20px;
+    font-size: 0.7rem;
+    padding: 0.15rem 0.7rem;
+    margin-top: 0.4rem;
+    letter-spacing: 0.05em;
+}
+
+.sidebar-nav {
+    padding: 0.5rem 0;
+}
+
+.sidebar-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    width: 100%;
+    padding: 0.85rem 1.2rem;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.875rem;
+    color: var(--charcoal);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    text-align: left;
+    text-decoration: none;
+}
+
+.sidebar-nav-item i {
+    font-size: 1rem;
+    width: 1.2rem;
+    color: var(--light-gray);
+    transition: color 0.15s;
+}
+
+.sidebar-nav-item:hover,
+.sidebar-nav-item.active {
+    background: #e8f5e9;
+    color: #1a472a;
+}
+
+.sidebar-nav-item:hover i,
+.sidebar-nav-item.active i {
+    color: #1a472a;
+}
+
+.sidebar-nav-item.active {
+    font-weight: 700;
+}
+
+.sidebar-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 0.4rem 0;
+}
+
+/* ── 메인 콘텐츠 ────────────────────────────────────────────────────── */
+
+.owner-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.owner-section {
+    display: none;
+}
+
+.owner-section.active {
+    display: block;
+}
+
+/* 섹션 제목 */
+.section-title {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--charcoal);
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #2d6a4f;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* ── 카드 공통 ──────────────────────────────────────────────────────── */
+
+.info-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.8rem;
+    margin-bottom: 1.2rem;
+}
+
+.info-card-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--light-gray);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 1.2rem;
+}
+
+/* ── 폼 공통 ────────────────────────────────────────────────────────── */
+
+.fg {
+    margin-bottom: 1rem;
+}
+
+.fg label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--mid-gray);
+    margin-bottom: 0.35rem;
+}
+
+.fg input,
+.fg select,
+.fg textarea {
+    width: 100%;
+    padding: 0.6rem 0.9rem;
+    border: 1px solid var(--border-input);
+    border-radius: 8px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.9rem;
+    color: var(--charcoal);
+    background: #fff;
+    transition: border-color 0.2s;
+    outline: none;
+}
+
+.fg input:focus,
+.fg select:focus,
+.fg textarea:focus {
+    border-color: #2d6a4f;
+    box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.12);
+}
+
+.fg textarea {
+    resize: vertical;
+    min-height: 90px;
+}
+
+/* 필수 표시 */
+.required {
+    color: var(--error);
+    margin-left: 0.15rem;
+}
+
+/* 2열 그리드 */
+.two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+/* 3열 그리드 */
+.three-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+}
+
+/* 주소 입력 + 새로고침 버튼 */
+.address-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.address-row input {
+    flex: 1;
+}
+
+.btn-refresh {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.6rem 1rem;
+    background: #fff;
+    border: 1px solid #2d6a4f;
+    border-radius: 8px;
+    color: #2d6a4f;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+}
+
+.btn-refresh:hover {
+    background: #2d6a4f;
+    color: #fff;
+}
+
+.btn-refresh i {
+    font-size: 0.95rem;
+}
+
+/* ── 버튼 ───────────────────────────────────────────────────────────── */
+
+.btn-primary {
+    background: #2d6a4f;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.7rem 1.5rem;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.btn-primary:hover {
+    background: #1a472a;
+}
+
+.btn-outline {
+    background: #fff;
+    color: #2d6a4f;
+    border: 1px solid #2d6a4f;
+    border-radius: 8px;
+    padding: 0.6rem 1.2rem;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.btn-outline:hover {
+    background: #2d6a4f;
+    color: #fff;
+}
+
+.btn-danger-sm {
+    background: none;
+    border: 1px solid var(--error);
+    color: var(--error);
+    border-radius: 6px;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.btn-danger-sm:hover {
+    background: var(--error);
+    color: #fff;
+}
+
+/* ── 상품 카드 그리드 ────────────────────────────────────────────────── */
+
+.item-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.item-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+    position: relative;
+}
+
+.item-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+
+.item-card-img {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    background: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--light-gray);
+    font-size: 2rem;
+}
+
+.item-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.item-card-body {
+    padding: 1rem;
+}
+
+.item-card-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--charcoal);
+    margin-bottom: 0.4rem;
+}
+
+.item-card-price {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.4rem;
+}
+
+.price-original {
+    font-size: 0.8rem;
+    color: var(--light-gray);
+    text-decoration: line-through;
+}
+
+.price-discount {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.item-badge {
+    display: inline-block;
+    background: #FFF3E0;
+    color: var(--primary);
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.1rem 0.4rem;
+}
+
+.item-meta {
+    font-size: 0.78rem;
+    color: var(--mid-gray);
+    margin-top: 0.3rem;
+}
+
+.item-card-actions {
+    display: flex;
+    gap: 0.4rem;
+    padding: 0.7rem 1rem;
+    border-top: 1px solid #f3f4f6;
+}
+
+/* ── 가게 사진 그리드 ────────────────────────────────────────────────── */
+
+.photo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.photo-item {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    aspect-ratio: 1;
+    background: #f3f4f6;
+}
+
+.photo-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.photo-delete {
+    position: absolute;
+    top: 0.3rem;
+    right: 0.3rem;
+    background: rgba(0,0,0,0.55);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+}
+
+.photo-delete:hover {
+    background: var(--error);
+}
+
+.photo-add-box {
+    border: 2px dashed var(--border-input);
+    border-radius: 10px;
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    color: var(--light-gray);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+}
+
+.photo-add-box:hover {
+    border-color: #2d6a4f;
+    color: #2d6a4f;
+}
+
+.photo-add-box i {
+    font-size: 1.5rem;
+}
+
+/* ── 매출 정산 ──────────────────────────────────────────────────────── */
+
+.sales-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.sales-stat-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.2rem;
+    text-align: center;
+}
+
+.sales-stat-label {
+    font-size: 0.78rem;
+    color: var(--mid-gray);
+    margin-bottom: 0.4rem;
+}
+
+.sales-stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--charcoal);
+}
+
+.sales-stat-value.revenue {
+    color: #2d6a4f;
+}
+
+.sales-refresh-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.sales-refresh-note {
+    font-size: 0.78rem;
+    color: var(--light-gray);
+}
+
+/* 일별 매출 테이블 */
+.sales-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.sales-table th,
+.sales-table td {
+    padding: 0.65rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.sales-table th {
+    background: #f9fafb;
+    font-weight: 700;
+    color: var(--mid-gray);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.sales-table td:last-child {
+    text-align: right;
+    font-weight: 600;
+    color: #2d6a4f;
+}
+
+/* ── 모달 (상품등록) ─────────────────────────────────────────────────── */
+
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.modal-overlay.open {
+    display: flex;
+}
+
+.modal-box {
+    background: #fff;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 560px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    animation: slideUp 0.25s ease;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(24px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.4rem 1.6rem 1rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.modal-header h3 {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: var(--light-gray);
+    transition: color 0.15s;
+}
+
+.modal-close:hover {
+    color: var(--error);
+}
+
+.modal-body {
+    padding: 1.4rem 1.6rem;
+}
+
+/* ── 토스트 ─────────────────────────────────────────────────────────── */
+
+.owner-toast-wrap {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    pointer-events: none;
+}
+
+.owner-toast {
+    background: #1a472a;
+    color: #fff;
+    padding: 0.8rem 1.4rem;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.3s, transform 0.3s;
+    pointer-events: auto;
+}
+
+.owner-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.owner-toast.error {
+    background: var(--error);
+}
+
+/* ── 반응형 ─────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+    .owner-wrap {
+        flex-direction: column;
+        padding: 0 1rem;
+        margin: 1.5rem auto;
+    }
+
+    .owner-sidebar {
+        width: 100%;
+        position: static;
+    }
+
+    .two-col,
+    .three-col {
+        grid-template-columns: 1fr;
+    }
+
+    .sales-stat-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}

@@ -129,7 +129,6 @@
         AND i.deleted_at IS NULL
         AND i.stock      > 0
         AND i.expire_at  > NOW()
-        AND DATE(i.expire_at) = CURDATE()
     </sql>
 
     <!-- GROUP BY + 집계 SELECT 절 -->
@@ -185,120 +184,75 @@
          SW(minLat,minLng) ~ NE(maxLat,maxLng) 사각형 범위 내 가게 반환.
          캐시 미적용 - 지도 moveend 이벤트마다 실시간 조회.
     ══════════════════════════════════════════════════════════════ -->
-    <select id="findStorePinsByBbox" resultMap="StoreMapDtoResultMap">
-        SELECT
-            s.id,
-            s.name,
-            s.lat,
-            s.lng,
-            s.category,
-            TIME_FORMAT(s.close_time, '%H:%i') AS close_time,
-            s.thumbnail_url,
-            SUM(i.stock)          AS total_stock,
-            MIN(i.discount_price) AS min_discount_price,
-            MIN(i.original_price) AS min_original_price,
-            MAX(i.discount_rate)  AS max_discount_rate,
-            NULL                  AS distance_km
-        FROM stores s
-        INNER JOIN items i ON i.store_id = s.id
-        WHERE
-            <include refid="baseActiveCondition"/>
-            <!-- Bbox 범위 조건: 사각형 내 위/경도 필터 -->
-            AND s.lat BETWEEN #{bbox.minLat} AND #{bbox.maxLat}
-            AND s.lng BETWEEN #{bbox.minLng} AND #{bbox.maxLng}
-        GROUP BY
-            s.id, s.name, s.lat, s.lng, s.category, s.close_time, s.thumbnail_url
-        ORDER BY
-            total_stock ASC, min_discount_price ASC
-    </select>
-
-
-    <!-- ══════════════════════════════════════════════════════════════
-         FR-M04  필터 기반 가게 핀 검색 (동적 SQL)
-    ══════════════════════════════════════════════════════════════ -->
-    <select id="findStorePinsFiltered" resultMap="StoreMapDtoResultMap">
-        SELECT
-            s.id,
-            s.name,
-            s.lat,
-            s.lng,
-            s.category,
-            TIME_FORMAT(s.close_time, '%H:%i') AS close_time,
-            s.thumbnail_url,
-            SUM(i.stock)          AS total_stock,
-            MIN(i.discount_price) AS min_discount_price,
-            MIN(i.original_price) AS min_original_price,
-            MAX(i.discount_rate)  AS max_discount_rate,
-            <choose>
-                <when test="f.centerLat != null and f.centerLng != null">
-                    (6371 * ACOS(
-                        COS(RADIANS(#{f.centerLat})) * COS(RADIANS(s.lat)) *
-                        COS(RADIANS(s.lng) - RADIANS(#{f.centerLng})) +
-                        SIN(RADIANS(#{f.centerLat})) * SIN(RADIANS(s.lat))
-                    ))
-                </when>
-                <otherwise>NULL</otherwise>
-            </choose>
-            AS distance_km
-        FROM stores s
-        INNER JOIN items i ON i.store_id = s.id
-        <where>
-            s.deleted_at IS NULL
-            AND i.deleted_at IS NULL
-            AND i.stock     > 0
-            AND i.expire_at > NOW()
-            AND DATE(i.expire_at) = CURDATE()
-
-            <!-- 카테고리 필터 -->
-            <if test="f.category != null and f.category != ''">
-                AND s.category = #{f.category}
-            </if>
-
-            <!-- 최소 할인율 -->
-            <if test="f.minDiscountRate != null">
-                AND i.discount_rate >= #{f.minDiscountRate}
-            </if>
-
-            <!-- 최대 할인율 -->
-            <if test="f.maxDiscountRate != null">
-                AND i.discount_rate &lt;= #{f.maxDiscountRate}
-            </if>
-
-            <!-- 최대 할인가 -->
-            <if test="f.maxDiscountPrice != null">
-                AND i.discount_price &lt;= #{f.maxDiscountPrice}
-            </if>
-
-            <!-- 마감 N분 이내 -->
-            <if test="f.expireWithinMinutes != null">
-                AND i.expire_at &lt;= DATE_ADD(NOW(), INTERVAL #{f.expireWithinMinutes} MINUTE)
-            </if>
-
-            <!-- 반경 필터 -->
-            <if test="f.centerLat != null and f.centerLng != null and f.radius != null">
-                AND (6371 * ACOS(
-                        COS(RADIANS(#{f.centerLat})) * COS(RADIANS(s.lat)) *
-                        COS(RADIANS(s.lng) - RADIANS(#{f.centerLng})) +
-                        SIN(RADIANS(#{f.centerLat})) * SIN(RADIANS(s.lat))
-                     )) &lt;= #{f.radius}
-            </if>
-        </where>
-        GROUP BY
-            s.id, s.name, s.lat, s.lng, s.category, s.close_time, s.thumbnail_url
-        <choose>
-            <when test="f.sortBy == 'discountRate'">
-                ORDER BY max_discount_rate DESC, total_stock ASC
-            </when>
-            <when test="f.sortBy == 'distance' and f.centerLat != null">
-                ORDER BY distance_km ASC, total_stock ASC
-            </when>
-            <otherwise>
-                <!-- 기본: 재고 적은 순 (마감 임박 우선) -->
-                ORDER BY total_stock ASC, min_discount_price ASC
-            </otherwise>
-        </choose>
-    </select>
-
+	 <select id="findStorePinsByBboxFiltered" resultMap="StoreMapDtoResultMap">
+	    SELECT
+	        s.id,
+	        s.name,
+	        s.lat,
+	        s.lng,
+	        s.category,
+	        TIME_FORMAT(s.close_time, '%H:%i') AS close_time,
+	        s.thumbnail_url,
+	        SUM(i.stock)          AS total_stock,
+	        MIN(i.discount_price) AS min_discount_price,
+	        MIN(i.original_price) AS min_original_price,
+	        MAX(i.discount_rate)  AS max_discount_rate,
+	        <choose>
+	            <when test="f.centerLat != null and f.centerLng != null">
+	                (6371 * ACOS(
+	                    COS(RADIANS(#{f.centerLat})) * COS(RADIANS(s.lat)) *
+	                    COS(RADIANS(s.lng) - RADIANS(#{f.centerLng})) +
+	                    SIN(RADIANS(#{f.centerLat})) * SIN(RADIANS(s.lat))
+	                ))
+	            </when>
+	            <otherwise>NULL</otherwise>
+	        </choose>
+	        AS distance_km
+	    FROM stores s
+	    INNER JOIN items i ON i.store_id = s.id
+	    <where>
+	        s.deleted_at IS NULL
+	        AND i.deleted_at IS NULL
+	        AND i.stock > 0
+	        AND i.expire_at > NOW()
+	
+	        AND s.lat BETWEEN #{bbox.minLat} AND #{bbox.maxLat}
+	        AND s.lng BETWEEN #{bbox.minLng} AND #{bbox.maxLng}
+	
+	        <if test="f.category != null and f.category != ''">
+	            AND s.category = #{f.category}
+	        </if>
+	
+	        <if test="f.minDiscountRate != null">
+	            AND i.discount_rate >= #{f.minDiscountRate}
+	        </if>
+	
+	        <if test="f.maxDiscountRate != null">
+	            AND i.discount_rate &lt;= #{f.maxDiscountRate}
+	        </if>
+	
+	        <if test="f.maxDiscountPrice != null">
+	            AND i.discount_price &lt;= #{f.maxDiscountPrice}
+	        </if>
+	
+	        <if test="f.expireWithinMinutes != null">
+	            AND i.expire_at &lt;= DATE_ADD(NOW(), INTERVAL #{f.expireWithinMinutes} MINUTE)
+	        </if>
+	    </where>
+	    GROUP BY
+	        s.id, s.name, s.lat, s.lng, s.category, s.close_time, s.thumbnail_url
+	    <choose>
+	        <when test="f.sortBy == 'discountRate'">
+	            ORDER BY max_discount_rate DESC, total_stock ASC
+	        </when>
+	        <when test="f.sortBy == 'distance' and f.centerLat != null and f.centerLng != null">
+	            ORDER BY distance_km ASC, total_stock ASC
+	        </when>
+	        <otherwise>
+	            ORDER BY total_stock ASC, min_discount_price ASC
+	        </otherwise>
+	    </choose>
+	</select>
 
     <!-- ══════════════════════════════════════════════════════════════
          FR-M03  가게 상세 조회 (가게 기본 정보 + 집계)
@@ -369,55 +323,103 @@
          [요구사항 3] 무한 스크롤 페이징 (radius 필터 추가)
          radius가 null이 아닌 경우 centerLat/Lng 기준 반경 내 가게만 조회.
     ══════════════════════════════════════════════════════════════ -->
-    <select id="findStoresByPage" resultMap="StoreMapDtoResultMap">
-        SELECT
-            <include refid="storeAggSelect"/>,
-            <choose>
-                <when test="centerLat != null and centerLng != null">
-                    (6371 * ACOS(
-                        COS(RADIANS(#{centerLat})) * COS(RADIANS(s.lat)) *
-                        COS(RADIANS(s.lng) - RADIANS(#{centerLng})) +
-                        SIN(RADIANS(#{centerLat})) * SIN(RADIANS(s.lat))
-                    ))
-                </when>
-                <otherwise>NULL</otherwise>
-            </choose>
-            AS distance_km
-        FROM stores s
-        INNER JOIN items i ON i.store_id = s.id
-        WHERE
-            <include refid="baseActiveCondition"/>
-            <!-- [요구사항 3] 반경 필터: 우측 리스트도 동일 반경 내 가게만 -->
-            <include refid="radiusCondition"/>
-        GROUP BY
-            s.id, s.name, s.lat, s.lng, s.category, s.close_time, s.thumbnail_url
-        ORDER BY
-            total_stock ASC, min_discount_price ASC
-        LIMIT  #{limit}
-        OFFSET #{offset}
-    </select>
-
-    <!-- [요구사항 3] 무한 스크롤 전체 건수 (radius 필터 포함) -->
-    <select id="countActiveStores" resultType="long">
-        SELECT COUNT(DISTINCT s.id)
-        FROM   stores s
-        INNER JOIN items i ON i.store_id = s.id
-        WHERE
-            s.deleted_at IS NULL
-            AND i.deleted_at IS NULL
-            AND i.stock      > 0
-            AND i.expire_at  > NOW()
-            AND DATE(i.expire_at) = CURDATE()
-            <!-- radius 있을 때만 반경 조건 추가 -->
-            <if test="centerLat != null and centerLng != null and radius != null">
-                AND (6371 * ACOS(
-                        COS(RADIANS(#{centerLat})) * COS(RADIANS(s.lat)) *
-                        COS(RADIANS(s.lng) - RADIANS(#{centerLng})) +
-                        SIN(RADIANS(#{centerLat})) * SIN(RADIANS(s.lat))
-                     )) &lt;= #{radius}
-            </if>
-    </select>
-
+	   <select id="findStoresByPageFiltered" resultMap="StoreMapDtoResultMap">
+	    SELECT
+	        <include refid="storeAggSelect"/>,
+	        <choose>
+	            <when test="f.centerLat != null and f.centerLng != null">
+	                (6371 * ACOS(
+	                    COS(RADIANS(#{f.centerLat})) * COS(RADIANS(s.lat)) *
+	                    COS(RADIANS(s.lng) - RADIANS(#{f.centerLng})) +
+	                    SIN(RADIANS(#{f.centerLat})) * SIN(RADIANS(s.lat))
+	                ))
+	            </when>
+	            <otherwise>NULL</otherwise>
+	        </choose>
+	        AS distance_km
+	    FROM stores s
+	    INNER JOIN items i ON i.store_id = s.id
+	    <where>
+	        s.deleted_at IS NULL
+	        AND i.deleted_at IS NULL
+	        AND i.stock > 0
+	        AND i.expire_at > NOW()
+	
+	        <if test="f.category != null and f.category != ''">
+	            AND s.category = #{f.category}
+	        </if>
+	        <if test="f.minDiscountRate != null">
+	            AND i.discount_rate >= #{f.minDiscountRate}
+	        </if>
+	        <if test="f.maxDiscountRate != null">
+	            AND i.discount_rate &lt;= #{f.maxDiscountRate}
+	        </if>
+	        <if test="f.maxDiscountPrice != null">
+	            AND i.discount_price &lt;= #{f.maxDiscountPrice}
+	        </if>
+	        <if test="f.expireWithinMinutes != null">
+	            AND i.expire_at &lt;= DATE_ADD(NOW(), INTERVAL #{f.expireWithinMinutes} MINUTE)
+	        </if>
+	        <if test="f.centerLat != null and f.centerLng != null and f.radius != null">
+	            AND (6371 * ACOS(
+	                    COS(RADIANS(#{f.centerLat})) * COS(RADIANS(s.lat)) *
+	                    COS(RADIANS(s.lng) - RADIANS(#{f.centerLng})) +
+	                    SIN(RADIANS(#{f.centerLat})) * SIN(RADIANS(s.lat))
+	                 )) &lt;= #{f.radius}
+	        </if>
+	    </where>
+	    GROUP BY
+	        s.id, s.name, s.lat, s.lng, s.category, s.close_time, s.thumbnail_url
+	    <choose>
+	        <when test="f.sortBy == 'discountRate'">
+	            ORDER BY max_discount_rate DESC, total_stock ASC
+	        </when>
+	        <when test="f.sortBy == 'distance' and f.centerLat != null and f.centerLng != null">
+	            ORDER BY distance_km ASC, total_stock ASC
+	        </when>
+	        <otherwise>
+	            ORDER BY total_stock ASC, min_discount_price ASC
+	        </otherwise>
+	    </choose>
+	    LIMIT #{limit}
+	    OFFSET #{offset}
+	</select>
+	
+	<select id="countActiveStoresFiltered" resultType="long">
+	    SELECT COUNT(DISTINCT s.id)
+	    FROM stores s
+	    INNER JOIN items i ON i.store_id = s.id
+	    <where>
+	        s.deleted_at IS NULL
+	        AND i.deleted_at IS NULL
+	        AND i.stock > 0
+	        AND i.expire_at > NOW()
+	
+	        <if test="f.category != null and f.category != ''">
+	            AND s.category = #{f.category}
+	        </if>
+	        <if test="f.minDiscountRate != null">
+	            AND i.discount_rate >= #{f.minDiscountRate}
+	        </if>
+	        <if test="f.maxDiscountRate != null">
+	            AND i.discount_rate &lt;= #{f.maxDiscountRate}
+	        </if>
+	        <if test="f.maxDiscountPrice != null">
+	            AND i.discount_price &lt;= #{f.maxDiscountPrice}
+	        </if>
+	        <if test="f.expireWithinMinutes != null">
+	            AND i.expire_at &lt;= DATE_ADD(NOW(), INTERVAL #{f.expireWithinMinutes} MINUTE)
+	        </if>
+	        <if test="f.centerLat != null and f.centerLng != null and f.radius != null">
+	            AND (6371 * ACOS(
+	                    COS(RADIANS(#{f.centerLat})) * COS(RADIANS(s.lat)) *
+	                    COS(RADIANS(s.lng) - RADIANS(#{f.centerLng})) +
+	                    SIN(RADIANS(#{f.centerLat})) * SIN(RADIANS(s.lat))
+	                 )) &lt;= #{f.radius}
+	        </if>
+	    </where>
+	</select>
+	
 
     <!-- ══════════════════════════════════════════════════════════════
          Favorites (즐겨찾기) 토글용 쿼리
@@ -445,5 +447,143 @@
         WHERE member_id = #{memberId}
           AND store_id  = #{storeId}
     </delete>
+    
+     <!-- 오너 전용 ResultMap: StoreEntity (snake_case → camelCase 매핑) -->
+    <resultMap id="storeEntityResultMap" type="com.deushu.store.domain.StoreEntity">
+        <id     property="id"             column="id"/>
+        <result property="ownerId"        column="owner_id"/>
+        <result property="name"           column="name"/>
+        <result property="businessNumber" column="business_number"/>
+        <result property="category"       column="category"/>
+        <result property="address"        column="address"/>
+        <result property="lat"            column="lat"/>
+        <result property="lng"            column="lng"/>
+        <result property="openTime"       column="open_time"/>
+        <result property="closeTime"      column="close_time"/>
+        <result property="thumbnailUrl"   column="thumbnail_url"/>
+        <result property="info"           column="info"/>
+        <result property="createdAt"      column="created_at"/>
+        <result property="updatedAt"      column="updated_at"/>
+        <result property="deletedAt"      column="deleted_at"/>
+        <result property="lastName"  column="last_name"/>
+		<result property="firstName" column="first_name"/>
+    </resultMap>
 
+    <!-- store_images ResultMap -->
+    <resultMap id="storeImageResultMap" type="com.deushu.store.dto.StoreImageDto">
+        <id     property="id"        column="id"/>
+        <result property="storeId"   column="store_id"/>
+        <result property="imageUrl"  column="image_url"/>
+        <result property="sortOrder" column="sort_order"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <!-- ── 오너 가게 조회 ─────────────────────────────────────────── -->
+
+    <!-- 오너 ID로 가게 조회 (논리삭제 제외, 최신 1건) -->
+    <select id="findByOwnerId" parameterType="long" resultMap="storeEntityResultMap">
+        SELECT id, owner_id, name, business_number, category,
+               address, lat, lng, open_time, close_time,
+               thumbnail_url, info, created_at, updated_at, deleted_at
+        FROM stores
+        WHERE owner_id  = #{ownerId}
+          AND deleted_at IS NULL
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
+
+    <!-- 가게 ID로 단건 조회 (오너용) -->
+    <select id="findStoreById" parameterType="long" resultMap="storeEntityResultMap">
+        SELECT id, owner_id, name, business_number, category,
+               address, lat, lng, open_time, close_time,
+               thumbnail_url, info, created_at, updated_at, deleted_at
+        FROM stores
+        WHERE id        = #{storeId}
+          AND deleted_at IS NULL
+    </select>
+
+    <!-- ── 가게 등록 / 수정 / 삭제 ───────────────────────────────── -->
+
+    <!-- 기존 insertStore + update 두 쿼리 삭제하고 아래 하나로 교체 -->
+	<insert id="upsertStore" parameterType="com.deushu.store.domain.StoreEntity"
+	        useGeneratedKeys="true" keyProperty="id">
+	    INSERT INTO stores (owner_id, name, business_number, category,
+	                        address, lat, lng, open_time, close_time,
+	                        thumbnail_url, info)
+	    VALUES (#{ownerId}, #{name}, #{businessNumber}, #{category},
+	            #{address}, #{lat}, #{lng}, #{openTime}, #{closeTime},
+	            #{thumbnailUrl}, #{info})
+	    ON DUPLICATE KEY UPDATE
+	        name          = VALUES(name),
+	        category      = VALUES(category),
+	        address       = VALUES(address),
+	        lat           = VALUES(lat),
+	        lng           = VALUES(lng),
+	        open_time     = VALUES(open_time),
+	        close_time    = VALUES(close_time),
+	        thumbnail_url = VALUES(thumbnail_url),
+	        info          = VALUES(info),
+	        updated_at    = NOW()
+	</insert>
+
+    <!-- 주소·위경도만 단독 업데이트 (다른 컬럼 보호) -->
+    <update id="updateAddress" parameterType="com.deushu.store.domain.StoreEntity">
+        UPDATE stores
+        SET address    = #{address},
+            lat        = #{lat},
+            lng        = #{lng},
+            updated_at = NOW()
+        WHERE id       = #{id}
+          AND owner_id = #{ownerId}
+          AND deleted_at IS NULL
+    </update>
+
+    <!-- 가게 논리삭제 (폐업 처리) -->
+    <update id="delete" parameterType="long">
+        UPDATE stores
+        SET deleted_at = NOW()
+        WHERE id = #{storeId}
+    </update>
+
+    <!-- ── store_images 관리 ──────────────────────────────────────── -->
+
+    <!-- 가게 추가 사진 목록 (sort_order 오름차순) -->
+    <select id="findImagesByStoreId" parameterType="long" resultMap="storeImageResultMap">
+        SELECT id, store_id, image_url, sort_order, created_at
+        FROM store_images
+        WHERE store_id = #{storeId}
+        ORDER BY sort_order ASC
+    </select>
+
+    <!-- 가게 사진 추가 -->
+    <insert id="insertImage" parameterType="com.deushu.store.dto.StoreImageDto"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO store_images (store_id, image_url, sort_order)
+        VALUES (#{storeId}, #{imageUrl}, #{sortOrder})
+    </insert>
+
+    <!-- 가게 사진 삭제 (storeId 조건으로 타 가게 이미지 삭제 방지) -->
+    <delete id="deleteImage">
+        DELETE FROM store_images
+        WHERE id       = #{imageId}
+          AND store_id = #{storeId}
+    </delete>
+
+
+    <!-- ── mock_business_registry 조회 ───────────────────────────── -->
+
+    <!-- 사업자번호로 주소 + 위경도 조회 (오너 회원가입 검증 + 주소·위경도 자동입력) -->
+    <!-- 사업자번호로 주소 조회 (위경도는 Nominatim 으로 별도 처리) -->
+    <select id="findBusinessByNumber" parameterType="String" resultMap="storeEntityResultMap">
+        SELECT business_number,
+               store_name  AS name,
+               address,
+               last_name,
+               first_name
+        FROM mock_business_registry
+        WHERE business_number = #{businessNumber}
+          AND status          = 'ACTIVE'
+    </select>
+    
+    
 </mapper>

@@ -32,4 +32,28 @@ public interface OrderMapper {
      * 決済成功時、またはキャンセル時のみ呼び出されます。
      */
     void updateOrderStatus(OrderEntity order);
+    
+    // ════════════════════════════════════════════════════════════════
+    // ★ 신규 추가 — QR / 픽업 확인용 (기존 메서드와 충돌 없음)
+    // ════════════════════════════════════════════════════════════════
+
+    /**
+     * pickupCode(UUID)로 주문 단건 조회.
+     * 오너 픽업 확인 시 사용.
+     */
+    OrderEntity findOrderByPickupCode(@Param("pickupCode") String pickupCode);
+
+    /**
+     * 주문 상품 종류 수 조회 (order_items 건수).
+     * 오너 픽업 확인 화면에서 몇 가지 상품인지 표시.
+     */
+    int countOrderItems(@Param("orderId") Long orderId);
+
+    /**
+     * pickupCode 기반 상태 변경.
+     * PAYMENT_COMPLETED → PICKUP_COMPLETED 처리.
+     */
+    void updateStatusByPickupCode(@Param("pickupCode") String pickupCode,
+                                  @Param("status")     String status);
+    
 }

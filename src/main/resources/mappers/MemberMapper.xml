@@ -92,4 +92,12 @@
         WHERE id = #{id}
     </update>
 
+	<!-- 사업자 회원가입 (ROLE_OWNER 고정) -->
+	<insert id="insertOwner" parameterType="com.deushu.member.domain.MemberEntity">
+	    INSERT INTO members (email, password, last_name, first_name,
+	                         last_name_kana, first_name_kana, phone, role)
+	    VALUES (#{email}, #{password}, #{lastName}, #{firstName},
+	            #{lastNameKana}, #{firstNameKana}, #{phone}, 'ROLE_OWNER')
+	</insert>
+
 </mapper>
