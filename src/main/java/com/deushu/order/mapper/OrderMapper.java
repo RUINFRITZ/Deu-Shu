@@ -44,5 +44,11 @@ public interface OrderMapper {
     List<MyOrderResponse> findMyCompletedOrders(@Param("memberId") Long memberId,
             @Param("storeId")  Long storeId);
     
-    
+    // =====================================================================
+    // スケジューラー用: 未決済状態(PAYMENT_PENDING)で指定時間経過した注文を照会
+    // =====================================================================
+    List<OrderEntity> findPendingOrdersOlderThan(@Param("minutes") int minutes);
+
+    // ロールバック用: キャンセルされた注文に含まれる商品の在庫を復元(+quantity)
+    void restoreItemStock(@Param("orderId") Long orderId);
 }

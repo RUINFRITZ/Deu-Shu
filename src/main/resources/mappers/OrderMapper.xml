@@ -107,5 +107,19 @@
 		ORDER BY o.created_at DESC
 	</select>
     
+    <select id="findPendingOrdersOlderThan" resultType="com.deushu.order.domain.OrderEntity">
+        SELECT *
+        FROM orders
+        WHERE order_status = 'PAYMENT_PENDING'
+          AND created_at &lt;= DATE_SUB(NOW(), INTERVAL #{minutes} MINUTE)
+    </select>
+
+    <update id="restoreItemStock">
+        UPDATE items i
+        JOIN order_items oi ON i.id = oi.item_id
+        SET i.stock = i.stock + oi.quantity,
+            i.updated_at = NOW()
+        WHERE oi.order_id = #{orderId}
+    </update>
 
 </mapper>

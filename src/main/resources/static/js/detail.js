@@ -707,7 +707,7 @@ async function processCheckout(cartItems, totalPrice, storeId) {
     // 0. 비로그인 방어
     const userNameElement = document.getElementById('headerUserName');
     if (!userNameElement || !userNameElement.innerText) {
-        showToast('決済を行うにはログインが必要です。', 'error');
+        showToast(' * 決済を行うにはログインが必要です。', 'error');
         openModal('user');
         return;
     }
@@ -719,10 +719,26 @@ async function processCheckout(cartItems, totalPrice, storeId) {
             headers: { 'Content-Type': 'application/json' },
             body:    JSON.stringify({ storeId, cartItems, totalPrice })
         });
+		
+		// HTTP 4xx, 5xx エラー (在庫不足、販売終了など) のハンドリング
+        if (!orderResponse.ok) {
+            const errorData = await orderResponse.json();
+            const errorMessage = errorData.message || '既に他のお客様が購入したか、在庫が不足しています。';
+            
+            // 1. ユーザーに在庫変動を警告(Alert)
+            alert('⚠️ ' + errorMessage);
+            
+            // 2. 最新の在庫状態を画面に反映させるためにページを強制リロード
+            window.location.reload();
+            return;
+        }
+				
         const orderData = await orderResponse.json();
 
+		// ApiResponse の isSuccess が false の場合 (カスタム例外処理のフォールバック)
         if (!orderData.isSuccess) {
-            showToast(orderData.message || '注文の生成に失敗しました。', 'error');
+            alert('⚠️ ' + (orderData.message || '注文の生成に失敗しました。'));
+            window.location.reload();
             return;
         }
 

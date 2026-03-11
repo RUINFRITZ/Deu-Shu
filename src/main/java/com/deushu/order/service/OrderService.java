@@ -1,18 +1,24 @@
 package com.deushu.order.service;
 
-import com.deushu.order.domain.ItemEntity;
-import com.deushu.order.domain.OrderEntity;
-import com.deushu.order.domain.OrderItemEntity;
-import com.deushu.order.dto.OrderCreateRequestDto;
-import com.deushu.order.mapper.OrderMapper;
-import com.deushu.order.dto.MyOrderResponse;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.deushu.order.domain.ItemEntity;
+import com.deushu.order.domain.OrderEntity;
+import com.deushu.order.domain.OrderItemEntity;
+import com.deushu.order.dto.MyOrderResponse;
+import com.deushu.order.dto.OrderCreateRequestDto;
+import com.deushu.order.mapper.OrderMapper;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
@@ -65,13 +71,15 @@ public class OrderService {
             throw new IllegalStateException("決済金額が一致しません。画面を更新して再度お試しください。");
         }
 
+        String shortPickupCode = generateShortPickupCode();
+        
         // 3. 注文(親)データの生成
         OrderEntity newOrder = OrderEntity.builder()
                 .memberId(memberId)
                 .storeId(requestDto.getStoreId())
                 .orderStatus("PAYMENT_PENDING") // まずは「決済待機」状態で保存
                 .totalPrice(calculatedTotalPrice)
-                .pickupCode(UUID.randomUUID().toString()) // 受け取り用のユニークなUUID生成
+                .pickupCode(shortPickupCode)
                 .build();
         
         orderMapper.insertOrder(newOrder); // 実行後、newOrder.getId() にPKがセットされる
@@ -82,16 +90,37 @@ public class OrderService {
         }
         orderMapper.insertOrderItems(orderItems);
 
-        log.info("注文生成完了(待機状態): 注文ID={}, ユーザーID={}, 金額={}", newOrder.getId(), memberId, calculatedTotalPrice);
+        log.info("注文生成完了(待機状態): 注文ID={}, ユーザーID={}, 金額={}, ピックアップコード={}", 
+                newOrder.getId(), memberId, calculatedTotalPrice, shortPickupCode);
         
         return newOrder.getId();
     }
     
     /*
-     * 내 결제 완료 주문 목록 조회
+     * 私の支払い完了 注文リストを確認
      */
     public List<MyOrderResponse> getMyCompletedOrders(Long memberId, Long storeId) {
         return orderMapper.findMyCompletedOrders(memberId, storeId);
     }
     
+    // =====================================================================
+    // ヘルパーメソッド: 人間が読みやすい(Human-readable)ピックアップコードを生成
+    // フォーマット: yyMMdd-XXXX-mmss (例: 260311-8492-4530)
+    // 万が一QRスキャナーが故障した際も、店舗スタッフが容易に手入力できる設計です。
+    // =====================================================================
+    private String generateShortPickupCode() {
+        LocalDateTime now = LocalDateTime.now();
+        
+        // 1. 本日の日付 (MMdd) - 6桁
+        String datePart = now.format(DateTimeFormatter.ofPattern("yyMMdd"));
+        
+        // 2. ランダムな数字 - 4桁 (1000 ~ 9999)
+        int randomPart = ThreadLocalRandom.current().nextInt(1000, 10000);
+        
+        // 3. 現在の分と秒 (mmss) - 4桁
+        String timePart = now.format(DateTimeFormatter.ofPattern("mmss"));
+        
+        // 🚨 UX向上のため、ハイフン(-)で区切り視認性を高めます
+        return String.format("%s-%04d-%s", datePart, randomPart, timePart);
+    }
 }
