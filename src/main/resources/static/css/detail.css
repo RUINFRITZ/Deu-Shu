@@ -91,9 +91,12 @@ img {
 .site-header {
     background: var(--white);
     border-bottom: 1px solid var(--gray-200);
-    position: sticky;
+    position: fixed;
     top: 0;
-    z-index: 100;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 1050;
 }
 
 .header-inner {

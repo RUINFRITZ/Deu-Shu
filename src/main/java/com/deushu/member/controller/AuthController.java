@@ -48,6 +48,7 @@ public class AuthController {
 
     @Data
     public static class SignupRequest {
+    		private String id;
         private String email;
         private String password;
         private String lastName;
@@ -138,6 +139,8 @@ public class AuthController {
         }
 
         session.setAttribute("memberId", 회원.getId());
+        session.setAttribute("memberName", 회원.getLastName() + 회원.getFirstName());
+
         
         // =====================================================================
         // Spring Security コンテキストとの強制同期ブリッジコード

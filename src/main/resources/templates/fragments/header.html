@@ -1,777 +1,613 @@
 <!DOCTYPE html>
-
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
-<header class="site-header" th:fragment="header">
-    <div class="header-inner">
 
-        <!-- 로고 영역 -->
-        <a th:href="@{/}" class="logo-wrap">
-            <span class="logo-main">ドゥーシュー</span>
-        </a>
+	<!--
+  핵심 수정: th:fragment="header" 를 <th:block> 에 붙여야
+  <header> 바깥의 모달·토스트·스크립트까지 모두 포함됩니다.
+  pages 사용법은 변경 없음: th:replace="~{fragments/header :: header}"
+-->
+	<th:block th:fragment="header">
 
-<!-- PC 네비게이션 메뉴 수정 -->
-<nav class="nav-desktop">
-<!--  리스트 페이지로 지역명 파라미터 전달-->
-    <!-- 都心: 千代田・中央・港 -->
-    <div class="nav-item">
-        <a th:href="@{/list(region='toshin', radius=1)}" class="nav-link">都心</a>
-        <div class="dropdown">
-            <a th:href="@{/list(region='chiyoda', radius=1)}">千代田区</a>
-            <a th:href="@{/list(region='chuo', radius=1)}">中央区</a>
-            <a th:href="@{/list(region='minato', radius=1)}">港区</a>
-        </div>
-    </div>
+		<!-- ▼ 헤더 본체 ▼ -->
+		<header id="deushu-main-header" class="site-header">
+			<div class="header-inner">
+				<a th:href="@{/}" class="logo-wrap"> <span class="logo-main">ドゥーシュー</span>
+				</a>
+				<nav class="nav-desktop">
+					<div class="nav-item">
+						<a th:href="@{/list(region='toshin', radius=2)}">都心 </a>
+						<div class="deushu-dropdown">
+							<a th:href="@{/list(region='chiyoda', radius=2)}">千代田区</a> <a
+								th:href="@{/list(region='chuo', radius=2)}">中央区</a> <a
+								th:href="@{/list(region='minato', radius=2)}">港区</a>
+						</div>
+					</div>
+					<div class="nav-item">
+						<a th:href="@{/list(region='jonan', radius=2)}">城南</a>
+						<div class="deushu-dropdown">
+							<a th:href="@{/list(region='shinagawa', radius=2)}">品川区</a> <a
+								th:href="@{/list(region='meguro', radius=2)}">目黒区</a> <a
+								th:href="@{/list(region='ota', radius=2)}">大田区</a> <a
+								th:href="@{/list(region='setagaya', radius=2)}">世田谷区</a>
+						</div>
+					</div>
+					<div class="nav-item">
+						<a th:href="@{/list(region='josei', radius=2)}">城西</a>
+						<div class="deushu-dropdown">
+							<a th:href="@{/list(region='shinjuku', radius=2)}">新宿区</a> <a
+								th:href="@{/list(region='shibuya', radius=2)}">渋谷区</a> <a
+								th:href="@{/list(region='nakano', radius=2)}">中野区</a> <a
+								th:href="@{/list(region='suginami', radius=2)}">杉並区</a> <a
+								th:href="@{/list(region='nerima', radius=2)}">練馬区</a>
+						</div>
+					</div>
+					<div class="nav-item">
+						<a th:href="@{/list(region='johoku', radius=2)}">城北</a>
+						<div class="deushu-dropdown">
+							<a th:href="@{/list(region='bunkyo', radius=2)}">文京区</a> <a
+								th:href="@{/list(region='toshima', radius=2)}">豊島区</a> <a
+								th:href="@{/list(region='kita', radius=2)}">北区</a> <a
+								th:href="@{/list(region='itabashi', radius=2)}">板橋区</a> <a
+								th:href="@{/list(region='adachi', radius=2)}">足立区</a>
+						</div>
+					</div>
+					<div class="nav-item">
+						<a th:href="@{/list(region='joto', radius=2)}">城東</a>
+						<div class="deushu-dropdown">
+							<a th:href="@{/list(region='taito', radius=2)}">台東区</a> <a
+								th:href="@{/list(region='sumida', radius=2)}">墨田区</a> <a
+								th:href="@{/list(region='koto', radius=2)}">江東区</a> <a
+								th:href="@{/list(region='katsushika', radius=2)}">葛飾区</a> <a
+								th:href="@{/list(region='edogawa', radius=2)}">江戸川区</a>
+						</div>
+					</div>
+				</nav>
+				<div class="header-actions">
+					<button class="btn-auth" id="btnAuthGuest"
+						onclick="openModal('user')" th:if="${session.memberId == null}">
+						ログイン / 会員登録</button>
 
-    <!-- 城南: 品川・目黒・大田・世田谷 -->
-    <div class="nav-item">
-        <a th:href="@{/list(region='jonan', radius=1)}" class="nav-link">城南</a>
-        <div class="dropdown">
-            <a th:href="@{/list(region='shinagawa', radius=1)}">品川区</a>
-            <a th:href="@{/list(region='meguro', radius=1)}">目黒区</a>
-            <a th:href="@{/list(region='ota', radius=1)}">大田区</a>
-            <a th:href="@{/list(region='setagaya', radius=1)}">世田谷区</a>
-        </div>
-    </div>
+					<div class="user-menu" id="userMenuWrap"
+						th:if="${session.memberId != null}">
+						<button class="btn-user-name" id="btnUserName">
+							<i class="bi bi-person-circle"></i> <span id="headerUserName"
+								th:text="${session.memberName}"></span>様 <i
+								class="bi bi-chevron-down"
+								style="font-size: 0.7rem; margin-left: 2px;"></i>
+						</button>
+						<div class="user-dropdown" id="userDropdown">
+							<a th:href="@{/mypage}" class="user-dropdown-item"> <i
+								class="bi bi-person"></i> マイページ
+							</a> <a th:href="@{/order/pickup}" class="user-dropdown-item"
+								th:if="${hasCompletedOrder}"> <i class="bi bi-bag-check"></i>
+								注文状況
+							</a>
+							<div class="user-dropdown-divider"
+								style="height: 1px; background: #e5e7eb; margin: 4px 0;"></div>
+							<a href="/mypage#orders" class="user-dropdown-item"> <i
+								class="bi bi-receipt"></i> 注文履歴
+							</a> <a href="/mypage#favorites" class="user-dropdown-item"> <i
+								class="bi bi-heart"></i> お気に入り
+							</a>
+							<div class="user-dropdown-divider"
+								style="height: 1px; background: #e5e7eb; margin: 4px 0;"></div>
+							<button class="user-dropdown-item" onclick="handleLogout()">
+								<i class="bi bi-box-arrow-right"></i> ログアウト
+						</div>
+					</div>
 
-    <!-- 城西: 新宿・渋谷・中野・杉並・練馬 -->
-    <div class="nav-item">
-        <a th:href="@{/list(region='josei', radius=1)}" class="nav-link">城西</a>
-        <div class="dropdown">
-            <a th:href="@{/list(region='shinjuku', radius=1)}">新宿区</a>
-            <a th:href="@{/list(region='shibuya', radius=1)}">渋谷区</a>
-            <a th:href="@{/list(region='nakano', radius=1)}">中野区</a>
-            <a th:href="@{/list(region='suginami', radius=1)}">杉並区</a>
-            <a th:href="@{/list(region='nerima', radius=1)}">練馬区</a>
-        </div>
-    </div>
-
-    <!-- 城北: 文京・豊島・北・板橋・足立 -->
-    <div class="nav-item">
-        <a th:href="@{/list(region='johoku', radius=1)}" class="nav-link">城北</a>
-        <div class="dropdown">
-            <a th:href="@{/list(region='bunkyo', radius=1)}">文京区</a>
-            <a th:href="@{/list(region='toshima', radius=1)}">豊島区</a>
-            <a th:href="@{/list(region='kita', radius=1)}">北区</a>
-            <a th:href="@{/list(region='itabashi', radius=1)}">板橋区</a>
-            <a th:href="@{/list(region='adachi', radius=1)}">足立区</a>
-        </div>
-    </div>
-
-    <!-- 城東: 台東・墨田・江東・葛飾・江戸川 -->
-    <div class="nav-item">
-        <a th:href="@{/list(region='joto', radius=1)}" class="nav-link">城東</a>
-        <div class="dropdown">
-            <a th:href="@{/list(region='taito', radius=1)}">台東区</a>
-            <a th:href="@{/list(region='sumida', radius=1)}">墨田区</a>
-            <a th:href="@{/list(region='koto', radius=1)}">江東区</a>
-            <a th:href="@{/list(region='katsushika', radius=1)}">葛飾区</a>
-            <a th:href="@{/list(region='edogawa', radius=1)}">江戸川区</a>
-        </div>
-    </div>
-</nav>
-
- 
-        <!-- 헤더 오른쪽: 로그인 버튼 + 모바일 메뉴 버튼 -->
-        <div class="header-actions">
-            <!-- 비로그인 상태 -->
-            <button class="btn-auth" id="btnAuthGuest" onclick="openModal('user')">
-                ログイン / 会員登録
-            </button>
-            <!-- 로그인 상태: 이름様 + 드롭다운 -->
-            <div class="user-menu" id="userMenuWrap" style="display:none;">
-                <button class="btn-user-name" id="btnUserName">
-                    <i class="bi bi-person-circle"></i>
-                    <span id="headerUserName"></span>様
-                    <i class="bi bi-chevron-down" style="font-size:0.7rem;margin-left:2px;"></i>
-                </button>
-                <div class="user-dropdown" id="userDropdown">
-                    <a th:href="@{/mypage}" class="user-dropdown-item">
-                        <i class="bi bi-person"></i> マイページ
-                    </a>
-                    <button class="user-dropdown-item" onclick="handleLogout()">
-                        <i class="bi bi-box-arrow-right"></i> ログアウト
-                    </button>
-                </div>
-            </div>
-            <!-- 모바일용 햄버거 버튼 -->
-            <button class="btn-menu">
-                <i class="bi bi-list"></i>
-            </button>
-        </div>
-    </div>
+					<button class="btn-menu">
+						<i class="bi bi-list"></i>
+					</button>
+				</div>
+			</div>
+		</header>
 
 
+		<!-- ▼ 로그인/회원가입 모달 ▼ -->
+		<div class="auth-overlay" id="authOverlay"
+			onclick="handleOverlayClick(event)">
+			<div class="auth-modal" id="authModal">
+				<button class="modal-close" onclick="closeModal()">
+					<i class="bi bi-x-lg"></i>
+				</button>
+				<div class="tab-header" id="tabHeader"></div>
 
-<!-- 로그인/회원가입 모달 — 헤더에 포함되어 모든 페이지에서 공통 사용 -->
-<div class="auth-overlay" id="authOverlay" onclick="handleOverlayClick(event)">
-<div class="auth-modal" id="authModal">
-
-    <!-- 모달 닫기 버튼 -->
-    <button class="modal-close" onclick="closeModal()">
-        <i class="bi bi-x-lg"></i>
-    </button>
-
-    <!-- 탭 버튼 영역 (JS로 동적 생성) -->
-    <div class="tab-header" id="tabHeader"></div>
-
-    <!-- [패널 1] 일반회원 로그인 — API: POST /api/auth/login -->
-    <div id="panelLogin" class="modal-body-wrap" style="display:none;">
-
-        <!-- 이메일 입력 -->
-        <div class="fg">
-            <label class="form-label-jp">
-                <i class="bi bi-envelope" style="color:var(--primary-light);font-size:0.85rem;"></i>
-                メールアドレス <span class="required">*</span>
-            </label>
-            <input type="email" class="form-input" id="loginEmail"
-                placeholder="登録済みのメールアドレス"
-                oninput="clearFieldError('loginEmail')">
-            <p class="field-msg error" id="loginEmailMsg"></p>
-        </div>
-
-        <!-- 비밀번호 입력 -->
-        <div class="fg">
-            <label class="form-label-jp">
-                <i class="bi bi-lock" style="color:var(--primary-light);font-size:0.85rem;"></i>
-                パスワード <span class="required">*</span>
-            </label>
-            <div class="pw-wrap">
-                <input type="password" class="form-input" id="loginPw"
-                    placeholder="パスワードを入力"
-                    oninput="clearFieldError('loginPw')">
-                <button class="pw-toggle" onclick="togglePw('loginPw',this)">
-                    <i class="bi bi-eye"></i>
-                </button>
-            </div>
-            <p class="field-msg error" id="loginPwMsg"></p>
-        </div>
-
-        <!-- 이메일 저장 체크박스 -->
-        <div class="save-id-wrap">
-            <input type="checkbox" id="saveEmail">
-            <label for="saveEmail">メールアドレスを保存する</label>
-        </div>
-
-        <button class="btn-primary-full" onclick="handleUserLogin()">ログイン</button>
-
-        <div class="sub-links">
-            <a href="#" onclick="openFindEmailModal(); return false;">メールを探す</a>
-            <span class="sep">|</span>
-            <a href="#" onclick="openResetPwModal(); return false;">パスワード再設定</a>
-            <span class="sep">|</span>
-            <button class="link-biz" onclick="switchToBiz()">ビジネス ログイン/登録</button>
-        </div>
-
-        <!-- 소셜 로그인 -->
-        <div class="divider-label"><span>かんたんログイン</span></div>
-        <div class="social-btns">
-            <button class="social-btn" title="Googleでログイン">
-                <svg width="22" height="22" viewBox="0 0 48 48">
-                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.7 1.22 9.2 3.22l6.85-6.85C35.9 2.38 30.27 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.2C12.43 13.72 17.74 9.5 24 9.5z"/>
-                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.2C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.36-8.16 2.36-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+				<div id="panelLogin" class="modal-body-wrap" style="display: none;">
+					<div class="fg">
+						<label class="form-label-jp"> <i class="bi bi-envelope"
+							style="color: var(--primary-light); font-size: 0.85rem;"></i>
+							メールアドレス <span class="required">*</span>
+						</label> <input type="email" class="form-input" id="loginEmail"
+							placeholder="登録済みのメールアドレス"
+							oninput="clearFieldError('loginEmail')"
+							onkeydown="if(event.key==='Enter') document.getElementById('loginPw').focus()">
+						<p class="field-msg error" id="loginEmailMsg"></p>
+					</div>
+					<div class="fg">
+						<label class="form-label-jp"> <i class="bi bi-lock"
+							style="color: var(--primary-light); font-size: 0.85rem;"></i>
+							パスワード <span class="required">*</span>
+						</label>
+						<div class="pw-wrap">
+							<input type="password" class="form-input" id="loginPw"
+								placeholder="パスワードを入力" oninput="clearFieldError('loginPw')"
+								onkeydown="if(event.key==='Enter') handleUserLogin()">
+							<button class="pw-toggle" onclick="togglePw('loginPw',this)">
+								<i class="bi bi-eye"></i>
+							</button>
+						</div>
+						<p class="field-msg error" id="loginPwMsg"></p>
+					</div>
+					<button class="btn-primary-full" onclick="handleUserLogin()">ログイン</button>
+					<div class="sub-links">
+						<a href="#" onclick="openFindEmailModal(); return false;">メールを探す</a>
+						<span class="sep">|</span> <a href="#"
+							onclick="openResetPwModal(); return false;">パスワード再設定</a> <span
+							class="sep">|</span>
+						<button class="link-biz" onclick="switchToBiz()">ビジネス
+							ログイン/登録</button>
+					</div>
+					<div class="divider-label">
+						<span>かんたんログイン</span>
+					</div>
+					<div class="social-btns">
+						<button class="social-btn" title="Googleでログイン">
+							<svg width="22" height="22" viewBox="0 0 48 48">
+                    <path fill="#EA4335"
+									d="M24 9.5c3.54 0 6.7 1.22 9.2 3.22l6.85-6.85C35.9 2.38 30.27 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.2C12.43 13.72 17.74 9.5 24 9.5z" />
+                    <path fill="#4285F4"
+									d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+                    <path fill="#FBBC05"
+									d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.2C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+                    <path fill="#34A853"
+									d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.36-8.16 2.36-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
                 </svg>
-            </button>
-            <button class="social-btn line-btn" title="LINEでログイン">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-                    <path d="M12 .5C5.649.5.5 4.891.5 10.25c0 4.233 2.944 7.896 7.334 9.592.32.115.757.353.869.808.1.414.064.978.032 1.407l-.14.85c-.044.258-.2 1.007.882.55 1.082-.456 5.835-3.44 7.965-5.89C18.858 15.79 20 13.124 20 10.25 20 4.891 18.351.5 12 .5z"/>
+						</button>
+						<button class="social-btn line-btn" title="LINEでログイン">
+							<svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                    <path
+									d="M12 .5C5.649.5.5 4.891.5 10.25c0 4.233 2.944 7.896 7.334 9.592.32.115.757.353.869.808.1.414.064.978.032 1.407l-.14.85c-.044.258-.2 1.007.882.55 1.082-.456 5.835-3.44 7.965-5.89C18.858 15.79 20 13.124 20 10.25 20 4.891 18.351.5 12 .5z" />
                 </svg>
-            </button>
-        </div>
-    </div>
-    <!-- [패널 2] 일반회원 회원가입 — API: POST /api/auth/signup -->
-    <div id="panelRegister" class="modal-body-wrap" style="display:none;">
+						</button>
+					</div>
+				</div>
 
-        <div class="fg">
-            <label class="form-label-jp">
-                メールアドレス <span class="required">*</span>
-            </label>
-            <input type="email" class="form-input" id="regEmail"
-                placeholder="例: deu-shu@gmail.com"
-                oninput="clearFieldError('regEmail')">
-            <p class="field-msg" id="regEmailMsg"></p>
-        </div>
+				<div id="panelRegister" class="modal-body-wrap"
+					style="display: none;">
+					<div class="fg">
+						<label class="form-label-jp">メールアドレス <span
+							class="required">*</span></label> <input type="email" class="form-input"
+							id="regEmail" placeholder="例: deu-shu@gmail.com"
+							oninput="clearFieldError('regEmail')">
+						<p class="field-msg" id="regEmailMsg"></p>
+					</div>
+					<div class="fg">
+						<label class="form-label-jp">パスワード <span class="required">*</span></label>
+						<div class="pw-wrap">
+							<input type="password" class="form-input" id="regPw"
+								placeholder="数字・英字・記号を含む8文字以上"
+								oninput="checkPwStrength(this.value)">
+							<button class="pw-toggle" onclick="togglePw('regPw',this)">
+								<i class="bi bi-eye"></i>
+							</button>
+						</div>
+						<div class="pw-strength-bar">
+							<div class="pw-strength-fill" id="pwStrengthFill"></div>
+						</div>
+					</div>
+					<div class="fg">
+						<label class="form-label-jp">パスワード確認 <span
+							class="required">*</span></label>
+						<div class="pw-wrap">
+							<input type="password" class="form-input" id="regPwConfirm"
+								placeholder="パスワードをもう一度入力" oninput="checkPwMatch()">
+							<button class="pw-toggle" onclick="togglePw('regPwConfirm',this)">
+								<i class="bi bi-eye"></i>
+							</button>
+						</div>
+						<p class="field-msg" id="regPwConfirmMsg"></p>
+					</div>
+					<div class="fg">
+						<label class="form-label-jp">お名前（姓・名） <span
+							class="required">*</span></label>
+						<div class="name-grid">
+							<div>
+								<input type="text" class="form-input" id="regLastName"
+									placeholder="田中（姓）">
+								<p class="field-msg error" id="regLastNameMsg"></p>
+							</div>
+							<div>
+								<input type="text" class="form-input" id="regFirstName"
+									placeholder="一郎（名）">
+							</div>
+						</div>
+					</div>
+					<div class="fg">
+						<label class="form-label-jp">フリガナ（セイ・メイ） <span
+							class="required">*</span></label>
+						<div class="name-grid">
+							<div>
+								<input type="text" class="form-input" id="regLastNameKana"
+									placeholder="タナカ（セイ）">
+								<p class="field-msg error" id="regLastNameKanaMsg"></p>
+							</div>
+							<div>
+								<input type="text" class="form-input" id="regFirstNameKana"
+									placeholder="イチロウ（メイ）">
+							</div>
+						</div>
+					</div>
+					<div class="fg">
+						<label class="form-label-jp">電話番号 <span class="required">*</span></label>
+						<input type="tel" class="form-input" id="regPhone"
+							placeholder="例: 090-1234-5678"
+							oninput="clearFieldError('regPhone')">
+						<p class="field-msg error" id="regPhoneMsg"></p>
+					</div>
+					<button class="btn-primary-full" onclick="handleUserRegister()">会員登録</button>
+				</div>
 
-        <div class="fg">
-            <label class="form-label-jp">
-                パスワード <span class="required">*</span>
-            </label>
-            <div class="pw-wrap">
-                <input type="password" class="form-input" id="regPw"
-                    placeholder="数字・英字・記号を含む8文字以上"
-                    oninput="checkPwStrength(this.value)">
-                <button class="pw-toggle" onclick="togglePw('regPw',this)">
-                    <i class="bi bi-eye"></i>
-                </button>
-            </div>
-            <div class="pw-strength-bar">
-                <div class="pw-strength-fill" id="pwStrengthFill"></div>
-            </div>
-        </div>
+				<div id="panelBizLogin" class="modal-body-wrap"
+					style="display: none;">
+					<div class="info-note">
+						<i class="bi bi-shop"></i> ビジネスアカウントでログインします。<br>オーナーダッシュボードへアクセスできます。
+					</div>
+					<div class="fg">
+						<label class="form-label-jp">メールアドレス <span
+							class="required">*</span></label> <input type="email" class="form-input"
+							id="bizLoginEmail" placeholder="登録済みのメールアドレス"
+							oninput="clearFieldError('bizLoginEmail')">
+						<p class="field-msg error" id="bizLoginEmailMsg"></p>
+					</div>
+					<div class="fg">
+						<label class="form-label-jp">パスワード <span class="required">*</span></label>
+						<div class="pw-wrap">
+							<input type="password" class="form-input" id="bizLoginPw"
+								placeholder="パスワードを入力">
+							<button class="pw-toggle" onclick="togglePw('bizLoginPw',this)">
+								<i class="bi bi-eye"></i>
+							</button>
+						</div>
+					</div>
+					<button class="btn-orange-full" onclick="handleBizLogin()">ビジネスログイン</button>
+					<div class="sub-links">
+						<button onclick="switchToUser()">← 一般会員に戻る</button>
+						<span class="sep">|</span>
+						<button onclick="switchToBizReg()">新規ビジネス登録</button>
+					</div>
+				</div>
 
-        <div class="fg">
-            <label class="form-label-jp">パスワード確認 <span class="required">*</span></label>
-            <div class="pw-wrap">
-                <input type="password" class="form-input" id="regPwConfirm"
-                    placeholder="パスワードをもう一度入力"
-                    oninput="checkPwMatch()">
-                <button class="pw-toggle" onclick="togglePw('regPwConfirm',this)">
-                    <i class="bi bi-eye"></i>
-                </button>
-            </div>
-            <p class="field-msg" id="regPwConfirmMsg"></p>
-        </div>
-
-        <div class="fg">
-            <label class="form-label-jp">
-                お名前（姓・名） <span class="required">*</span>
-            </label>
-            <div class="name-grid">
-                <div>
-                    <input type="text" class="form-input" id="regLastName" placeholder="田中（姓）">
-                    <p class="field-msg error" id="regLastNameMsg"></p>
-                </div>
-                <div>
-                    <input type="text" class="form-input" id="regFirstName" placeholder="一郎（名）">
-                </div>
-            </div>
-        </div>
-
-        <div class="fg">
-            <label class="form-label-jp">
-                フリガナ（セイ・メイ） <span class="required">*</span>
-            </label>
-            <div class="name-grid">
-                <div>
-                    <input type="text" class="form-input" id="regLastNameKana" placeholder="タナカ（セイ）">
-                    <p class="field-msg error" id="regLastNameKanaMsg"></p>
-                </div>
-                <div>
-                    <input type="text" class="form-input" id="regFirstNameKana" placeholder="イチロウ（メイ）">
-                </div>
-            </div>
-        </div>
-
-        <div class="fg">
-            <label class="form-label-jp">
-                電話番号 <span class="required">*</span>
-            </label>
-            <input type="tel" class="form-input" id="regPhone"
-                placeholder="例: 090-1234-5678"
-                oninput="clearFieldError('regPhone')">
-            <p class="field-msg error" id="regPhoneMsg"></p>
-        </div>
-
-        <button class="btn-primary-full" onclick="handleUserRegister()">会員登録</button>
-    </div>
-
-    <!-- [패널 3] 비즈니스 로그인 — API: POST /api/auth/login (role: ROLE_OWNER) -->
-    <div id="panelBizLogin" class="modal-body-wrap" style="display:none;">
-
-        <div class="info-note">
-            <i class="bi bi-shop"></i>
-            ビジネスアカウントでログインします。<br>
-            オーナーダッシュボードへアクセスできます。
-        </div>
-
-        <div class="fg">
-            <label class="form-label-jp">
-                メールアドレス <span class="required">*</span>
-            </label>
-            <input type="email" class="form-input" id="bizLoginEmail"
-                placeholder="登録済みのメールアドレス"
-                oninput="clearFieldError('bizLoginEmail')">
-            <p class="field-msg error" id="bizLoginEmailMsg"></p>
-        </div>
-
-        <div class="fg">
-            <label class="form-label-jp">
-                パスワード <span class="required">*</span>
-            </label>
-            <div class="pw-wrap">
-                <input type="password" class="form-input" id="bizLoginPw"
-                    placeholder="パスワードを入力">
-                <button class="pw-toggle" onclick="togglePw('bizLoginPw',this)">
-                    <i class="bi bi-eye"></i>
-                </button>
-            </div>
-        </div>
-
-        <button class="btn-orange-full" onclick="handleBizLogin()">ビジネスログイン</button>
-
-        <div class="sub-links">
-            <button onclick="switchToUser()">← 一般会員に戻る</button>
-            <span class="sep">|</span>
-            <button onclick="switchToBizReg()">新規ビジネス登録</button>
-        </div>
-    </div>
-
-    <!-- [패널 4] 비즈니스 회원가입 — API: POST /api/auth/signup/owner -->
-    <div id="panelBizRegister" class="modal-body-wrap" style="display:none;">
-
-        <!-- STEP 1 -->
-        <p class="form-section-title">
-            <i class="bi bi-person"></i> STEP 1
-        </p>
-
-        <div class="fg">
-            <label class="form-label-jp">
-                メールアドレス <span class="required">*</span>
-            </label>
-            <input type="email" class="form-input" id="bizRegEmail"
-                placeholder="例: owner@deu-shu.jp"
-                oninput="clearFieldError('bizRegEmail')">
-            <p class="field-msg error" id="bizRegEmailMsg"></p>
-        </div>
-
-        <div class="fg">
-            <label class="form-label-jp">
-                パスワード <span class="required">*</span>
-            </label>
-            <div class="pw-wrap">
-                <input type="password" class="form-input" id="bizRegPw"
-                    placeholder="数字・英字・記号を含む8文字以上"
-                    oninput="checkBizPwStrength(this.value)">
-                <button class="pw-toggle" onclick="togglePw('bizRegPw',this)">
-                    <i class="bi bi-eye"></i>
-                </button>
-            </div>
-            <div class="pw-strength-bar">
-                <div class="pw-strength-fill" id="bizPwStrengthFill"></div>
-            </div>
-        </div>
-
-        <div class="fg">
-            <label class="form-label-jp">パスワード確認 <span class="required">*</span></label>
-            <div class="pw-wrap">
-                <input type="password" class="form-input" id="bizRegPwC"
-                    placeholder="パスワードをもう一度入力"
-                    oninput="checkBizPwMatch()">
-                <button class="pw-toggle" onclick="togglePw('bizRegPwC',this)">
-                    <i class="bi bi-eye"></i>
-                </button>
-            </div>
-            <p class="field-msg" id="bizRegPwCMsg"></p>
-        </div>
-
-        <div class="fg">
-            <label class="form-label-jp">
-                代表者名（姓・名） <span class="required">*</span>
-            </label>
-            <div class="name-grid">
-                <div>
-                    <input type="text" class="form-input" id="bizRegLastName"
-                        placeholder="田中（姓）" oninput="clearBizVerify()">
-                </div>
-                <div>
-                    <input type="text" class="form-input" id="bizRegFirstName"
-                        placeholder="一郎（名）" oninput="clearBizVerify()">
-                </div>
-            </div>
-        </div>
-
-        <div class="fg">
-            <label class="form-label-jp">
-                フリガナ（セイ・メイ） <span class="required">*</span>
-            </label>
-            <div class="name-grid">
-                <div>
-                    <input type="text" class="form-input" id="bizRegLastNameKana" placeholder="タナカ（セイ）">
-                </div>
-                <div>
-                    <input type="text" class="form-input" id="bizRegFirstNameKana" placeholder="イチロウ（メイ）">
-                </div>
-            </div>
-        </div>
-
-        <div class="fg">
-            <label class="form-label-jp">
-                代表電話番号 <span class="required">*</span>
-            </label>
-            <input type="tel" class="form-input" id="bizRegPhone" placeholder="例: 03-1234-5678">
-            <p class="hint">※ 1つの番号につき1オーナーアカウントのみ登録可能</p>
-        </div>
-
-        <!-- STEP 2 -->
-        <p class="form-section-title">
-            <i class="bi bi-shield-check"></i> STEP 2 — 事業者番号照合
-        </p>
-
-        <div class="fg">
-            <label class="form-label-jp">
-                事業者番号 <span class="required">*</span>
-            </label>
-            <div class="verify-row">
-                <input type="text" class="form-input" id="bizRegBizNum"
-                    placeholder="例: 1234567890"
-                    oninput="clearBizVerify()">
-                <button class="btn-verify" onclick="verifyBusinessNumber()">照合</button>
-            </div>
-            <div class="ok-note" id="bizVerifyOk">
-                <i class="bi bi-check-circle-fill"></i>
-                <span id="bizVerifyOkText"></span>
-            </div>
-            <p class="field-msg error" id="bizRegBizNumMsg"></p>
-        </div>
-
-        <!-- STEP 3 -->
-        <p class="form-section-title">
-            <i class="bi bi-shop"></i> STEP 3 — 店舗情報（照合後に自動入力）
-        </p>
-
-        <div class="fg">
-            <label class="form-label-jp">
-                店舗名
-                <span class="auto-fill-label">✔ 自動入力・編集不可</span>
-            </label>
-            <input type="text" class="form-input" id="bizRegStoreName"
-                placeholder="STEP 2 の照合完了後に自動入力されます"
-                disabled>
-        </div>
-
-        <div class="fg">
-            <label class="form-label-jp">
-                店舗住所
-                <span class="auto-fill-label">✔ 自動入力・編集不可</span>
-            </label>
-            <input type="text" class="form-input" id="bizRegStoreAddress"
-                placeholder="STEP 2 の照合完了後に自動入力されます"
-                disabled>
-        </div>
-
-        <div class="btn-row">
-            <button class="btn-back" onclick="switchToBiz()">← 戻る</button>
-            <button class="btn-orange-full" style="margin-top:0;" onclick="handleBizRegister()">
-                ビジネス登録完了
-            </button>
-        </div>
-
-        <div style="height:0.5rem;"></div>
-    </div>
-
-</div><!-- /auth-modal -->
-</div><!-- /auth-overlay -->
-
-<!-- 토스트 알림 컨테이너 -->
-<div class="toast-wrap" id="toastWrap"></div>
-
-<!-- 공통 JS -->
-<script th:src="@{/js/script.js}"></script>
+				<div id="panelBizRegister" class="modal-body-wrap"
+					style="display: none;">
+					<p class="form-section-title">
+						<i class="bi bi-person"></i> STEP 1
+					</p>
+					<div class="fg">
+						<label class="form-label-jp">メールアドレス <span
+							class="required">*</span></label> <input type="email" class="form-input"
+							id="bizRegEmail" placeholder="例: owner@deu-shu.jp"
+							oninput="clearFieldError('bizRegEmail')">
+						<p class="field-msg error" id="bizRegEmailMsg"></p>
+					</div>
+					<div class="fg">
+						<label class="form-label-jp">パスワード <span class="required">*</span></label>
+						<div class="pw-wrap">
+							<input type="password" class="form-input" id="bizRegPw"
+								placeholder="数字・英字・記号を含む8文字以上"
+								oninput="checkBizPwStrength(this.value)">
+							<button class="pw-toggle" onclick="togglePw('bizRegPw',this)">
+								<i class="bi bi-eye"></i>
+							</button>
+						</div>
+						<div class="pw-strength-bar">
+							<div class="pw-strength-fill" id="bizPwStrengthFill"></div>
+						</div>
+					</div>
+					<div class="fg">
+						<label class="form-label-jp">パスワード確認 <span
+							class="required">*</span></label>
+						<div class="pw-wrap">
+							<input type="password" class="form-input" id="bizRegPwC"
+								placeholder="パスワードをもう一度入力" oninput="checkBizPwMatch()">
+							<button class="pw-toggle" onclick="togglePw('bizRegPwC',this)">
+								<i class="bi bi-eye"></i>
+							</button>
+						</div>
+						<p class="field-msg" id="bizRegPwCMsg"></p>
+					</div>
+					<div class="fg">
+						<label class="form-label-jp">代表者名（姓・名） <span
+							class="required">*</span></label>
+						<div class="name-grid">
+							<div>
+								<input type="text" class="form-input" id="bizRegLastName"
+									placeholder="田中（姓）" oninput="clearBizVerify()">
+							</div>
+							<div>
+								<input type="text" class="form-input" id="bizRegFirstName"
+									placeholder="一郎（名）" oninput="clearBizVerify()">
+							</div>
+						</div>
+					</div>
+					<div class="fg">
+						<label class="form-label-jp">フリガナ（セイ・メイ） <span
+							class="required">*</span></label>
+						<div class="name-grid">
+							<div>
+								<input type="text" class="form-input" id="bizRegLastNameKana"
+									placeholder="タナカ（セイ）">
+							</div>
+							<div>
+								<input type="text" class="form-input" id="bizRegFirstNameKana"
+									placeholder="イチロウ（メイ）">
+							</div>
+						</div>
+					</div>
+					<div class="fg">
+						<label class="form-label-jp">代表電話番号 <span class="required">*</span></label>
+						<input type="tel" class="form-input" id="bizRegPhone"
+							placeholder="例: 03-1234-5678">
+						<p class="hint">※ 1つの番号につき1オーナーアカウントのみ登録可能</p>
+					</div>
+					<p class="form-section-title">
+						<i class="bi bi-shield-check"></i> STEP 2 — 事業者番号照合
+					</p>
+					<div class="fg">
+						<label class="form-label-jp">事業者番号 <span class="required">*</span></label>
+						<div class="verify-row">
+							<input type="text" class="form-input" id="bizRegBizNum"
+								placeholder="例: 1234567890" oninput="clearBizVerify()">
+							<button class="btn-verify" onclick="verifyBusinessNumber()">照合</button>
+						</div>
+						<div class="ok-note" id="bizVerifyOk">
+							<i class="bi bi-check-circle-fill"></i><span id="bizVerifyOkText"></span>
+						</div>
+						<p class="field-msg error" id="bizRegBizNumMsg"></p>
+					</div>
+					<p class="form-section-title">
+						<i class="bi bi-shop"></i> STEP 3 — 店舗情報（照合後に自動入力）
+					</p>
+					<div class="fg">
+						<label class="form-label-jp">店舗名<span
+							class="auto-fill-label">✔ 自動入力・編集不可</span></label> <input type="text"
+							class="form-input" id="bizRegStoreName"
+							placeholder="STEP 2 の照合完了後に自動入力されます" disabled>
+					</div>
+					<div class="fg">
+						<label class="form-label-jp">店舗住所<span
+							class="auto-fill-label">✔ 自動入力・編集不可</span></label> <input type="text"
+							class="form-input" id="bizRegStoreAddress"
+							placeholder="STEP 2 の照合完了後に自動入力されます" disabled>
+					</div>
+					<div class="btn-row">
+						<button class="btn-back" onclick="switchToBiz()">← 戻る</button>
+						<button class="btn-orange-full" style="margin-top: 0;"
+							onclick="handleBizRegister()">ビジネス登録完了</button>
+					</div>
+					<div style="height: 0.5rem;"></div>
+				</div>
+			</div>
+		</div>
 
 
+		<!-- ▼ 토스트 컨테이너 ▼ -->
+		<div class="ds-toast-wrap" id="toastWrap"></div>
+
+		<!-- ▼ 공통 JS ▼ -->
+		<script th:src="@{/js/script.js}"></script>
 
 
-<!-- 비밀번호 재설정 모달 -->
-<div class="auth-overlay" id="resetPwOverlay" onclick="if(event.target===this) closeResetPwModal()" style="display:none; align-items:center; justify-content:center;">
-    <div class="auth-modal" style="max-width:420px; width:90%; padding:2rem; border-radius:12px; background:#fff;">
-
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
-            <h2 style="font-size:1.2rem; font-weight:700;">パスワード再設定</h2>
-            <button onclick="closeResetPwModal()" style="background:none; border:none; font-size:1.4rem; cursor:pointer;">×</button>
-        </div>
-
-        <!-- STEP 1: 본인 확인 입력 -->
-        <div id="resetPwStep1">
-            <p style="font-size:0.85rem; color:#666; margin-bottom:1.2rem;">
-                登録情報を入力して本人確認を行ってください
-            </p>
-            <div style="margin-bottom:0.9rem;">
-                <label style="display:block; font-size:0.85rem; margin-bottom:0.3rem;">メールアドレス</label>
-                <input type="email" id="resetEmail" placeholder="登録済みのメールアドレス"
-                    style="width:100%; padding:0.6rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
-            </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-bottom:0.9rem;">
-                <div>
-                    <label style="display:block; font-size:0.85rem; margin-bottom:0.3rem;">姓（漢字）</label>
-                    <input type="text" id="resetLastName" placeholder="田中"
-                        style="width:100%; padding:0.6rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
-                </div>
-                <div>
-                    <label style="display:block; font-size:0.85rem; margin-bottom:0.3rem;">名（漢字）</label>
-                    <input type="text" id="resetFirstName" placeholder="一郎"
-                        style="width:100%; padding:0.6rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
-                </div>
-            </div>
-            <div style="margin-bottom:1.2rem;">
-                <label style="display:block; font-size:0.85rem; margin-bottom:0.3rem;">電話番号</label>
-                <input type="tel" id="resetPhone" placeholder="例：09012345678"
-                    style="width:100%; padding:0.6rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
-            </div>
-            <p id="resetStep1Msg" style="color:#e53e3e; font-size:0.85rem; margin-bottom:0.8rem; display:none;"></p>
-            <button onclick="handleResetVerify()"
-                style="width:100%; padding:0.75rem; background:#2d6a4f; color:#fff; border:none; border-radius:6px; font-size:1rem; cursor:pointer; font-weight:600;">
-                本人確認
-            </button>
-        </div>
-
-        <!-- STEP 2: 새 비밀번호 입력 (본인 확인 통과 후 표시) -->
-        <div id="resetPwStep2" style="display:none;">
-            <p style="font-size:0.85rem; color:#2d6a4f; font-weight:600; margin-bottom:1.2rem;">
-                ✔ 本人確認が完了しました。新しいパスワードを設定してください。
-            </p>
-            <div style="margin-bottom:0.9rem;">
-                <label style="display:block; font-size:0.85rem; margin-bottom:0.3rem;">新しいパスワード</label>
-                <input type="password" id="resetNewPw" placeholder="新しいパスワードを入力"
-                    oninput="checkResetPwStrength(this.value)"
-                    style="width:100%; padding:0.6rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
-                <!-- 비밀번호 강도 바 -->
-                <div class="pw-strength-bar">
-                    <div class="pw-strength-fill" id="resetPwStrengthFill"></div>
-                </div>
-            </div>
-            <div style="margin-bottom:1.2rem;">
-                <label style="display:block; font-size:0.85rem; margin-bottom:0.3rem;">新しいパスワード（確認）</label>
-                <input type="password" id="resetNewPwConfirm" placeholder="もう一度入力"
-                    style="width:100%; padding:0.6rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
-            </div>
-            <p id="resetStep2Msg" style="color:#e53e3e; font-size:0.85rem; margin-bottom:0.8rem; display:none;"></p>
-            <button onclick="handleResetSubmit()"
-                style="width:100%; padding:0.75rem; background:#2d6a4f; color:#fff; border:none; border-radius:6px; font-size:1rem; cursor:pointer; font-weight:600;">
-                パスワードを変更する
-            </button>
-        </div>
-
-
-
-    </div>
-</div>
-
-<script>
-// 비밀번호 재설정용 강도 바 갱신
-function checkResetPwStrength(val) {
-    applyStrengthBar('resetPwStrengthFill', calcPwStrength(val));
-}
-
-// 비밀번호 재설정 모달 열기
+		<!-- ▼ 비밀번호 재설정 모달 ▼ -->
+		<div class="auth-overlay" id="resetPwOverlay"
+			onclick="if(event.target===this) closeResetPwModal()"
+			style="display: none; align-items: center; justify-content: center;">
+			<div class="auth-modal"
+				style="max-width: 420px; width: 90%; padding: 2rem; border-radius: 12px; background: #fff;">
+				<div
+					style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+					<h2 style="font-size: 1.2rem; font-weight: 700;">パスワード再設定</h2>
+					<button onclick="closeResetPwModal()"
+						style="background: none; border: none; font-size: 1.4rem; cursor: pointer;">×</button>
+				</div>
+				<div id="resetPwStep1">
+					<p style="font-size: 0.85rem; color: #666; margin-bottom: 1.2rem;">登録情報を入力して本人確認を行ってください</p>
+					<div style="margin-bottom: 0.9rem;">
+						<label
+							style="display: block; font-size: 0.85rem; margin-bottom: 0.3rem;">メールアドレス</label>
+						<input type="email" id="resetEmail" placeholder="登録済みのメールアドレス"
+							style="width: 100%; padding: 0.6rem; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;">
+					</div>
+					<div
+						style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.9rem;">
+						<div>
+							<label
+								style="display: block; font-size: 0.85rem; margin-bottom: 0.3rem;">姓（漢字）</label>
+							<input type="text" id="resetLastName" placeholder="田中"
+								style="width: 100%; padding: 0.6rem; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;">
+						</div>
+						<div>
+							<label
+								style="display: block; font-size: 0.85rem; margin-bottom: 0.3rem;">名（漢字）</label>
+							<input type="text" id="resetFirstName" placeholder="一郎"
+								style="width: 100%; padding: 0.6rem; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;">
+						</div>
+					</div>
+					<div style="margin-bottom: 1.2rem;">
+						<label
+							style="display: block; font-size: 0.85rem; margin-bottom: 0.3rem;">電話番号</label>
+						<input type="tel" id="resetPhone" placeholder="例：09012345678"
+							style="width: 100%; padding: 0.6rem; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;">
+					</div>
+					<p id="resetStep1Msg"
+						style="color: #e53e3e; font-size: 0.85rem; margin-bottom: 0.8rem; display: none;"></p>
+					<button onclick="handleResetVerify()"
+						style="width: 100%; padding: 0.75rem; background: #2d6a4f; color: #fff; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; font-weight: 600;">本人確認</button>
+				</div>
+				<div id="resetPwStep2" style="display: none;">
+					<p
+						style="font-size: 0.85rem; color: #2d6a4f; font-weight: 600; margin-bottom: 1.2rem;">✔
+						本人確認が完了しました。新しいパスワードを設定してください。</p>
+					<div style="margin-bottom: 0.9rem;">
+						<label
+							style="display: block; font-size: 0.85rem; margin-bottom: 0.3rem;">新しいパスワード</label>
+						<input type="password" id="resetNewPw" placeholder="新しいパスワードを入力"
+							oninput="checkResetPwStrength(this.value)"
+							style="width: 100%; padding: 0.6rem; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;">
+						<div class="pw-strength-bar">
+							<div class="pw-strength-fill" id="resetPwStrengthFill"></div>
+						</div>
+					</div>
+					<div style="margin-bottom: 1.2rem;">
+						<label
+							style="display: block; font-size: 0.85rem; margin-bottom: 0.3rem;">新しいパスワード（確認）</label>
+						<input type="password" id="resetNewPwConfirm" placeholder="もう一度入力"
+							style="width: 100%; padding: 0.6rem; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;">
+					</div>
+					<p id="resetStep2Msg"
+						style="color: #e53e3e; font-size: 0.85rem; margin-bottom: 0.8rem; display: none;"></p>
+					<button onclick="handleResetSubmit()"
+						style="width: 100%; padding: 0.75rem; background: #2d6a4f; color: #fff; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; font-weight: 600;">パスワードを変更する</button>
+				</div>
+			</div>
+		</div>
+		<script>
+function checkResetPwStrength(val) { applyStrengthBar('resetPwStrengthFill', calcPwStrength(val)); }
 function openResetPwModal() {
-    // 전체 초기화
     document.getElementById('resetEmail').value = '';
     document.getElementById('resetLastName').value = '';
     document.getElementById('resetFirstName').value = '';
     document.getElementById('resetPhone').value = '';
     document.getElementById('resetNewPw').value = '';
-    applyStrengthBar('resetPwStrengthFill', 0); // 강도 바 초기화
+    applyStrengthBar('resetPwStrengthFill', 0);
     document.getElementById('resetNewPwConfirm').value = '';
     document.getElementById('resetStep1Msg').style.display = 'none';
     document.getElementById('resetStep2Msg').style.display = 'none';
     document.getElementById('resetPwStep1').style.display = 'block';
     document.getElementById('resetPwStep2').style.display = 'none';
-    // 모달 표시
     document.getElementById('resetPwOverlay').style.display = 'flex';
     document.body.style.overflow = 'hidden';
 }
-
-// 비밀번호 재설정 모달 닫기
 function closeResetPwModal() {
     document.getElementById('resetPwOverlay').style.display = 'none';
     document.body.style.overflow = '';
 }
-
-// STEP 1: 본인 확인 (이메일 + 이름 + 전화번호)
-// 서버에서 일치 여부만 확인 → 통과하면 STEP 2로 이동
 function handleResetVerify() {
-    var email     = document.getElementById('resetEmail').value.trim();
-    var lastName  = document.getElementById('resetLastName').value.trim();
+    var email = document.getElementById('resetEmail').value.trim();
+    var lastName = document.getElementById('resetLastName').value.trim();
     var firstName = document.getElementById('resetFirstName').value.trim();
-    var phone     = document.getElementById('resetPhone').value.trim();
-    var msgEl     = document.getElementById('resetStep1Msg');
-
-    if (!email || !lastName || !firstName || !phone) {
-        msgEl.textContent = 'すべての項目を入力してください';
-        msgEl.style.display = 'block';
-        return;
-    }
-
+    var phone = document.getElementById('resetPhone').value.trim();
+    var msgEl = document.getElementById('resetStep1Msg');
+    if (!email || !lastName || !firstName || !phone) { msgEl.textContent = 'すべての項目を入力してください'; msgEl.style.display = 'block'; return; }
     msgEl.style.display = 'none';
-
-    // 본인 확인용으로 newPw를 임시값으로 전송 (서버에서 일치 여부만 확인)
-    // 실제 비밀번호 변경은 STEP 2에서 진행
-    fetch('/api/auth/verify-identity', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            email: email,
-            lastName: lastName,
-            firstName: firstName,
-            phone: phone
-        })
-    })
+    fetch('/api/auth/verify-identity', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, lastName: lastName, firstName: firstName, phone: phone }) })
     .then(function(res) { return res.json(); })
     .then(function(data) {
-        if (data.success) {
-            // 본인 확인 통과 → STEP 2로
-            document.getElementById('resetPwStep1').style.display = 'none';
-            document.getElementById('resetPwStep2').style.display = 'block';
-        } else {
-            msgEl.textContent = data.message || '入力情報が一致しません';
-            msgEl.style.display = 'block';
-        }
-    })
-    .catch(function() {
-        msgEl.textContent = 'サーバーエラーが発生しました';
-        msgEl.style.display = 'block';
-    });
+        if (data.success) { document.getElementById('resetPwStep1').style.display = 'none'; document.getElementById('resetPwStep2').style.display = 'block'; }
+        else { msgEl.textContent = data.message || '入力情報が一致しません'; msgEl.style.display = 'block'; }
+    }).catch(function() { msgEl.textContent = 'サーバーエラーが発生しました'; msgEl.style.display = 'block'; });
 }
-
-// STEP 2: 새 비밀번호 실제 저장
 function handleResetSubmit() {
-    var newPw        = document.getElementById('resetNewPw').value;
+    var newPw = document.getElementById('resetNewPw').value;
     var newPwConfirm = document.getElementById('resetNewPwConfirm').value;
-    var msgEl        = document.getElementById('resetStep2Msg');
-
-    if (!newPw || !newPwConfirm) {
-        msgEl.textContent = '新しいパスワードを入力してください';
-        msgEl.style.display = 'block';
-        return;
-    }
-    if (newPw !== newPwConfirm) {
-        msgEl.textContent = 'パスワードが一致しません';
-        msgEl.style.display = 'block';
-        return;
-    }
-    if (newPw.length < 8) {
-        msgEl.textContent = 'パスワードは8文字以上で入力してください';
-        msgEl.style.display = 'block';
-        return;
-    }
-
+    var msgEl = document.getElementById('resetStep2Msg');
+    if (!newPw || !newPwConfirm) { msgEl.textContent = '新しいパスワードを入力してください'; msgEl.style.display = 'block'; return; }
+    if (newPw !== newPwConfirm) { msgEl.textContent = 'パスワードが一致しません'; msgEl.style.display = 'block'; return; }
+    if (newPw.length < 8) { msgEl.textContent = 'パスワードは8文字以上で入力してください'; msgEl.style.display = 'block'; return; }
     msgEl.style.display = 'none';
-
-    // 본인 확인 정보 + 새 비밀번호 함께 전송
-    fetch('/api/auth/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            email:     document.getElementById('resetEmail').value.trim(),
-            lastName:  document.getElementById('resetLastName').value.trim(),
+    fetch('/api/auth/reset-password', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: document.getElementById('resetEmail').value.trim(),
+            lastName: document.getElementById('resetLastName').value.trim(),
             firstName: document.getElementById('resetFirstName').value.trim(),
-            phone:     document.getElementById('resetPhone').value.trim(),
-            newPw:     newPw
-        })
-    })
+            phone: document.getElementById('resetPhone').value.trim(), newPw: newPw }) })
     .then(function(res) { return res.json(); })
     .then(function(data) {
-        if (data.success) {
-            // 바로 모달 닫고 토스트 + 로그인 화면 열기
-            closeResetPwModal();
-            showToast('パスワードが変更されました。再度ログインしてください。', 'success');
-            openModal('user');
-            showPanel('panelLogin');
-            setTabActive('tabLogin');
-        } else {
-            msgEl.textContent = data.message || 'パスワードの変更に失敗しました';
-            msgEl.style.display = 'block';
-        }
-    })
-    .catch(function() {
-        msgEl.textContent = 'サーバーエラーが発生しました';
-        msgEl.style.display = 'block';
-    });
+        if (data.success) { closeResetPwModal(); showToast('パスワードが変更されました。再度ログインしてください。', 'success'); openModal('user'); showPanel('panelLogin'); setTabActive('tabLogin'); }
+        else { msgEl.textContent = data.message || 'パスワードの変更に失敗しました'; msgEl.style.display = 'block'; }
+    }).catch(function() { msgEl.textContent = 'サーバーエラーが発生しました'; msgEl.style.display = 'block'; });
 }
 </script>
 
-<!-- 이메일 찾기 모달 -->
-<div class="auth-overlay" id="findEmailOverlay" onclick="if(event.target===this) closeFindEmailModal()" style="display:none; align-items:center; justify-content:center;">
-    <div class="auth-modal" style="max-width:400px; width:90%; padding:2rem; border-radius:12px; background:#fff;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
-            <h2 style="font-size:1.2rem; font-weight:700;">メールアドレスを探す</h2>
-            <button onclick="closeFindEmailModal()" style="background:none; border:none; font-size:1.4rem; cursor:pointer;">×</button>
-        </div>
 
-        <!-- 입력 폼 -->
-        <div id="findEmailForm">
-            <div style="margin-bottom:1rem;">
-                <label style="display:block; font-size:0.85rem; margin-bottom:0.3rem;">お名前（漢字）</label>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
-                    <input type="text" id="findLastName" placeholder="姓（例：山田）" style="padding:0.6rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
-                    <input type="text" id="findFirstName" placeholder="名（例：太郎）" style="padding:0.6rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
-                </div>
-            </div>
-            <div style="margin-bottom:1.2rem;">
-                <label style="display:block; font-size:0.85rem; margin-bottom:0.3rem;">電話番号</label>
-                <input type="tel" id="findPhone" placeholder="例：09012345678" style="width:100%; padding:0.6rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
-            </div>
-            <!-- 오류 메시지 -->
-            <p id="findEmailMsg" style="color:#e53e3e; font-size:0.85rem; margin-bottom:0.8rem; display:none;"></p>
-            <button onclick="handleFindEmail()" style="width:100%; padding:0.75rem; background:#2d6a4f; color:#fff; border:none; border-radius:6px; font-size:1rem; cursor:pointer; font-weight:600;">
-                探す
-            </button>
-        </div>
-
-        <!-- 결과 화면 (찾은 후 표시) -->
-        <div id="findEmailResult" style="display:none; text-align:center;">
-            <p style="font-size:0.95rem; color:#555; margin-bottom:1rem;">登録されているメールアドレス</p>
-            <p id="foundEmail" style="font-size:1.2rem; font-weight:700; color:#2d6a4f; margin-bottom:1.5rem;"></p>
-            <button onclick="closeFindEmailModal()" style="width:100%; padding:0.75rem; background:#2d6a4f; color:#fff; border:none; border-radius:6px; font-size:1rem; cursor:pointer; font-weight:600;">
-                閉じる
-            </button>
-        </div>
-    </div>
-</div>
-
-<script>
-// 이메일 찾기 모달 열기
+		<!-- ▼ 이메일 찾기 모달 ▼ -->
+		<div class="auth-overlay" id="findEmailOverlay"
+			onclick="if(event.target===this) closeFindEmailModal()"
+			style="display: none; align-items: center; justify-content: center;">
+			<div class="auth-modal"
+				style="max-width: 400px; width: 90%; padding: 2rem; border-radius: 12px; background: #fff;">
+				<div
+					style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+					<h2 style="font-size: 1.2rem; font-weight: 700;">メールアドレスを探す</h2>
+					<button onclick="closeFindEmailModal()"
+						style="background: none; border: none; font-size: 1.4rem; cursor: pointer;">×</button>
+				</div>
+				<div id="findEmailForm">
+					<div style="margin-bottom: 1rem;">
+						<label
+							style="display: block; font-size: 0.85rem; margin-bottom: 0.3rem;">お名前（漢字）</label>
+						<div
+							style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+							<input type="text" id="findLastName" placeholder="姓（例：山田）"
+								style="padding: 0.6rem; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;">
+							<input type="text" id="findFirstName" placeholder="名（例：太郎）"
+								style="padding: 0.6rem; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;">
+						</div>
+					</div>
+					<div style="margin-bottom: 1.2rem;">
+						<label
+							style="display: block; font-size: 0.85rem; margin-bottom: 0.3rem;">電話番号</label>
+						<input type="tel" id="findPhone" placeholder="例：09012345678"
+							style="width: 100%; padding: 0.6rem; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;">
+					</div>
+					<p id="findEmailMsg"
+						style="color: #e53e3e; font-size: 0.85rem; margin-bottom: 0.8rem; display: none;"></p>
+					<button onclick="handleFindEmail()"
+						style="width: 100%; padding: 0.75rem; background: #2d6a4f; color: #fff; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; font-weight: 600;">探す</button>
+				</div>
+				<div id="findEmailResult" style="display: none; text-align: center;">
+					<p style="font-size: 0.95rem; color: #555; margin-bottom: 1rem;">登録されているメールアドレス</p>
+					<p id="foundEmail"
+						style="font-size: 1.2rem; font-weight: 700; color: #2d6a4f; margin-bottom: 1.5rem;"></p>
+					<button onclick="closeFindEmailModal()"
+						style="width: 100%; padding: 0.75rem; background: #2d6a4f; color: #fff; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; font-weight: 600;">閉じる</button>
+				</div>
+			</div>
+		</div>
+		<script>
 function openFindEmailModal() {
-    // 입력값 초기화
     document.getElementById('findLastName').value = '';
     document.getElementById('findFirstName').value = '';
     document.getElementById('findPhone').value = '';
     document.getElementById('findEmailMsg').style.display = 'none';
     document.getElementById('findEmailForm').style.display = 'block';
     document.getElementById('findEmailResult').style.display = 'none';
-    // 모달 표시
     document.getElementById('findEmailOverlay').style.display = 'flex';
     document.body.style.overflow = 'hidden';
 }
-
-// 이메일 찾기 모달 닫기
 function closeFindEmailModal() {
     document.getElementById('findEmailOverlay').style.display = 'none';
     document.body.style.overflow = '';
 }
-
-// 이메일 찾기 요청 — POST /api/auth/find-email
 function handleFindEmail() {
-    var lastName  = document.getElementById('findLastName').value.trim();
+    var lastName = document.getElementById('findLastName').value.trim();
     var firstName = document.getElementById('findFirstName').value.trim();
-    var phone     = document.getElementById('findPhone').value.trim();
-    var msgEl     = document.getElementById('findEmailMsg');
-
-    // 입력값 검증
-    if (!lastName || !firstName || !phone) {
-        msgEl.textContent = 'すべての項目を入力してください';
-        msgEl.style.display = 'block';
-        return;
-    }
-
+    var phone = document.getElementById('findPhone').value.trim();
+    var msgEl = document.getElementById('findEmailMsg');
+    if (!lastName || !firstName || !phone) { msgEl.textContent = 'すべての項目を入力してください'; msgEl.style.display = 'block'; return; }
     msgEl.style.display = 'none';
-
-    fetch('/api/auth/find-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lastName: lastName, firstName: firstName, phone: phone })
-    })
+    fetch('/api/auth/find-email', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lastName: lastName, firstName: firstName, phone: phone }) })
     .then(function(res) { return res.json(); })
     .then(function(data) {
-        if (data.success) {
-            // 찾기 성공 → 결과 화면으로 전환
-            document.getElementById('foundEmail').textContent = data.email;
-            document.getElementById('findEmailForm').style.display = 'none';
-            document.getElementById('findEmailResult').style.display = 'block';
-        } else {
-            // 찾기 실패 → 에러 메시지 표시
-            msgEl.textContent = data.message || '一致する会員情報が見つかりません';
-            msgEl.style.display = 'block';
-        }
-    })
-    .catch(function() {
-        msgEl.textContent = 'サーバーエラーが発生しました';
-        msgEl.style.display = 'block';
-    });
+        if (data.success) { document.getElementById('foundEmail').textContent = data.email; document.getElementById('findEmailForm').style.display = 'none'; document.getElementById('findEmailResult').style.display = 'block'; }
+        else { msgEl.textContent = data.message || '一致する会員情報が見つかりません'; msgEl.style.display = 'block'; }
+    }).catch(function() { msgEl.textContent = 'サーバーエラーが発生しました'; msgEl.style.display = 'block'; });
 }
 </script>
+
+	</th:block>
+
 </body>
-</html>
 </html>
