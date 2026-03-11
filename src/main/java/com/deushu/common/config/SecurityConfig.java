@@ -32,6 +32,17 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+            // モダールベースのAjaxログインを使用するためCSRFを無効化
+            .csrf(AbstractHttpConfigurer::disable)
+            
+            // デフォルトのフォームログイン（/loginへの強制リダイレクト）を無効化
+            // これにより、非ログイン時に自動でログインページに飛ばされる現象を防ぐ
+            .formLogin(AbstractHttpConfigurer::disable)
+            
+            // REST APIおよび独自セッション管理用の設定
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+            )
             
             // エンドポイント別のアクセス権限制御
             .authorizeHttpRequests(auth -> auth
@@ -81,6 +92,7 @@ public class SecurityConfig {
                 .requestMatchers("/mypage").authenticated()
                 
                 // [ パクさん領域 ] 今後実装する注文・決済API
+                .requestMatchers(HttpMethod.GET, "/api/v1/orders/my").hasRole("USER") // 추가
                 .requestMatchers("/api/v1/orders/**").hasRole("USER")
                 .requestMatchers("/api/v1/owner/**").hasAnyRole("OWNER", "ADMIN")
 

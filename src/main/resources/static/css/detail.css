@@ -580,8 +580,7 @@ body {
 .cart-float-tab .cft-badge { position: absolute; top: -.45rem; right: -.55rem; background: var(--primary); color: #fff; font-size: .625rem; font-weight: 800; min-width: 1.1rem; height: 1.1rem; border-radius: 99px; padding: 0 .2rem; display: none; align-items: center; justify-content: center; line-height: 1; }
 .cart-float-tab .cft-badge.show { display: inline-flex; }
 .cart-float-tab .cft-label { writing-mode: vertical-rl; font-size: .6875rem; font-weight: 700; color: var(--primary); letter-spacing: .05em; opacity: .85; }
-.cart-float-tab .cft-price { writing-mode: vertical-rl; font-size: .6875rem; font-weight: 800; color: var(--primary-dark); display: none; }
-.cart-float-tab .cft-price.show { display: block; }
+.cart-float-tab .cft-price { display: none !important; }
 
 /* ════════════════════════════════════════
    반응형
@@ -702,4 +701,158 @@ body {
     background: var(--gray-100);
     padding: .25rem .625rem;
     border-radius: 99px;
+}
+
+/* ============================================
+   리뷰 아이템 — 리모델링
+============================================ */
+.review-item {
+    display: flex;
+    gap: 1.25rem;
+    padding: 1.25rem 0;
+    border-bottom: 1px solid var(--gray-100);
+}
+.review-item:last-child { border-bottom: none; }
+
+/* 왼쪽: 작성자 */
+.ri-author {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .5rem;
+    width: 144px;
+    flex-shrink: 0;
+    text-align: center;
+}
+.ri-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.ri-author-info {
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+}
+.ri-firstname {
+    font-size: .875rem;
+    font-weight: 700;
+    color: var(--gray-800);
+}
+.ri-fullname {
+    font-size: .75rem;
+    color: var(--gray-400);
+}
+.ri-orderdate {
+    font-size: .7rem;
+    color: var(--gray-400);
+    margin-top: .15rem;
+}
+
+/* 오른쪽: 리뷰 내용 */
+.ri-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+}
+.ri-body-top {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    flex-wrap: wrap;
+}
+.ri-stars {
+    display: flex;
+    align-items: center;
+    gap: .1rem;
+}
+.ri-star {
+    font-size: .875rem;
+    color: #f59e0b;
+}
+.ri-rating-num {
+    font-size: .8rem;
+    font-weight: 700;
+    color: #f59e0b;
+    margin-left: .2rem;
+}
+.ri-date {
+    font-size: .75rem;
+    color: var(--gray-400);
+    margin-left: auto;
+}
+.ri-delete-btn {
+    background: none;
+    border: none;
+    color: var(--gray-300);
+    cursor: pointer;
+    font-size: .875rem;
+    padding: .2rem .3rem;
+    border-radius: 4px;
+    transition: color .15s, background .15s;
+}
+.ri-delete-btn:hover {
+    color: #ef4444;
+    background: #fef2f2;
+}
+.ri-ordered-items {
+    font-size: .8rem;
+    color: var(--primary);
+    background: var(--primary-pale, #f0faf5);
+    padding: .25rem .6rem;
+    border-radius: 99px;
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    width: fit-content;
+}
+.ri-title {
+    font-size: .9375rem;
+    font-weight: 700;
+    color: var(--gray-800);
+}
+.ri-content {
+    font-size: .875rem;
+    color: var(--gray-600);
+    line-height: 1.65;
+    white-space: pre-line;
+}
+.ri-photo {
+    width: 200px;
+    height: 200px;
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    margin-top: .5rem;
+    cursor: pointer;
+    transition: opacity .15s;
+    flex-shrink: 0;
+}
+.ri-photo:hover { opacity: .85; }
+
+/* 사진 클릭 시 원본 팝업 오버레이 */
+.ri-photo-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.75);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+.ri-photo-overlay.active { display: flex; }
+.ri-photo-overlay img {
+    max-width: 90vw;
+    max-height: 90vh;
+    border-radius: 10px;
+    object-fit: contain;
 }
