@@ -32,13 +32,4 @@ public interface OrderMapper {
      * 決済成功時、またはキャンセル時のみ呼び出されます。
      */
     void updateOrderStatus(OrderEntity order);
-
-    /*
-     * 인덱스 페이지에서 히어로 버튼 분기에 사용
-     * 해당 회원의 오늘 결제 완료(PAYMENT_COMPLETED) 주문 수를 반환
-     *
-     * @param memberId 로그인한 회원 ID
-     * @return 오늘 완료된 주문 수 (0이면 주문 없음, 1 이상이면 주문 있음)
-     */
-    int countTodayCompletedOrders(@Param("memberId") Long memberId);
 }
