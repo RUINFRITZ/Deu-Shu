@@ -12,16 +12,81 @@ function escapeHtml(str) {
 }
 
 // ============================================
-// 리뷰 작성 모달
+// 리뷰 모달 — 2단계: 주문 선택 → 리뷰 작성
 // ============================================
-function openReviewModal() {
+let _selectedOrderId = null;
+
+async function openReviewModal() {
+    _selectedOrderId = null;
+    showReviewStep(1);
     document.getElementById('reviewModal').classList.add('active');
+
+    try {
+        const res = await fetch(`/api/v1/orders/my?storeId=${storeId}`);
+        if (res.status === 401) {
+            alert('로그인이 필요합니다.');
+            document.getElementById('reviewModal').classList.remove('active');
+            return;
+        }
+        const data   = await res.json();
+        const orders = data.result ?? data.data ?? data ?? [];
+        renderOrderList(Array.isArray(orders) ? orders : []);
+    } catch (err) {
+        console.error('[주문 목록 오류]', err);
+        document.getElementById('orderListBody').innerHTML =
+            '<p style="color:var(--gray-500);padding:1rem;">주문 목록을 불러오지 못했습니다.</p>';
+    }
 }
+
 function closeReviewModal() {
     document.getElementById('reviewModal').classList.remove('active');
 }
 function handleModalClick(event) {
     if (event.target.id === 'reviewModal') closeReviewModal();
+}
+
+function showReviewStep(step) {
+    document.getElementById('reviewStep1').style.display = step === 1 ? '' : 'none';
+    document.getElementById('reviewStep2').style.display = step === 2 ? '' : 'none';
+}
+
+function renderOrderList(orders) {
+    const body = document.getElementById('orderListBody');
+    if (!orders.length) {
+        body.innerHTML = '<p style="color:var(--gray-500);padding:1rem 0;">이 가게에서 결제 완료된 주문이 없습니다.</p>';
+        return;
+    }
+    body.innerHTML = '';
+    orders.forEach(order => {
+        const itemNames = (order.items || []).map(i => i.itemName).join(', ');
+        const date      = order.createdAt
+            ? new Date(order.createdAt).toLocaleDateString('ko-KR') : '';
+        const div = document.createElement('div');
+        div.className = 'review-order-item' + (order.reviewed ? ' reviewed' : '');
+        div.innerHTML = `
+            <div class="roi-info">
+                <span class="roi-date">${date}</span>
+                <span class="roi-items">${escapeHtml(itemNames)}</span>
+                <span class="roi-price">${(order.totalPrice || 0).toLocaleString()}원</span>
+            </div>
+            ${order.reviewed
+                ? '<span class="roi-badge done">리뷰 완료</span>'
+                : `<button class="roi-btn" onclick="selectOrderForReview(${order.orderId})">선택</button>`
+            }
+        `;
+        body.appendChild(div);
+    });
+}
+
+function selectOrderForReview(orderId) {
+    _selectedOrderId = orderId;
+    _lastOrderId     = orderId;
+    showReviewStep(2);
+}
+
+function backToOrderList() {
+    _selectedOrderId = null;
+    showReviewStep(1);
 }
 
 // ============================================
@@ -60,7 +125,7 @@ function updateStars() {
 // ============================================
 // 글자 수 카운터
 // ============================================
-const textarea = document.getElementById('reviewContent');
+const textarea     = document.getElementById('reviewContent');
 const currentCount = document.getElementById('currentCount');
 textarea?.addEventListener('input', () => {
     currentCount.textContent = textarea.value.length;
@@ -103,7 +168,7 @@ function toggleReviewText(button) {
         button.classList.remove('expanded');
     } else {
         reviewText.dataset.short = reviewText.textContent;
-        reviewText.textContent = reviewText.dataset.full || reviewText.textContent;
+        reviewText.textContent   = reviewText.dataset.full || reviewText.textContent;
         button.innerHTML = '접기 <i class="bi bi-chevron-up"></i>';
         button.classList.add('expanded');
     }
@@ -127,86 +192,48 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ============================================
-// renderStore - API 응답 구조에 맞게 파싱
+// renderStore
 // ============================================
 function renderStore(data) {
-
-    // ── API 응답 구조 정규화 ──
-    // /api/stores/{id} 응답은 flat 구조이므로 내부에서 분리
     const store = {
-        name:         data.name,
-        category:     data.category,
-        address:      data.address,
-        lat:          data.lat,
-        lng:          data.lng,
-        openTime:     data.openTime  || "",
-        closeTime:    data.closeTime || "",
-        thumbnailUrl: data.thumbnailUrl
+        name:      data.name      ?? '-',
+        category:  data.category  ?? '-',
+        address:   data.address   ?? '-',
+        lat:       data.lat,
+        lng:       data.lng,
+        openTime:  data.openTime  || '',
+        closeTime: data.closeTime || '',
+        phone:     data.phone     ?? '-',
     };
+    const images = (data.imageUrls ?? []).filter(Boolean);
+    const rating = { avg: data.avgRating ?? 0, count: data.reviewCount ?? 0 };
+    const items  = data.items ?? [];
 
-    const images = data.imageUrls || [];
+    document.getElementById('storeName').textContent      = store.name;
+    document.getElementById('storeCategory').textContent  = store.category;
+    document.getElementById('storeAddress').textContent   = store.address;
+    document.getElementById('storeHours').textContent     =
+        store.openTime && store.closeTime ? `${store.openTime} ~ ${store.closeTime}` : '-';
+    document.getElementById('storePhone').textContent     = store.phone;
+    document.getElementById('ratingAvg').textContent      = Number(rating.avg).toFixed(1);
+    document.getElementById('reviewCount').textContent    = `리뷰 ${rating.count}`;
+    document.getElementById('reviewsTitle').textContent   = `리뷰 (${rating.count})`;
 
-    const rating = {
-        avg:   data.avgRating   ?? 0,
-        count: data.reviewCount ?? 0
-    };
+    const infoEl = document.getElementById('storeInfo');
+    if (infoEl) infoEl.textContent = data.info || '등록된 안내문이 없습니다.';
 
-    const items = data.items || [];
+    initSlider(images);
 
-    // ========================
-    // 가게 기본 정보
-    // ========================
-    document.getElementById("storeName").textContent    = store.name;
-    document.getElementById("storeCategory").textContent = store.category;
-    document.getElementById("storeAddress").textContent  = store.address;
-    document.getElementById("storeHours").textContent    = `${store.openTime} ~ ${store.closeTime}`;
-    document.getElementById("ratingAvg").textContent     = Number(rating.avg).toFixed(1);
-    document.getElementById("reviewCount").textContent   = `리뷰 ${rating.count}`;
-    document.getElementById("reviewsTitle").textContent  = `리뷰 (${rating.count})`;
-
-    // ========================
-    // 이미지 갤러리
-    // ========================
-    if (images.length > 0) {
-        document.getElementById("mainImage").src = images[0];
-
-        const subImagesDiv = document.getElementById("subImages");
-        subImagesDiv.innerHTML = "";
-        images.slice(1, 5).forEach(img => {
-            const imageTag = document.createElement("img");
-            imageTag.src = img;
-            subImagesDiv.appendChild(imageTag);
-        });
-    }
-
-    // ========================
-    // 지도 초기화
-    // ========================
     const minDiscountPrice = items.length > 0
-        ? Math.min(...items.map(i => i.discountPrice))
-        : null;
-    const totalStock = items.reduce((sum, i) => sum + i.stock, 0);
+        ? Math.min(...items.map(i => i.discountPrice)) : null;
+    const totalStock = items.reduce((s, i) => s + i.stock, 0);
 
-    initMap(
-        store.lat,
-        store.lng,
-        store.name,
-        store.category,
-        store.closeTime,
-        store.address,
-        minDiscountPrice,
-        totalStock
-    );
+    initMap(store.lat, store.lng, store.name, store.category,
+            store.closeTime, store.address, minDiscountPrice, totalStock);
 
-    // ========================
-    // 상품 목록
-    // ========================
     renderItems(items);
-
-    // ========================
-    // 리뷰 로딩
-    // ========================
     loadReviews(storeId);
+    initFavBtn(data.favorited === true);
 }
 
 // ============================================
@@ -231,12 +258,10 @@ function loadReviews(storeId) {
 function renderReviews(reviews) {
     const reviewsList = document.getElementById("reviewsList");
     reviewsList.innerHTML = "";
-
     if (!reviews.length) {
         reviewsList.innerHTML = `<div class="empty">리뷰가 없습니다.</div>`;
         return;
     }
-
     reviews.forEach(r => {
         const div = document.createElement("div");
         div.className = "review-item";
@@ -254,9 +279,64 @@ function renderReviews(reviews) {
 }
 
 // ============================================
-// 지도 (Leaflet) - 리스트 페이지 스타일 통일
+// 리뷰 작성 제출
 // ============================================
-let _map = null;
+async function submitReview() {
+    const title    = document.getElementById('reviewTitle')?.value.trim();
+    const content  = document.getElementById('reviewContent')?.value.trim();
+    const photoUrl = document.getElementById('previewImage')?.src || null;
+
+    if (!title)   { alert('제목을 입력해주세요.'); return; }
+    if (!content) { alert('내용을 입력해주세요.'); return; }
+    if (currentRating < 1) { alert('별점을 선택해주세요.'); return; }
+
+    const body = {
+        storeId:  storeId,
+        title:    title,
+        content:  content,
+        rating:   currentRating,
+        photoUrl: (photoUrl && photoUrl.startsWith('data:')) ? null : (photoUrl || null),
+        orderId:  _lastOrderId
+    };
+
+    try {
+        const res = await fetch('/api/reviews', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify(body)
+        });
+        const json = await res.json();
+
+        if (res.status === 401) {
+            alert('리뷰 작성은 로그인 후 이용할 수 있습니다.');
+            window.location.href = '/';
+            return;
+        }
+        if (!json.success) {
+            alert(json.message || '리뷰 등록에 실패했습니다.');
+            return;
+        }
+
+        alert('리뷰가 등록되었습니다.');
+        closeReviewModal();
+        document.getElementById('reviewTitle').value   = '';
+        document.getElementById('reviewContent').value = '';
+        currentRating = 5.0;
+        updateStars();
+        removeImage();
+        loadReviews(storeId);
+
+    } catch (err) {
+        console.error('[리뷰 등록] 오류:', err);
+        alert('오류가 발생했습니다. 다시 시도해주세요.');
+    }
+}
+
+// ============================================
+// 지도 (Leaflet)
+// ============================================
+let _map    = null;
+let _marker = null;
 
 function _createDetailMarkerIcon(stock) {
     const color = stock === 0  ? '#D32F2F'
@@ -278,7 +358,7 @@ function _createDetailMarkerIcon(stock) {
     });
 }
 
-function _buildDetailPopup(name, category, closeTime, address, minDiscountPrice, totalStock) {
+function _buildDetailPopup(name, category, closeTime, address, minDiscountPrice, totalStock, lat, lng) {
     const stockBadge = totalStock === 0
         ? '<span style="color:#D32F2F;font-weight:700;">売り切れ</span>'
         : totalStock <= 5
@@ -295,7 +375,7 @@ function _buildDetailPopup(name, category, closeTime, address, minDiscountPrice,
             <div class="map-popup-sub">${escapeHtml(category)} · 閉店 ${escapeHtml(closeTime)}</div>
             <div class="map-popup-sub" style="margin-top:2px;">${escapeHtml(address)}</div>
             ${priceHtml}
-            <a href="https://www.openstreetmap.org/?mlat=${_map ? _map.getCenter().lat : 0}&mlon=${_map ? _map.getCenter().lng : 0}#map=16"
+            <a href="https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=16/${lat}/${lng}"
                target="_blank" rel="noopener"
                style="display:block;margin-top:8px;text-align:center;
                       background:#4F7F68;color:#fff;border-radius:6px;
@@ -306,66 +386,61 @@ function _buildDetailPopup(name, category, closeTime, address, minDiscountPrice,
 }
 
 function initMap(lat, lng, name, category, closeTime, address, minDiscountPrice, totalStock) {
-    // lat/lng 없으면 지도 스킵
     if (!lat || !lng) {
         console.warn("[initMap] lat/lng 없음 - 지도 스킵");
         return;
     }
-
     const section     = document.querySelector('.map-section');
     const placeholder = section.querySelector('.map-placeholder');
 
     if (_map) {
         _map.setView([lat, lng], 16);
+        if (_marker) _marker.remove();
+        const stock2 = totalStock ?? 99;
+        _marker = L.marker([lat, lng], { icon: _createDetailMarkerIcon(stock2) }).addTo(_map);
+        _marker.bindPopup(
+            _buildDetailPopup(name, category, closeTime, address, minDiscountPrice, stock2, lat, lng),
+            { maxWidth: 240 }
+        );
+        _marker.openPopup();
         return;
     }
 
     placeholder.style.display = 'none';
-
     const mapDiv = document.createElement('div');
     mapDiv.id = 'leafletMap';
     mapDiv.style.cssText = 'width:100%;height:24rem;border-radius:0.75rem;z-index:0;';
     section.appendChild(mapDiv);
 
-    _map = L.map('leafletMap', {
-        center: [lat, lng],
-        zoom: 16,
-        zoomControl: true,
-        scrollWheelZoom: false,
-    });
-
+    _map = L.map('leafletMap', { center: [lat, lng], zoom: 16, zoomControl: true, scrollWheelZoom: false });
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19,
     }).addTo(_map);
 
-    const stock  = totalStock ?? 99;
-    const marker = L.marker([lat, lng], { icon: _createDetailMarkerIcon(stock) }).addTo(_map);
-
-    marker.bindPopup(
-        _buildDetailPopup(name, category, closeTime, address, minDiscountPrice, stock),
+    const stock = totalStock ?? 99;
+    _marker = L.marker([lat, lng], { icon: _createDetailMarkerIcon(stock) }).addTo(_map);
+    _marker.bindPopup(
+        _buildDetailPopup(name, category, closeTime, address, minDiscountPrice, stock, lat, lng),
         { maxWidth: 240 }
     );
-    marker.openPopup();
-
-    _map.on('click', () => {
-        if (!_map.scrollWheelZoom.enabled()) _map.scrollWheelZoom.enable();
-    });
+    _marker.openPopup();
+    _map.on('click', () => { if (!_map.scrollWheelZoom.enabled()) _map.scrollWheelZoom.enable(); });
 }
 
 // ============================================
-// 장바구니 (cart-sidebar)
+// 장바구니
 // ============================================
-const CART_KEY = `deushu_cart_${storeId}`;
-let _cart = [];
+const CART_KEY   = `deushu_cart_${storeId}`;
+let _cart        = [];
+let _lastOrderId = null;  // 결제 완료 후 orderId 보관 → 리뷰 작성에 연결
 
 function cartLoad() {
     try { _cart = JSON.parse(localStorage.getItem(CART_KEY)) || []; }
     catch { _cart = []; }
 }
-function cartSave() {
-    localStorage.setItem(CART_KEY, JSON.stringify(_cart));
-}
+function cartSave() { localStorage.setItem(CART_KEY, JSON.stringify(_cart)); }
+
 function cartSet(item, qty) {
     const idx = _cart.findIndex(c => c.id === item.id);
     if (qty <= 0) {
@@ -393,7 +468,7 @@ function cartChangeQty(itemId, delta) {
     renderCartPanel();
 }
 
-// ── 패널 DOM 삽입 ──
+// ── 패널 DOM 삽입 (IIFE) ──
 (function injectPanel() {
     cartLoad();
 
@@ -449,7 +524,6 @@ function cartChangeQty(itemId, delta) {
     document.body.appendChild(floatTab);
     document.body.appendChild(overlay);
     document.body.appendChild(panel);
-
     updateCartBadge();
 })();
 
@@ -471,7 +545,6 @@ function renderCartPanel() {
     const body   = document.getElementById('cartBody');
     const footer = document.getElementById('cartFooter');
     body.innerHTML = '';
-
     if (!_cart.length) {
         footer.style.display = 'none';
         body.innerHTML = `
@@ -481,16 +554,13 @@ function renderCartPanel() {
             </div>`;
         return;
     }
-
     footer.style.display = 'flex';
     let totalOrig = 0, totalFinal = 0;
-
     _cart.forEach(c => {
         const lineOrig  = c.originalPrice * c.quantity;
         const lineFinal = c.discountPrice  * c.quantity;
         totalOrig  += lineOrig;
         totalFinal += lineFinal;
-
         const div = document.createElement('div');
         div.className = 'rp-cart-item';
         div.innerHTML = `
@@ -499,27 +569,22 @@ function renderCartPanel() {
                 <p class="rp-cart-item-name">${c.name}</p>
                 <p class="rp-cart-item-price">${c.discountPrice.toLocaleString()}원</p>
                 <div class="rp-qty-control rp-qty-sm">
-                    <div class="rp-qty-btn ${c.quantity <= 1 ? 'disabled' : ''}"
-                         onclick="cartChangeQty(${c.id}, -1)">
+                    <div class="rp-qty-btn ${c.quantity <= 1 ? 'disabled' : ''}" onclick="cartChangeQty(${c.id}, -1)">
                         <i class="bi bi-dash"></i>
                     </div>
                     <div class="rp-qty-num">${c.quantity}</div>
-                    <div class="rp-qty-btn ${c.quantity >= c.stock ? 'disabled' : ''}"
-                         onclick="cartChangeQty(${c.id}, 1)">
+                    <div class="rp-qty-btn ${c.quantity >= c.stock ? 'disabled' : ''}" onclick="cartChangeQty(${c.id}, 1)">
                         <i class="bi bi-plus"></i>
                     </div>
                 </div>
             </div>
             <div class="rp-cart-item-right">
-                <button class="rp-cart-remove" onclick="cartRemove(${c.id})">
-                    <i class="bi bi-trash3"></i>
-                </button>
+                <button class="rp-cart-remove" onclick="cartRemove(${c.id})"><i class="bi bi-trash3"></i></button>
                 <span class="rp-cart-line-total">${lineFinal.toLocaleString()}원</span>
             </div>
         `;
         body.appendChild(div);
     });
-
     const saved = totalOrig - totalFinal;
     document.getElementById('summaryOriginal').textContent = `${totalOrig.toLocaleString()}원`;
     document.getElementById('summarySave').textContent     = `-${saved.toLocaleString()}원`;
@@ -529,40 +594,19 @@ function renderCartPanel() {
 function updateCartBadge() {
     const count      = _cart.reduce((s, c) => s + c.quantity, 0);
     const totalPrice = _cart.reduce((s, c) => s + c.discountPrice * c.quantity, 0);
-
     const badge = document.getElementById('cartBadge');
-    if (badge) {
-        badge.textContent = count;
-        badge.style.display = count > 0 ? 'inline-flex' : 'none';
-    }
+    if (badge) { badge.textContent = count; badge.style.display = count > 0 ? 'inline-flex' : 'none'; }
     const cftBadge = document.getElementById('cftBadge');
-    if (cftBadge) {
-        cftBadge.textContent = count;
-        cftBadge.classList.toggle('show', count > 0);
-    }
+    if (cftBadge) { cftBadge.textContent = count; cftBadge.classList.toggle('show', count > 0); }
     const cftPrice = document.getElementById('cftPrice');
-    if (cftPrice) {
-        cftPrice.textContent = `${totalPrice.toLocaleString()}원`;
-        cftPrice.classList.toggle('show', count > 0);
-    }
+    if (cftPrice) { cftPrice.textContent = `${totalPrice.toLocaleString()}원`; cftPrice.classList.toggle('show', count > 0); }
 }
 
 function onClickPay() {
     if (!_cart.length) return;
-
-    // 1. バックエンド(OrderCreateRequestDto)が要求するフォーマットにデータを変換
-    const cartItems = _cart.map(c => ({
-        itemId: c.id,
-        quantity: c.quantity
-        // orderPriceはバックエンドで安全に再計算されるため、フロントからは送信不要です
-    }));
-
-    // 2. フロントエンドでの合計計算金額（サーバーで検証されます）
+    const cartItems  = _cart.map(c => ({ itemId: c.id, quantity: c.quantity }));
     const totalPrice = _cart.reduce((s, c) => s + c.discountPrice * c.quantity, 0);
-
     console.log('[決済リクエスト準備完了]', { storeId, cartItems, totalPrice });
-
-    // 3. パクさんが作成した PortOne 決済メイン関数を呼び出し
     processCheckout(cartItems, totalPrice, storeId);
 }
 
@@ -572,20 +616,16 @@ function onClickPay() {
 function renderItems(items) {
     const itemsGrid = document.getElementById('itemsGrid');
     itemsGrid.innerHTML = '';
-
     if (!items.length) {
         itemsGrid.innerHTML = `<p style="color:var(--gray-500);padding:1rem;">등록된 상품이 없습니다.</p>`;
         return;
     }
-
     items.forEach(item => {
         const saved   = _cart.find(c => c.id === item.id);
         const initQty = saved ? saved.quantity : 0;
-
         const card = document.createElement('div');
         card.className = 'product-card';
         card.dataset.itemId = item.id;
-
         card.innerHTML = `
             <div class="product-image">
                 <img src="${item.thumbnailUrl || ''}" alt="${item.name}">
@@ -598,20 +638,15 @@ function renderItems(items) {
                     <span class="original-price">${item.originalPrice.toLocaleString()}원</span>
                 </div>
                 <div class="product-meta">
-                    <div class="meta-item">
-                        <i class="bi bi-box"></i>
-                        <span>재고 ${item.stock}개</span>
-                    </div>
+                    <div class="meta-item"><i class="bi bi-box"></i><span>재고 ${item.stock}개</span></div>
                 </div>
                 <div class="card-add-row">
                     <div class="rp-qty-control rp-qty-sm">
-                        <div class="rp-qty-btn ${initQty <= 1 ? 'disabled' : ''}"
-                             onclick="cardChangeQty(this, ${item.id}, -1)">
+                        <div class="rp-qty-btn ${initQty <= 1 ? 'disabled' : ''}" onclick="cardChangeQty(this, ${item.id}, -1)">
                             <i class="bi bi-dash"></i>
                         </div>
                         <div class="rp-qty-num card-qty-num">${initQty || 1}</div>
-                        <div class="rp-qty-btn ${initQty >= item.stock ? 'disabled' : ''}"
-                             onclick="cardChangeQty(this, ${item.id}, 1)">
+                        <div class="rp-qty-btn ${initQty >= item.stock ? 'disabled' : ''}" onclick="cardChangeQty(this, ${item.id}, 1)">
                             <i class="bi bi-plus"></i>
                         </div>
                     </div>
@@ -635,11 +670,9 @@ function cardChangeQty(btn, itemId, delta) {
     const plusBtn  = card.querySelector('.rp-qty-btn:last-child');
     const stockEl  = card.querySelector('.meta-item span');
     const stock    = parseInt(stockEl?.textContent.replace(/[^0-9]/g, '')) || 99;
-
     let qty = parseInt(qtyEl.textContent) || 1;
     qty = Math.min(Math.max(1, qty + delta), stock);
     qtyEl.textContent = qty;
-
     minusBtn.classList.toggle('disabled', qty <= 1);
     plusBtn.classList.toggle('disabled',  qty >= stock);
 }
@@ -648,7 +681,6 @@ function cardAddToCart(btn, item) {
     const card  = btn.closest('.product-card');
     const qtyEl = card.querySelector('.card-qty-num');
     const qty   = parseInt(qtyEl.textContent) || 1;
-
     cartSet(item, qty);
     btn.classList.add('in-cart');
     btn.innerHTML = `<i class="bi bi-bag-check-fill"></i> ${qty}개 담김`;
@@ -659,11 +691,12 @@ function resetCardQty(card) {
     const qtyEl = card.querySelector('.card-qty-num');
     const btn   = card.querySelector('.btn-add-cart-card');
     if (qtyEl) qtyEl.textContent = '1';
-    if (btn) {
-        btn.classList.remove('in-cart');
-        btn.innerHTML = '<i class="bi bi-bag-plus"></i> 담기';
-    }
+    if (btn) { btn.classList.remove('in-cart'); btn.innerHTML = '<i class="bi bi-bag-plus"></i> 담기'; }
 }
+
+// ============================================
+// PortOne 결제
+// ============================================
 
 /*
  * 決済実行のメイン関数
@@ -671,80 +704,56 @@ function resetCardQty(card) {
  * 2. 成功時、PortOneの決済窓口を呼び出し
  */
 async function processCheckout(cartItems, totalPrice, storeId) {
-	// 0. 未ログイン状態の防御コード
+    // 0. 비로그인 방어
     const userNameElement = document.getElementById('headerUserName');
-    if (!userNameElement || !userNameElement.innerText) { // isUserLoggedIn() の代替案
+    if (!userNameElement || !userNameElement.innerText) {
         showToast('決済を行うにはログインが必要です。', 'error');
         openModal('user');
         return;
     }
 
     try {
-        // =====================================================================
-        // STEP 1: バックエンドの注文生成APIを呼び出し（ここで悲観的ロックが発動します）
-        // =====================================================================
-        const orderRequest = {
-            storeId: storeId,
-            cartItems: cartItems,
-            totalPrice: totalPrice
-        };
-
-        // 先ほどパクさんが作成した /api/v1/orders へのPOSTリクエスト
+        // STEP 1: 주문 생성 (비관적 락으로 재고 확보)
         const orderResponse = await fetch('/api/v1/orders', {
-            method: 'POST',
+            method:  'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(orderRequest)
+            body:    JSON.stringify({ storeId, cartItems, totalPrice })
         });
-
         const orderData = await orderResponse.json();
 
         if (!orderData.isSuccess) {
-            // 在庫不足(Lost Update防御)などのエラー時はここで弾かれます
             showToast(orderData.message || '注文の生成に失敗しました。', 'error');
             return;
         }
 
-        // サーバーから発行された「決済待機(PAYMENT_PENDING)」状態の注文ID
         const pendingOrderId = orderData.data;
 
-        // =====================================================================
-        // STEP 2: PortOne (旧 Iamport) 決済モジュールの呼び出し
-        // =====================================================================
-        // 管理者コンソールで発行された「ショップ識別コード(Store ID)」で初期化
+        // STEP 2: PortOne 결제창 호출
         IMP.init("imp41118237");
-
-        // 決済リクエストオブジェクトの構成
         const paymentData = {
-            pg: "tosspayments", // テスト用カカオペイ（最速でテスト可能）
-            pay_method: "card",
-            merchant_uid: `ORDER_${pendingOrderId}_${new Date().getTime()}`, // 加盟店側の固有注文番号
-            name: "ドゥーシュー マルトク割引商品", // 決済窓口に表示される商品名
-            amount: totalPrice, // 実際の決済金額
-            buyer_email: document.getElementById('headerUserName').innerText + "@test.com", // テスト用
-            buyer_name: document.getElementById('headerUserName').innerText,
+            pg:           "tosspayments",
+            pay_method:   "card",
+            merchant_uid: `ORDER_${pendingOrderId}_${new Date().getTime()}`,
+            name:         "ドゥーシュー マルトク割引商品",
+            amount:       totalPrice,
+            buyer_email:  document.getElementById('headerUserName').innerText + "@test.com",
+            buyer_name:   document.getElementById('headerUserName').innerText,
         };
-		
-        // 決済窓口のレンダリングとコールバック関数の登録
-		IMP.request_pay(paymentData, async function (rsp) {
-		            
-            // [デバッグ用] PortOneからの応答をすべてコンソールに出力します
+
+        IMP.request_pay(paymentData, async function(rsp) {
             console.log("========== [PortOne 決済応答データ] ==========");
             console.log(JSON.stringify(rsp, null, 2));
             console.log("==============================================");
 
-			// 🚨 [核心] Toss Payments等で 'success' フィールドが欠落するPG独自のバグ(Edge Case)を防御します。
-            // error_msg が存在せず、imp_uid (決済番号) がきちんと発給されていれば「成功」とみなします。
+            // Toss Payments edge case 방어: success 필드 누락 시 imp_uid로 판단
             const isPaymentSuccessful = rsp.success || (rsp.imp_uid && !rsp.error_msg && !rsp.error_code);
 
             if (isPaymentSuccessful) {
-                console.log(`✅ 決済成功を感知！ imp_uid: ${rsp.imp_uid}, orderId: ${pendingOrderId}`);
-                console.log("🔄 バックエンド(Spring)へ検証APIをリクエストします...");
-                
-                // STEP 3: 決済成功時、バックエンドに最終検証(Validation)を要請
+                console.log(`✅ 決済成功！ imp_uid: ${rsp.imp_uid}, orderId: ${pendingOrderId}`);
                 verifyPayment(rsp.imp_uid, pendingOrderId);
             } else {
-                console.error(`❌ 決済失敗またはキャンセル: ${rsp.error_msg || '理由不明'}`);
-                showToast(`決済がキャンセルされました: ${rsp.error_msg || '残高不足、またはユーザーキャンセル'}`, 'error');
+                console.error(`❌ 決済失敗: ${rsp.error_msg || '理由不明'}`);
+                showToast(`決済がキャンセルされました: ${rsp.error_msg || 'ユーザーキャンセル'}`, 'error');
             }
         });
 
@@ -755,27 +764,27 @@ async function processCheckout(cartItems, totalPrice, storeId) {
 }
 
 /*
- * PortOneでの決済完了後、金額改ざんを防ぐためのバックエンド検証要請
+ * PortOne 결제 완료 후 백엔드 검증
  */
 async function verifyPayment(impUid, orderId) {
     try {
         const verifyRes = await fetch(`/api/v1/orders/${orderId}/payment`, {
-            method: 'POST',
+            method:  'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ impUid: impUid })
+            body:    JSON.stringify({ impUid })
         });
-
         const verifyData = await verifyRes.json();
 
         if (verifyData.isSuccess) {
-            // トーストメッセージを表示
+            // _lastOrderId 보관 (리뷰 작성 시 연결용)
+            _lastOrderId = orderId;
+            // 장바구니 초기화
+            localStorage.removeItem(CART_KEY);
+            _cart = [];
+            updateCartBadge();
+            closeCart();
             showToast('決済が正常に完了しました！マイページへ移動します。', 'success');
-            
-            // ユーザーがメッセージを読む時間(1.5秒)を与えてからマイページへリダイレクト
-            setTimeout(() => {
-                window.location.href = '/mypage';
-            }, 1500);
-            
+            setTimeout(() => { window.location.href = '/mypage'; }, 1500);
         } else {
             showToast(verifyData.message || '決済の検証に失敗しました。', 'error');
         }
@@ -784,3 +793,127 @@ async function verifyPayment(impUid, orderId) {
         showToast('サーバー通信エラーが発生しました。', 'error');
     }
 }
+
+// ============================================
+// 즐겨찾기
+// ============================================
+function initFavBtn(favorited) {
+    const btn = document.getElementById('favBtn');
+    if (!btn) return;
+    _setFavState(btn, favorited);
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+    newBtn.addEventListener('click', handleFavClick);
+}
+
+async function handleFavClick() {
+    const btn = document.getElementById('favBtn');
+    if (!btn || btn.dataset.loading === 'true') return;
+    btn.dataset.loading = 'true';
+    try {
+        const res  = await fetch(`/api/stores/${storeId}/favorite/toggle`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }
+        });
+        const json = await res.json();
+        if (res.status === 401 || json.success === false) {
+            alert('즐겨찾기는 로그인 후 이용할 수 있습니다.');
+            window.location.href = '/';
+            return;
+        }
+        _setFavState(btn, json.favorited);
+    } catch (err) {
+        console.error('[즐겨찾기] 오류:', err);
+    } finally {
+        btn.dataset.loading = 'false';
+    }
+}
+
+function _setFavState(btn, favorited) {
+    const icon = btn.querySelector('i');
+    if (!icon) return;
+    if (favorited) {
+        icon.className = 'bi bi-heart-fill';
+        btn.classList.add('active');
+        btn.setAttribute('aria-label', '즐겨찾기 해제');
+    } else {
+        icon.className = 'bi bi-heart';
+        btn.classList.remove('active');
+        btn.setAttribute('aria-label', '즐겨찾기 추가');
+    }
+}
+
+// ============================================
+// 이미지 슬라이더
+// ============================================
+let _sliderImages = [];
+let _sliderIdx    = 0;
+
+function initSlider(images) {
+    _sliderImages = images;
+    _sliderIdx    = 0;
+    const track = document.getElementById('sliderTrack');
+    const dots  = document.getElementById('sliderDots');
+    if (!track) return;
+    track.style.willChange = 'auto';
+    if (!images.length) return;
+
+    track.innerHTML = '';
+    images.forEach(src => {
+        const img = document.createElement('img');
+        img.src = src;
+        img.alt = '가게 이미지';
+        img.onerror = () => { img.style.background = 'var(--gray-200)'; img.removeAttribute('src'); };
+        track.appendChild(img);
+    });
+
+    if (dots) {
+        dots.innerHTML = '';
+        images.forEach((_, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'slider-dot' + (i === 0 ? ' active' : '');
+            btn.onclick = () => sliderGoTo(i);
+            dots.appendChild(btn);
+        });
+    }
+
+    const showNav = images.length > 1;
+    const prev = document.getElementById('sliderPrev');
+    const next = document.getElementById('sliderNext');
+    if (prev) prev.style.display = showNav ? '' : 'none';
+    if (next) next.style.display = showNav ? '' : 'none';
+    if (dots) dots.style.display = showNav ? '' : 'none';
+    _sliderGo(0);
+}
+
+function sliderMove(delta) {
+    if (!_sliderImages.length) return;
+    sliderGoTo((_sliderIdx + delta + _sliderImages.length) % _sliderImages.length);
+}
+function sliderGoTo(idx) { _sliderIdx = idx; _sliderGo(idx); }
+
+function _sliderGo(idx) {
+    const track = document.getElementById('sliderTrack');
+    if (!track) return;
+    track.style.willChange = 'transform';
+    track.style.transform  = `translateX(-${idx * 100}%)`;
+    track.addEventListener('transitionend', () => {
+        track.style.willChange = 'auto';
+    }, { once: true });
+    document.querySelectorAll('.slider-dot').forEach((d, i) => {
+        d.classList.toggle('active', i === idx);
+    });
+}
+
+// 터치 스와이프
+(function initSwipe() {
+    let startX = 0;
+    document.addEventListener('DOMContentLoaded', () => {
+        const slider = document.getElementById('storeSlider');
+        if (!slider) return;
+        slider.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, { passive: true });
+        slider.addEventListener('touchend',   e => {
+            const diff = startX - e.changedTouches[0].clientX;
+            if (Math.abs(diff) > 40) sliderMove(diff > 0 ? 1 : -1);
+        });
+    });
+})();
