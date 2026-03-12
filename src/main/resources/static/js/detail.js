@@ -262,40 +262,128 @@ function renderReviews(reviews) {
         reviewsList.innerHTML = `<div class="empty">리뷰가 없습니다.</div>`;
         return;
     }
+
+    // 현재 로그인 세션 memberId (헤더에서 추출)
+    const sessionMemberId = window._sessionMemberId ?? null;
+
     reviews.forEach(r => {
+        const stars    = renderStars(r.rating ?? 0);
+        const date     = r.createdAt
+            ? new Date(r.createdAt).toLocaleDateString('ko-KR') : '';
+        const orderDate = r.orderDate
+            ? new Date(r.orderDate).toLocaleDateString('ko-KR') : null;
+        const isOwner  = sessionMemberId && sessionMemberId === r.memberId;
+
         const div = document.createElement("div");
         div.className = "review-item";
+        div.dataset.reviewId = r.id;
         div.innerHTML = `
-            <div class="review-head">
-                <strong>${escapeHtml(r.title || "")}</strong>
-                <span>⭐ ${r.rating ?? 0}</span>
+            <!-- 왼쪽: 작성자 정보 -->
+            <div class="ri-author">
+                <div class="ri-avatar">${escapeHtml((r.firstName || '?')[0])}</div>
+                <div class="ri-author-info">
+                    <span class="ri-firstname">${escapeHtml(r.firstName || '익명')}</span>
+                    ${orderDate ? `<span class="ri-orderdate">주문일 ${orderDate}</span>` : ''}
+                </div>
             </div>
-            <div class="review-text">${escapeHtml(r.content || "")}</div>
-            ${r.photoUrl ? `<img src="${r.photoUrl}" style="max-width:100%;margin-top:8px;">` : ""}
-            <div class="review-meta">${escapeHtml(r.memberName || "익명")}</div>
+
+            <!-- 오른쪽: 리뷰 내용 -->
+            <div class="ri-body">
+                <div class="ri-body-top">
+                    <div class="ri-stars">${stars}</div>
+                    <span class="ri-date">${date}</span>
+                    ${isOwner ? `<button class="ri-delete-btn" onclick="deleteReview(${r.id})">
+                        <i class="bi bi-trash3"></i>
+                    </button>` : ''}
+                </div>
+                ${r.orderedItems ? `<div class="ri-ordered-items">
+                    <i class="bi bi-bag"></i> ${escapeHtml(r.orderedItems)}
+                </div>` : ''}
+                <div class="ri-title">${escapeHtml(r.title || '')}</div>
+                <div class="ri-content">${escapeHtml(r.content || '')}</div>
+                ${r.photoUrl ? `<img class="ri-photo" src="${escapeHtml(r.photoUrl)}" alt="리뷰 사진"
+                    onclick="openPhotoOverlay('${escapeHtml(r.photoUrl)}')">` : ''}
+            </div>
         `;
         reviewsList.appendChild(div);
     });
+}
+
+function renderStars(rating) {
+    let html = '';
+    for (let i = 1; i <= 5; i++) {
+        if (rating >= i)
+            html += '<i class="bi bi-star-fill ri-star"></i>';
+        else if (rating >= i - 0.5)
+            html += '<i class="bi bi-star-half ri-star"></i>';
+        else
+            html += '<i class="bi bi-star ri-star"></i>';
+    }
+    html += `<span class="ri-rating-num">${Number(rating).toFixed(1)}</span>`;
+    return html;
+}
+
+async function deleteReview(reviewId) {
+    if (!confirm('리뷰를 삭제하시겠습니까?')) return;
+    try {
+        const res  = await fetch(`/api/reviews/${reviewId}`, { method: 'DELETE' });
+        const json = await res.json();
+        if (json.success) {
+            const el = document.querySelector(`.review-item[data-review-id="${reviewId}"]`);
+            if (el) el.remove();
+            // 리뷰 카운트 갱신
+            const countEl = document.getElementById('reviewCount');
+            if (countEl) {
+                const cur = parseInt(countEl.textContent.replace(/[^0-9]/g, '')) || 0;
+                countEl.textContent = `리뷰 ${Math.max(0, cur - 1)}건`;
+            }
+        } else {
+            alert(json.message || '삭제에 실패했습니다.');
+        }
+    } catch (err) {
+        console.error('[리뷰 삭제] 오류:', err);
+        alert('오류가 발생했습니다.');
+    }
 }
 
 // ============================================
 // 리뷰 작성 제출
 // ============================================
 async function submitReview() {
-    const title    = document.getElementById('reviewTitle')?.value.trim();
-    const content  = document.getElementById('reviewContent')?.value.trim();
-    const photoUrl = document.getElementById('previewImage')?.src || null;
+    const title   = document.getElementById('reviewTitle')?.value.trim();
+    const content = document.getElementById('reviewContent')?.value.trim();
+    const fileInput = document.getElementById('imageInput');
 
     if (!title)   { alert('제목을 입력해주세요.'); return; }
     if (!content) { alert('내용을 입력해주세요.'); return; }
     if (currentRating < 1) { alert('별점을 선택해주세요.'); return; }
+
+    // 이미지가 있으면 S3에 먼저 업로드
+    let photoUrl = null;
+    if (fileInput && fileInput.files.length > 0) {
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        try {
+            const uploadRes  = await fetch('/api/reviews/image', { method: 'POST', body: formData });
+            const uploadJson = await uploadRes.json();
+            if (!uploadJson.success) {
+                alert(uploadJson.message || '이미지 업로드에 실패했습니다.');
+                return;
+            }
+            photoUrl = uploadJson.url;
+        } catch (err) {
+            console.error('[이미지 업로드] 오류:', err);
+            alert('이미지 업로드 중 오류가 발생했습니다.');
+            return;
+        }
+    }
 
     const body = {
         storeId:  storeId,
         title:    title,
         content:  content,
         rating:   currentRating,
-        photoUrl: (photoUrl && photoUrl.startsWith('data:')) ? null : (photoUrl || null),
+        photoUrl: photoUrl,
         orderId:  _lastOrderId
     };
 
@@ -431,7 +519,7 @@ function initMap(lat, lng, name, category, closeTime, address, minDiscountPrice,
 // ============================================
 // 장바구니
 // ============================================
-const CART_KEY   = `deushu_cart_${storeId}`;
+const CART_KEY   = `deushu_cart_${window._sessionMemberId ?? 'guest'}_${storeId}`;
 let _cart        = [];
 let _lastOrderId = null;  // 결제 완료 후 orderId 보관 → 리뷰 작성에 연결
 
@@ -487,7 +575,6 @@ function cartChangeQty(itemId, delta) {
             <span class="cft-badge" id="cftBadge">0</span>
         </div>
         <span class="cft-label">장바구니</span>
-        <span class="cft-price" id="cftPrice">0원</span>
     `;
 
     const panel = document.createElement('div');
@@ -939,3 +1026,23 @@ function _sliderGo(idx) {
         });
     });
 })();
+
+// ============================================
+// 리뷰 사진 원본 팝업
+// ============================================
+(function injectPhotoOverlay() {
+    const overlay = document.createElement('div');
+    overlay.className = 'ri-photo-overlay';
+    overlay.id = 'riPhotoOverlay';
+    overlay.innerHTML = '<img id="riPhotoOverlayImg" src="" alt="리뷰 사진 원본">';
+    overlay.addEventListener('click', () => overlay.classList.remove('active'));
+    document.body.appendChild(overlay);
+})();
+
+function openPhotoOverlay(url) {
+    const overlay = document.getElementById('riPhotoOverlay');
+    const img     = document.getElementById('riPhotoOverlayImg');
+    if (!overlay || !img) return;
+    img.src = url;
+    overlay.classList.add('active');
+}
