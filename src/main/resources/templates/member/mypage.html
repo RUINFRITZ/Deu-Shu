@@ -773,12 +773,14 @@
             </div>
         </section>
 
-        <!-- 찜한 가게 (미구현) -->
+        <!-- 찜한 가게 -->
         <section class="mypage-section" id="section-favorites">
             <h2 class="section-title">お気に入り</h2>
-            <div class="coming-soon">
-                <i class="bi bi-heart"></i>
-                <p>お気に入り機能は準備中です</p>
+            <div id="favoritesContainer">
+                <div class="coming-soon">
+                    <i class="bi bi-heart"></i>
+                    <p>お気に入りを読み込んでいます...</p>
+                </div>
             </div>
         </section>
 
@@ -1310,6 +1312,140 @@ function switchSection(name, btn) {
         loadOrderHistory();
     } else if (name === 'pickup') {
         loadTodayPickupOrders(); // 既存のピックアップ関数
+    } else if (name === 'favorites') {
+        loadFavorites();
+    }
+}
+
+/*
+ * お気に入り店舗リストをサーバーから非同期で取得します。
+ * GET /api/favorites/my
+ */
+async function loadFavorites() {
+    const container = document.getElementById('favoritesContainer');
+    container.innerHTML = `
+        <div class="coming-soon">
+            <i class="bi bi-hourglass-split"></i>
+            <p>お気に入りを読み込んでいます...</p>
+        </div>`;
+
+    try {
+        const res = await fetch('/api/favorites/my');
+        if (res.status === 401) {
+            showToast('ログインセッションが切れました。', 'error');
+            setTimeout(() => location.href = '/', 1500);
+            return;
+        }
+        if (!res.ok) throw new Error('サーバーエラー: ' + res.status);
+        const stores = await res.json();
+        renderFavorites(stores);
+    } catch (error) {
+        console.error('[MyPage] お気に入りの取得失敗:', error);
+        container.innerHTML = `
+            <div class="coming-soon" style="color: var(--error);">
+                <i class="bi bi-exclamation-triangle"></i>
+                <p>データの読み込みに失敗しました。再試行してください。</p>
+            </div>`;
+    }
+}
+
+/*
+ * 取得したお気に入り店舗データを元に、HTMLカード要素を生成してDOMに挿入します。
+ */
+function renderFavorites(stores) {
+    const container = document.getElementById('favoritesContainer');
+    if (!stores || stores.length === 0) {
+        container.innerHTML = `
+            <div class="coming-soon">
+                <i class="bi bi-heart"></i>
+                <p>お気に入り登録した店舗がありません。</p>
+            </div>`;
+        return;
+    }
+
+    let html = '<div class="card-grid-container">';
+    stores.forEach(s => {
+        const rating   = s.avgRating   ? Number(s.avgRating).toFixed(1) : '-';
+        const reviews  = s.reviewCount ?? 0;
+        const hours    = (s.openTime && s.closeTime) ? s.openTime + ' ~ ' + s.closeTime : '-';
+        const imgUrl   = s.thumbnailUrl || DEFAULT_ITEM_IMAGE;
+        const storeUrl = '/store/' + s.storeId;
+
+        html += `
+            <div class="info-card" style="cursor:pointer; margin-bottom:0;"
+                 onclick="location.href='` + storeUrl + `'">
+                <div style="display:flex; gap:1rem; margin-bottom:0.8rem;">
+                    <img src="` + imgUrl + `" alt="` + s.storeName + `"
+                         style="width:72px; height:72px; object-fit:cover; border-radius:8px;
+                                border:1px solid var(--border); flex-shrink:0;"
+                         onerror="this.style.background='#f3f4f6'; this.removeAttribute('src')">
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-size:0.75rem; color:var(--primary); font-weight:700; margin-bottom:0.2rem;">
+                            ` + (s.category || '') + `
+                        </div>
+                        <div style="font-size:1rem; font-weight:700; color:var(--charcoal);
+                                    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                            ` + s.storeName + `
+                        </div>
+                        <div style="display:flex; align-items:center; gap:0.3rem; font-size:0.8rem; margin-top:0.25rem;">
+                            <i class="bi bi-star-fill" style="color:var(--primary); font-size:0.75rem;"></i>
+                            <span style="font-weight:700; color:var(--primary);">` + rating + `</span>
+                            <span style="color:var(--mid-gray);">レビュー ` + reviews + `件</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="border-top:1px solid #f3f4f6; padding-top:0.6rem;
+                            display:flex; flex-direction:column; gap:0.25rem;">
+                    <div style="font-size:0.8rem; color:var(--mid-gray); display:flex; align-items:center; gap:0.4rem;">
+                        <i class="bi bi-geo-alt" style="color:var(--primary);"></i>
+                        <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">` + (s.address || '-') + `</span>
+                    </div>
+                    <div style="font-size:0.8rem; color:var(--mid-gray); display:flex; align-items:center; gap:0.4rem;">
+                        <i class="bi bi-clock" style="color:var(--primary);"></i>
+                        <span>` + hours + `</span>
+                    </div>
+                </div>
+                <div style="margin-top:0.8rem; text-align:right;">
+                    <button onclick="event.stopPropagation(); removeFavorite(` + s.storeId + `, this)"
+                            class="info-edit-btn"
+                            style="color:var(--error); border-color:var(--error);"
+                            onmouseover="this.style.background='var(--error)'; this.style.color='#fff';"
+                            onmouseout="this.style.background='none'; this.style.color='var(--error)';">
+                        <i class="bi bi-heart-slash"></i> 解除
+                    </button>
+                </div>
+            </div>`;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+/*
+ * お気に入りを解除し、アニメーション付きでカードを削除します。
+ * 既存の POST /api/favorites/{storeId}/toggle を再利用します。
+ */
+async function removeFavorite(storeId, btn) {
+    if (!confirm('お気に入りを解除しますか？')) return;
+    try {
+        const res  = await fetch('/api/favorites/' + storeId + '/toggle', { method: 'POST' });
+        const json = await res.json();
+        if (!json.favorited) {
+            // カードをフェードアウトしてDOMから削除
+            const card = btn.closest('.info-card');
+            if (card) {
+                card.style.transition = 'opacity 0.3s';
+                card.style.opacity = '0';
+                setTimeout(() => {
+                    card.remove();
+                    // 残りカードがなければ空の状態を再描画
+                    const grid = document.querySelector('#favoritesContainer > div');
+                    if (grid && grid.children.length === 0) loadFavorites();
+                }, 300);
+            }
+        }
+    } catch (error) {
+        console.error('[removeFavorite] エラー:', error);
+        showToast('エラーが発生しました。', 'error');
     }
 }
 
