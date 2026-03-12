@@ -2,6 +2,8 @@
 -- [ ドゥーシュー DB Schema V1.4 ]
 -- =========================================================================
 
+-- 0. 
+
 -- 1. 会員テーブル (Members) - べさん担当領域
 CREATE TABLE members (
 	id              BIGINT       AUTO_INCREMENT PRIMARY KEY,
@@ -173,24 +175,17 @@ CREATE TABLE complaints (
 -- （韓国語：트랜잭션의 경합 상태(Race Condition)를 재현하기 위해, 재고 1개인 상품을 생성합니다.）
 -- =========================================================================
 
--- ステップ1: 店舗を所有するためのオーナー会員（ROLE_OWNER）を1名生成します。
--- （韓国語：스텝 1: 점포를 소유하기 위한 점주 회원(ROLE_OWNER)을 1명 생성합니다.）
-INSERT INTO members (email, password, last_name, first_name, last_name_kana, first_name_kana, phone, role) 
-VALUES ('owner@demo.com', '$2a$10$dummyBcryptHashValue...', '山田', '太郎', 'ヤマダ', 'タロウ', '090-1111-2222', 'ROLE_OWNER');
 
--- ステップ2: 生成したオーナー(id=1を想定)に紐づく店舗（寿司屋）を生成します。
--- （韓国語：스텝 2: 생성한 점주(id=1 가정)에 종속된 점포(스시집)를 생성합니다.）
-INSERT INTO stores (owner_id, name, business_number, category, address, lat, lng, open_time, close_time) 
-VALUES (1, 'すし屋のドゥーシュー', '123-45-67890', 'SUSHI', '東京都千代田区丸の内1-1-1', 35.681236, 139.767125, '10:00:00', '22:00:00');
+INSERT INTO mock_business_registry
+    (business_number, last_name, first_name, last_name_kana, first_name_kana, store_name, address, status)
+VALUES
+    ('123-45-67890', '山田', '太郎', 'ヤマダ', 'タロウ',
+     'すし屋のドゥーシュー', '東京都千代田区丸の内1-1-1', 'ACTIVE'),
 
--- ステップ3: デモの核心となる、在庫が「1個」しかない割引商品を登録します。
--- （韓国語：스텝 3: 데모의 핵심이 되는, 재고가 '1개'밖에 없는 할인 상품을 등록합니다.）
-INSERT INTO items (store_id, name, original_price, discount_price, discount_rate, stock, expire_at) 
-VALUES (1, '特上サーモン寿司セット（残り1点）', 2000, 1000, 50, 1, DATE_ADD(NOW(), INTERVAL 3 HOUR));
+    ('987-65-43210', '田中', '花子', 'タナカ', 'ハナコ',
+     '田中ベーカリー', '東京都渋谷区神南1-2-3', 'ACTIVE'),
 
--- ステップ4: 複数商品決済（カート機能）のテスト用に、在庫に余裕のある商品をもう一つ登録します。
--- （韓国語：스텝 4: 다중 상품 결제(장바구니 기능) 테스트용으로, 재고에 여유가 있는 상품을 하나 더 등록합니다.）
-INSERT INTO items (store_id, name, original_price, discount_price, discount_rate, stock, expire_at) 
-VALUES (1, '自家製玉子焼き', 500, 300, 40, 10, DATE_ADD(NOW(), INTERVAL 3 HOUR));
+    ('555-44-33221', '鈴木', '一郎', 'スズキ', 'イチロウ',
+     'すずきのお弁当', '東京都新宿区西新宿2-3-4', 'ACTIVE');
+COMMIT;
 
-commit;

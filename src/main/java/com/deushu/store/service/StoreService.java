@@ -165,6 +165,7 @@ public class StoreService {
             .favorited(detail.isFavorited())
             .items(items)
             .imageUrls(imageUrls)
+            .info(detail.getInfo())
             .build();
     }
 
