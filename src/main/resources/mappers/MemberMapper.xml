@@ -114,8 +114,8 @@
         FROM orders o
         JOIN stores s ON o.store_id = s.id
         WHERE o.member_id = #{memberId}
-          AND o.order_status = 'PAYMENT_COMPLETED'
           AND DATE(o.created_at) = CURDATE()
+          AND o.order_status IN ('PAYMENT_COMPLETED', 'PAYMENT_PENDING')
         ORDER BY o.created_at DESC
     </select>
 	

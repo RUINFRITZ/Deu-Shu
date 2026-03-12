@@ -51,4 +51,7 @@ public interface OrderMapper {
 
     // ロールバック用: キャンセルされた注文に含まれる商品の在庫を復元(+quantity)
     void restoreItemStock(@Param("orderId") Long orderId);
+    
+    // キャンセルされた注文の商品履歴を再取得
+    List<OrderItemEntity> findOrderItemsByOrderId(@Param("orderId") Long orderId);
 }

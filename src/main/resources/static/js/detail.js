@@ -770,6 +770,12 @@ async function processCheckout(cartItems, totalPrice, storeId) {
             } else {
                 console.error(`❌ 決済失敗: ${rsp.error_msg || '理由不明'}`);
                 showToast(`決済がキャンセルされました: ${rsp.error_msg || 'ユーザーキャンセル'}`, 'error');
+				
+				// 決済がキャンセルされた場合、すでにサーバー側で確保(減少)された
+				// 在庫状態を画面に正しく反映させるため、1.5秒後にページをリロードします。
+				setTimeout(() => {
+                    window.location.reload();
+                }, 500);
             }
         });
 

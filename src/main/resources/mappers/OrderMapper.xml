@@ -122,4 +122,10 @@
         WHERE oi.order_id = #{orderId}
     </update>
 
+	<select id="findOrderItemsByOrderId" resultType="com.deushu.order.domain.OrderItemEntity">
+        SELECT *
+        FROM order_items
+        WHERE order_id = #{orderId}
+    </select>
+    
 </mapper>
