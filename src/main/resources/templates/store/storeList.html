@@ -278,7 +278,7 @@
                 </button>
 
                 <!-- 구분선 -->
-                <div class="vr mx-1 d-none d-sm-block" style="height:32px;"></div>
+                <div class="vr mx-1 d-none d-sm-block" style="height:55px;"></div>
 
                 <!-- 정렬 버튼 -->
                 <button class="sort-btn active" data-sort="stock" onclick="selectSort(this)">🔥 まもなく終了</button>
@@ -286,7 +286,7 @@
                 <button class="sort-btn" data-sort="distance" onclick="selectSort(this)">📍 距離順</button>
 
                 <!-- 구분선 -->
-                <div class="vr mx-1 d-none d-sm-block" style="height:32px;"></div>
+                <div class="vr mx-1 d-none d-sm-block" style="height:55px;"></div>
 
                 <!-- 상세 필터 토글 버튼 -->
                 <button class="sort-btn ms-auto" type="button"
@@ -392,57 +392,6 @@
                     <div class="p-2 p-md-3 flex-grow-1 d-flex flex-column">
                         <div id="store-list-container" class="flex-grow-1">
 
-                            <!--
-                                서버 사이드 렌더링 초기 카드 (page=0)
-                                StoreService.getStoresByPage(0, 10, lat, lng) 결과를 바인딩
-                            -->
-                            <div th:each="store : ${stores}"
-                                 class="card store-card mb-2"
-                                 th:data-store-id="${store.id}"
-                                 th:data-lat="${store.lat}"
-                                 th:data-lng="${store.lng}"
-                                 onclick="focusMapPin(this)">
-                                <div class="card-body d-flex">
-                                    <img th:src="${store.thumbnailUrl} ?: '/img/default-store.png'"
-                                         class="store-thumb me-3"
-                                         th:alt="${store.name}"
-                                         onerror="this.style.background='#D3D3D3'"/>
-                                    <div class="flex-grow-1">
-                                        <div class="d-flex justify-content-between align-items-start mb-1">
-                                            <h6 class="mb-0" th:text="${store.name}">店舗名</h6>
-                                            <span th:if="${store.totalStock > 5}"
-                                                  class="badge bg-success text-white small"
-                                                  th:text="'在庫余裕 · ' + ${store.totalStock}">
-                                                    在庫余裕
-                                                </span>
-                                            <span th:if="${store.totalStock > 0 and store.totalStock <= 5}"
-                                                  class="badge badge-warning-custom text-white small"
-                                                  th:text="'まもなく終了 · 在庫 ' + ${store.totalStock}">
-                                                    まもなく終了 · 在庫
-                                                </span>
-                                            <span th:if="${store.totalStock == 0}"
-                                                  class="badge badge-error-custom text-white small">
-                                                    売り切れ
-                                                </span>
-                                        </div>
-                                        <div class="text-muted small mb-1">
-                                            <span th:text="${store.category}">BAKERY</span>
-                                            · 本日 <span th:text="${store.closeTime}">22:00</span> 閉店
-                                        </div>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <span class="price-discount"
-                                                  th:text="'¥' + ${#numbers.formatInteger(store.minDiscountPrice, 3, 'COMMA')}">
-                                                    ¥4,000
-                                                </span>
-                                            <span class="price-original"
-                                                  th:text="'¥' + ${#numbers.formatInteger(store.minOriginalPrice, 3, 'COMMA')}">
-                                                    ¥8,000
-                                                </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
                             <!-- 무한스크롤 센티넬 -->
                             <div id="scroll-sentinel"></div>
                             <div id="scroll-loader" class="justify-content-center">
@@ -479,554 +428,593 @@
 <script th:inline="javascript">
 /*<![CDATA[*/
 
-    /* ══════════════════════════════════════════════════════════════
-       Thymeleaf → JS 데이터 주입
-       ListController 에서 model.addAttribute 로 넘겨준 값 사용
-    ══════════════════════════════════════════════════════════════ */
-    const REGION_LAT   = /*[[${centerLat}]]*/ 35.6812;
-    const REGION_LNG   = /*[[${centerLng}]]*/ 139.7671;
-    const REGION_NAME  = /*[[${regionName}]]*/ '東京駅周辺';
-    const REGION_CODE  = /*[[${regionCode}]]*/ '';
-    const DEFAULT_ZOOM = 15;
+/* =========================================================
+   기본 값
+========================================================= */
+const REGION_LAT  = /*[[${centerLat}]]*/ 35.681236;
+const REGION_LNG  = /*[[${centerLng}]]*/ 139.767125;
+const REGION_NAME = /*[[${regionName}]]*/ '東京';
+const INIT_RADIUS = /*[[${radius}]]*/ null;
+const serverPins  = /*[[${storePins}]]*/ [];
 
-    /* 서버에서 JSON 직렬화된 초기 핀 데이터 (StoreService.getStorePins 결과)
-       ListController 에서 model.addAttribute("storePins", ...) 로 주입 */
-    const serverPins = /*[[${storePins}]]*/ [];
+/* =========================================================
+   지도 초기화
+========================================================= */
+const DEFAULT_ZOOM = 15;
 
-    /* ══════════════════════════════════════════════════════════════
-       [요구사항 1] URL 파라미터에서 radius 읽기
-       index.html nav 버튼 → /list?region=XXX&radius=2 로 진입 시
-       radius=2 가 기본값으로 설정됨.
-       URL에 radius가 없으면 null (= 반경 제한 없음).
-    ══════════════════════════════════════════════════════════════ */
-    const urlParams    = new URLSearchParams(window.location.search);
-    const INIT_RADIUS  = urlParams.get('radius') ? parseFloat(urlParams.get('radius')) : null;
-    /* 현재 적용 중인 반경 (지도 이동 시 동적 업데이트) */
-    let   currentRadius = INIT_RADIUS;
+const map = L.map('map', {
+    zoomControl: true,
+    scrollWheelZoom: true
+}).setView([REGION_LAT, REGION_LNG], DEFAULT_ZOOM);
 
-    /* ══════════════════════════════════════════════════════════════
-       1. Leaflet 지도 초기화
-    ══════════════════════════════════════════════════════════════ */
-    const map = L.map('map').setView([REGION_LAT, REGION_LNG], DEFAULT_ZOOM);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
 
-    // 팝업이 열릴 때 즐겨찾기 상태를 서버에서 가져와 하트 UI 반영
-    map.on('popupopen', async function (e) {
-        const popupEl = e.popup.getElement();
-        if (!popupEl) return;
-        const btn = popupEl.querySelector('.fav-btn');
-        if (!btn) return;
-        const storeId = btn.getAttribute('data-store-id');
-        if (!storeId) return;
-        try {
-            const res = await fetch(`/api/stores/${storeId}`);
-            if (!res.ok) return;
-            const detail = await res.json();
-            const isFav  = !!detail.favorited;
-            btn.dataset.favorited = isFav ? 'true' : 'false';
-            if (isFav) {
-                btn.classList.add('is-fav');
-                btn.querySelector('.fav-icon').textContent = '♥';
-            } else {
-                btn.classList.remove('is-fav');
-                btn.querySelector('.fav-icon').textContent = '♡';
-            }
-        } catch (err) {
-            console.error('お気に入り状態取得エラー:', err);
-        }
+/* =========================================================
+   DOM 캐시
+========================================================= */
+const listContainer = document.getElementById('store-list-container');
+const sentinel      = document.getElementById('scroll-sentinel');
+const loader        = document.getElementById('scroll-loader');
+const endMsg        = document.getElementById('list-end-msg');
+
+/* =========================================================
+   상태값
+========================================================= */
+const PAGE_SIZE = 10;
+
+let currentPage   = 0;
+let isFetching    = false;
+let isListEnd     = false;
+let listCenterLat = REGION_LAT;
+let listCenterLng = REGION_LNG;
+let listRadius    = INIT_RADIUS;
+
+let moveTimer = null;
+let isProgrammaticMove = false;
+
+const filterState = {
+    category: '',
+    sortBy: 'stock',
+    maxDiscountPrice: null,
+    minDiscountRate: 0,
+    expireWithinMinutes: null,
+    radius: INIT_RADIUS,
+    centerLat: REGION_LAT,
+    centerLng: REGION_LNG
+};
+
+/* =========================================================
+   핀 렌더링
+========================================================= */
+const markerMap = {};
+
+function createMarkerIcon(totalStock) {
+    const color = totalStock <= 0  ? '#D32F2F'
+                : totalStock <= 5  ? '#FF9800'
+                :                    '#4F7F68';
+
+    return L.divIcon({
+        className: '',
+        html: `<div style="
+            width:32px; height:32px;
+            border-radius:50% 50% 50% 0;
+            background:${color};
+            border:2px solid #fff;
+            transform:rotate(-45deg);
+            box-shadow:0 2px 8px rgba(0,0,0,0.25);
+        "></div>`,
+        iconSize:     [32, 32],
+        iconAnchor:   [16, 32],
+        popupAnchor:  [0, -36]
     });
+}
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19
-    }).addTo(map);
+function buildPopup(pin) {
+    const stockBadge = pin.totalStock <= 0
+        ? `<span style="color:#D32F2F;font-weight:700;">売り切れ</span>`
+        : pin.totalStock <= 5
+            ? `<span style="color:#FF9800;font-weight:700;">在庫 ${pin.totalStock}個</span>`
+            : `<span style="color:#4F7F68;font-weight:700;">在庫余裕 ${pin.totalStock}+</span>`;
 
-    /* ── 커스텀 마커 (재고 상태별 색상) ── */
-    function createMarkerIcon(stock) {
-        const color = stock === 0 ? '#D32F2F'
-                    : stock <= 5 ? '#FF9800'
-                    : '#4F7F68';
-        return L.divIcon({
-            className: '',
-            html: `<div style="width:32px;height:32px;border-radius:50% 50% 50% 0;
-                               background:${color};border:2px solid #fff;
-                               transform:rotate(-45deg);
-                               box-shadow:0 2px 8px rgba(0,0,0,0.25);"></div>`,
-            iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -36]
-        });
-    }
+    return `
+        <div style="min-width:180px;">
+          <div class="map-popup-header">
+            <div>
+              <div class="map-popup-title">${pin.name}</div>
+              <div class="map-popup-sub">${pin.category} · 本日 ${pin.closeTime} 閉店</div>
+            </div>
+            <button type="button"
+                    class="fav-btn"
+                    data-store-id="${pin.id}"
+                    data-favorited="false"
+                    onclick="toggleFavoriteFromPopup(this)">
+              <span class="fav-icon">♡</span>
+            </button>
+          </div>
+          <div class="map-popup-price">
+            ¥${Number(pin.minDiscountPrice).toLocaleString()} &nbsp;${stockBadge}
+          </div>
+          <a href="/store/${pin.id}"
+             style="display:block;margin-top:8px;text-align:center;
+                    background:#4F7F68;color:#fff;border-radius:6px;
+                    padding:4px 0;font-size:0.8rem;text-decoration:none;">
+             詳細を見る
+          </a>
+        </div>`;
+}
 
-    /* ── 팝업 HTML ── */
-    function buildPopup(pin) {
-        const stockBadge = pin.totalStock === 0
-            ? '<span style="color:#D32F2F;font-weight:700;">売り切れ</span>'
-            : pin.totalStock <= 5
-                ? `<span style="color:#FF9800;font-weight:700;">在庫 ${pin.totalStock}個</span>`
-                : `<span style="color:#4F7F68;font-weight:700;">在庫余裕 ${pin.totalStock}+</span>`;
+function renderPins(pins) {
+    pins.forEach(pin => {
+        if (markerMap[pin.id]) return;
 
-        return `
-            <div style="min-width:180px;">
-              <div class="map-popup-header">
-                <div>
-                  <div class="map-popup-title">${pin.name}</div>
-                  <div class="map-popup-sub">${pin.category} · 本日 ${pin.closeTime} 閉店</div>
-                </div>
-                <button type="button"
-                        class="fav-btn"
-                        data-store-id="${pin.id}"
-                        data-favorited="false"
-                        onclick="toggleFavoriteFromPopup(this)">
-                  <span class="fav-icon">♡</span>
-                </button>
-              </div>
-              <div class="map-popup-price">
-                ¥${Number(pin.minDiscountPrice).toLocaleString()} &nbsp;${stockBadge}
-              </div>
-              <a href="/store/${pin.id}"
-                 style="display:block;margin-top:8px;text-align:center;
-                        background:#4F7F68;color:#fff;border-radius:6px;
-                        padding:4px 0;font-size:0.8rem;text-decoration:none;">
-                 詳細を見る
-              </a>
-            </div>`;
-    }
+        const marker = L.marker([pin.lat, pin.lng], {
+            icon: createMarkerIcon(pin.totalStock)
+        })
+        .bindPopup(buildPopup(pin), { maxWidth: 220 })
+        .addTo(map);
 
-    /* ── 마커 컬렉션 ── */
-    const markerMap = {};
-
-    function renderPins(pins) {
-        pins.forEach(pin => {
-            if (markerMap[pin.id]) return; // 중복 방지
-            const marker = L.marker([pin.lat, pin.lng], { icon: createMarkerIcon(pin.totalStock) })
-                .bindPopup(buildPopup(pin), { maxWidth: 220 })
-                .addTo(map);
-            markerMap[pin.id] = marker;
-        });
-    }
-
-    /* ── 초기 핀 렌더링 ── */
-    if (serverPins && serverPins.length > 0) {
-        renderPins(serverPins);
-    } else {
-        /* 서버 렌더링 핀이 없을 때 클라이언트에서 직접 조회
-           [요구사항 1] INIT_RADIUS가 있으면 해당 반경 내 가게만 핀 표시 */
-        (async () => {
-            try {
-                let url = `/api/stores/pins?centerLat=${REGION_LAT}&centerLng=${REGION_LNG}`;
-                if (INIT_RADIUS) url += `&radius=${INIT_RADIUS}`;
-                const resp = await fetch(url);
-                if (resp.ok) renderPins(await resp.json());
-            } catch (err) {
-                console.error('初期ピン取得エラー:', err);
-            }
-        })();
-    }
-
-    /* ── GPS (허용 시 내 위치로 이동) ── */
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            pos => {
-                map.setView([pos.coords.latitude, pos.coords.longitude], DEFAULT_ZOOM);
-                L.circleMarker([pos.coords.latitude, pos.coords.longitude], {
-                    radius: 10, color: '#4F7F68', fillColor: '#6FAF8F', fillOpacity: 0.6, weight: 2
-                }).bindPopup('<b>📍 現在地</b>').addTo(map);
-            },
-            () => console.info('[Deu-Shu] GPS拒否 → リージョン座標維持:', REGION_NAME)
-        );
-    }
-
-  
- // ── 카드 클릭 → 지도 핀 포커스 ──
-    let isProgrammaticMove = false;
- 
-    function focusMapPin(cardEl) {
-        const id  = parseInt(cardEl.dataset.storeId, 10);
-        const lat = parseFloat(cardEl.dataset.lat);
-        const lng = parseFloat(cardEl.dataset.lng);
-        if (lat && lng) {
-            isProgrammaticMove = true;
-            map.flyTo([lat, lng], 16, { animate: true, duration: 0.8 });
-        }
-        if (markerMap[id]) markerMap[id].openPopup();
-    }
-    /* ── 지도 핀 전체 교체 (필터/이동 후 사용) ── */
-    function replacePins(pins) {
-        Object.values(markerMap).forEach(m => map.removeLayer(m));
-        Object.keys(markerMap).forEach(k => delete markerMap[k]);
-        renderPins(pins);
-    }
-
-    /* ══════════════════════════════════════════════════════════════
-       [요구사항 4] 지도 이동(moveend) 이벤트 처리
-       지도를 이동하면 현재 보이는 영역(Bbox) 기준으로
-       핀과 리스트를 모두 업데이트한다.
-       debounce 300ms 적용 - 빠른 이동 시 API 중복 호출 방지.
-    ══════════════════════════════════════════════════════════════ */
-    let moveTimer = null;
-
-    map.on('moveend', function () {
-    	 //카드 클릭으로 인한 이동이면 리스트 갱신 skip
-        if (isProgrammaticMove) {
-            isProgrammaticMove = false;
-            return;
-        }
-
-        clearTimeout(moveTimer);
-        moveTimer = setTimeout(async () => {
-        	const bounds = map.getBounds();
-            const sw     = bounds.getSouthWest();
-            const ne     = bounds.getNorthEast();
-            const center = map.getCenter();
-
-            /* 현재 지도 중심 좌표를 filterState에도 갱신 */
-            filterState.centerLat = center.lat;
-            filterState.centerLng = center.lng;
-
-            try {
-                /* Bbox API로 현재 뷰포트 내 핀 조회 */
-                const pinUrl = `/api/stores/pins/bbox`
-                    + `?minLat=${sw.lat}&maxLat=${ne.lat}`
-                    + `&minLng=${sw.lng}&maxLng=${ne.lng}`;
-                const pinResp = await fetch(pinUrl);
-                if (pinResp.ok) {
-                    const pins = await pinResp.json();
-                    replacePins(pins);
-                }
-
-                /* 리스트도 현재 중심 + 보이는 범위 반경으로 업데이트
-                   반경: 지도 중심 ~ NE 모서리 거리(km) 계산 */
-                currentRadius = calcRadiusFromBounds(center, ne);
-                resetListForNewRegion(center.lat, center.lng, currentRadius);
-
-            } catch (err) {
-                console.error('地図移動後の更新エラー:', err);
-            }
-        }, 300);
+        markerMap[pin.id] = marker;
     });
+}
 
-    /**
-     * 지도 중심~NE 모서리 거리(km) 계산 (Haversine 간략 버전)
-     * 이 값을 radius로 사용하면 현재 보이는 영역이 모두 커버됨.
-     */
-    function calcRadiusFromBounds(center, ne) {
-        const R    = 6371;
-        const dLat = (ne.lat - center.lat) * Math.PI / 180;
-        const dLng = (ne.lng - center.lng) * Math.PI / 180;
-        const a    = Math.sin(dLat/2) * Math.sin(dLat/2)
-                   + Math.cos(center.lat * Math.PI / 180)
-                   * Math.cos(ne.lat    * Math.PI / 180)
-                   * Math.sin(dLng/2)   * Math.sin(dLng/2);
-        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    }
+function replacePins(pins) {
+    Object.values(markerMap).forEach(marker => map.removeLayer(marker));
+    Object.keys(markerMap).forEach(key => delete markerMap[key]);
+    renderPins(pins);
+}
 
-    /**
-     * [요구사항 4] 새 지역/반경으로 리스트 초기화
-     * 기존 카드 전체 삭제 후 page=0부터 다시 로드
-     */
-    function resetListForNewRegion(lat, lng, radius) {
-        // ✅ 상태 변수 갱신
-        listCenterLat = lat;
-        listCenterLng = lng;
-        listRadius    = radius;
-    	
-    	/* 기존 카드 제거 (sentinel 이전 노드만 삭제, sentinel 중복 선언 제거) */
-        let child = listContainer.firstChild;
-        while (child && child !== sentinel) {
-            const next = child.nextSibling;
-            listContainer.removeChild(child);
-            child = next;
-        }
+/* =========================================================
+   카드 렌더링
+========================================================= */
+function buildCardHtml(store) {
+    const imgSrc = store.thumbnailUrl && String(store.thumbnailUrl).trim() !== ''
+        ? store.thumbnailUrl
+        : '/img/default-store.png';
 
-        /* 무한스크롤 상태 초기화 */
-        currentPage = 0;
-        isListEnd   = false;
-        loader.style.display  = 'none';
-        endMsg.style.display  = 'none';
+    const stockBadge = store.totalStock <= 0
+        ? `<span class="badge badge-error-custom text-white small">売り切れ</span>`
+        : store.totalStock <= 5
+            ? `<span class="badge badge-warning-custom text-white small">まもなく終了 · 在庫 ${store.totalStock}</span>`
+            : `<span class="badge bg-success text-white small">在庫余裕 · ${store.totalStock}</span>`;
 
-        observer.observe(sentinel);
+    const discountPrice  = store.minDiscountPrice  != null
+        ? `¥${Number(store.minDiscountPrice).toLocaleString()}` : '—';
+    const originalPrice  = store.minOriginalPrice  != null
+        ? `¥${Number(store.minOriginalPrice).toLocaleString()}`  : '';
 
-        loadNextPage();
-    }
-
-
-    /* ══════════════════════════════════════════════════════════════
-       2. FR-M04 필터 상태 + API 호출
-    ══════════════════════════════════════════════════════════════ */
-    const filterState = {
-        category:            '',
-        sortBy:              'stock',
-        maxDiscountPrice:    null,
-        minDiscountRate:     0,
-        expireWithinMinutes: null,
-        radius:              INIT_RADIUS,   // [요구사항 1] URL 파라미터 radius 초기값
-        centerLat:           REGION_LAT,
-        centerLng:           REGION_LNG
-    };
-
-    let filterTimer = null;
-
-    /* debounce: 입력이 멈춘 후 500ms 뒤 필터 적용 */
-    function scheduleFilterApply() {
-        clearTimeout(filterTimer);
-        filterTimer = setTimeout(applyFilter, 500);
-    }
-
-    /* 카테고리 선택 */
-    function selectCategory(btn) {
-        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        filterState.category = btn.dataset.category;
-        document.getElementById('map-filter-label').textContent =
-            btn.dataset.category ? btn.textContent.trim() : '全カテゴリ';
-        applyFilter();
-    }
-
-    /* 정렬 선택 */
-    function selectSort(btn) {
-        document.querySelectorAll('.sort-btn[data-sort]').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        filterState.sortBy = btn.dataset.sort;
-        /* 정렬 레이블 일본어 */
-        const labels = {
-            stock:        '在庫・締切間近順',
-            discountRate: '割引率の高い順',
-            distance:     '距離が近い順'
-        };
-        document.getElementById('list-sort-label').textContent = labels[filterState.sortBy] || '並び替え';
-        applyFilter();
-    }
-
-    /* 필터 초기화 */
-    function resetFilters() {
-        document.getElementById('f-max-price').value  = '';
-        document.getElementById('f-min-rate').value   = '0';
-        document.getElementById('f-min-rate-val').textContent = '0%';
-        document.getElementById('f-expire').value     = '';
-        document.getElementById('f-radius').value     = '';
-
-        filterState.maxDiscountPrice    = null;
-        filterState.minDiscountRate     = 0;
-        filterState.expireWithinMinutes = null;
-        filterState.radius              = INIT_RADIUS;  // [요구사항 1] 초기화 시 URL 반경으로 복원
-
-        applyFilter();
-    }
-
-    /* 필터 API 호출 → 핀 + 리스트 교체 */
-    async function applyFilter() {
-        filterState.maxDiscountPrice    = document.getElementById('f-max-price').value  || null;
-        filterState.minDiscountRate     = document.getElementById('f-min-rate').value   || 0;
-        filterState.expireWithinMinutes = document.getElementById('f-expire').value     || null;
-        /* 상세 필터 반경 입력이 있으면 우선 적용, 없으면 현재 radius 유지 */
-        const inputRadius = document.getElementById('f-radius').value;
-        filterState.radius = inputRadius ? parseFloat(inputRadius) : currentRadius;
-
-        const params = new URLSearchParams();
-        if (filterState.category)            params.set('category',            filterState.category);
-        if (filterState.sortBy)              params.set('sortBy',              filterState.sortBy);
-        if (filterState.maxDiscountPrice)    params.set('maxDiscountPrice',    filterState.maxDiscountPrice);
-        if (filterState.minDiscountRate > 0) params.set('minDiscountRate',     filterState.minDiscountRate);
-        if (filterState.expireWithinMinutes) params.set('expireWithinMinutes', filterState.expireWithinMinutes);
-        if (filterState.radius)              params.set('radius',              filterState.radius);
-        params.set('centerLat', filterState.centerLat);
-        params.set('centerLng', filterState.centerLng);
-
-        try {
-            const resp = await fetch(`/api/stores/filter?${params.toString()}`);
-            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-            const pins = await resp.json();
-            replacePins(pins);
-            replaceListCards(pins);
-        } catch (err) {
-            console.error('[FR-M04] フィルター適用エラー:', err);
-        }
-    }
-
-    /* 리스트 카드 전체 교체 (필터 결과) */
-    function replaceListCards(stores) {
-        const container = document.getElementById('store-list-container');
-        const sentinel  = document.getElementById('scroll-sentinel');
-        let child = container.firstChild;
-        while (child && child !== sentinel) {
-            const next = child.nextSibling;
-            container.removeChild(child);
-            child = next;
-        }
-
-        if (stores.length === 0) {
-            sentinel.insertAdjacentHTML('beforebegin',
-                '<div class="text-center text-muted small py-3">条件に合う店舗が見つかりません。</div>');
-            return;
-        }
-
-        stores.forEach(store => {
-            sentinel.insertAdjacentHTML('beforebegin', buildCardHtml(store));
-        });
-
-        /* 필터 모드에서는 무한스크롤 비활성화 */
-        isListEnd = true;
-        document.getElementById('list-end-msg').style.display = 'none';
-    }
-
-
-    /* ══════════════════════════════════════════════════════════════
-       3. [요구사항 3] 무한 스크롤 (IntersectionObserver)
-       GET /api/stores?page=N&size=10&centerLat=&centerLng=&radius=2
-       radius 파라미터 추가 → 반경 내 가게만 리스트에 표시
-    ══════════════════════════════════════════════════════════════ */
-    let currentPage = 1;   // page 0은 서버 렌더링으로 처리
-    let isFetching  = false;
-    let isListEnd   = false;
-    const PAGE_SIZE = 10;
-    
- // ✅ 현재 리스트 기준 좌표/반경 상태 변수 (loadNextPage가 공유)
-    let listCenterLat = REGION_LAT;
-    let listCenterLng = REGION_LNG;
-    let listRadius    = INIT_RADIUS;   // null이면 반경 제한 없음
-    
-    const sentinel      = document.getElementById('scroll-sentinel');
-    const loader        = document.getElementById('scroll-loader');
-    const endMsg        = document.getElementById('list-end-msg');
-    const listContainer = document.getElementById('store-list-container');
-
-    /* ── 카드 HTML 빌더 (모든 텍스트 일본어) ── */
-    function buildCardHtml(store) {
-        const stockBadge = store.totalStock === 0
-            ? `<span class="badge badge-error-custom text-white small">売り切れ</span>`
-            : store.totalStock <= 5
-                ? `<span class="badge badge-warning-custom text-white small">まもなく終了 · 在庫 ${store.totalStock}</span>`
-                : `<span class="badge bg-success text-white small">在庫余裕 · ${store.totalStock}+</span>`;
-        const thumb = store.thumbnailUrl || '/img/default-store.png';
-        return `
+    return `
         <div class="card store-card mb-2"
-             data-store-id="${store.id}" data-lat="${store.lat}" data-lng="${store.lng}"
+             data-store-id="${store.id}"
+             data-lat="${store.lat}"
+             data-lng="${store.lng}"
              onclick="focusMapPin(this)">
             <div class="card-body d-flex">
-                <img src="${thumb}" class="store-thumb me-3" alt="${store.name}"
-                     onerror="this.style.background='#D3D3D3';this.removeAttribute('src')"/>
+                <img src="${imgSrc}"
+                     class="store-thumb me-3"
+                     alt="${store.name}"
+                     onerror="this.style.background='#D3D3D3'">
                 <div class="flex-grow-1">
                     <div class="d-flex justify-content-between align-items-start mb-1">
-                        <h6 class="mb-0">${store.name}</h6>${stockBadge}
+                        <h6 class="mb-0">${store.name}</h6>
+                        ${stockBadge}
                     </div>
                     <div class="text-muted small mb-1">
-                        ${store.category} · 本日 ${store.closeTime} 閉店
+                        ${store.category || ''} · 本日 ${store.closeTime || ''} 閉店
                     </div>
                     <div class="d-flex align-items-center gap-2">
-                        <span class="price-discount">¥${Number(store.minDiscountPrice).toLocaleString()}</span>
-                        <span class="price-original">¥${Number(store.minOriginalPrice).toLocaleString()}</span>
+                        <span class="price-discount">${discountPrice}</span>
+                        ${originalPrice ? `<span class="price-original">${originalPrice}</span>` : ''}
                     </div>
                 </div>
             </div>
         </div>`;
+}
+
+function focusMapPin(cardEl) {
+    const id  = parseInt(cardEl.dataset.storeId, 10);
+    const lat = parseFloat(cardEl.dataset.lat);
+    const lng = parseFloat(cardEl.dataset.lng);
+
+    if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+        isProgrammaticMove = true;
+        map.flyTo([lat, lng], 16, { animate: true, duration: 0.8 });
     }
 
-    /* ✅ loadNextPage: 파라미터 제거, 상태 변수 사용 */
-    async function loadNextPage() {
-        if (isFetching || isListEnd) return;
-        isFetching = true;
-        loader.style.display = 'flex';
+    if (markerMap[id]) {
+        markerMap[id].openPopup();
+    }
+}
 
-        try {
-            // ✅ 상태 변수 사용 (하드코딩된 REGION_LAT/LNG 제거)
-            let url = `/api/stores?page=${currentPage}&size=${PAGE_SIZE}`
-                    + `&centerLat=${listCenterLat}&centerLng=${listCenterLng}`;
-            if (listRadius) url += `&radius=${listRadius}`;   // ✅ radius도 반영
+/* =========================================================
+   거리 계산
+========================================================= */
+function calcRadiusFromBounds(center, ne) {
+    const R    = 6371;
+    const dLat = (ne.lat - center.lat) * Math.PI / 180;
+    const dLng = (ne.lng - center.lng) * Math.PI / 180;
 
-            const resp = await fetch(url);
-            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-            const data = await resp.json();
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(center.lat * Math.PI / 180) *
+        Math.cos(ne.lat * Math.PI / 180) *
+        Math.sin(dLng / 2) * Math.sin(dLng / 2);
 
-            if (!data.content || data.content.length === 0) {
-                isListEnd = true;
-                loader.style.display = 'none';
-                const hasAnyCard = document.querySelectorAll('#store-list-container .store-card').length > 0;
-                if (!hasAnyCard) endMsg.textContent = '現在ご利用可能な店舗がありません';
-                endMsg.style.display = 'block';
-                observer.unobserve(sentinel);
-                return;
-            }
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
-            data.content.forEach(store => {
-                sentinel.insertAdjacentHTML('beforebegin', buildCardHtml(store));
-                if (!markerMap[store.id]) {
-                    const marker = L.marker([store.lat, store.lng], { icon: createMarkerIcon(store.totalStock) })
-                        .bindPopup(buildPopup(store))
-                        .addTo(map);
-                    markerMap[store.id] = marker;
-                }
-            });
+/* =========================================================
+   필터 UI 이벤트 핸들러 (HTML onclick 호출용)
+========================================================= */
+function selectCategory(btn) {
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    filterState.category = btn.dataset.category || '';
+    applyFilter();
+}
 
-            currentPage++;
+function selectSort(btn) {
+    document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    filterState.sortBy = btn.dataset.sort || 'stock';
+    applyFilter();
+}
 
-            if (data.last === true || data.content.length < PAGE_SIZE) {
-                isListEnd = true;
-                loader.style.display = 'none';
-                endMsg.style.display = 'block';
-                observer.unobserve(sentinel);
-            }
+function resetFilters() {
+    const priceEl  = document.getElementById('f-max-price');
+    const rateEl   = document.getElementById('f-min-rate');
+    const rateVal  = document.getElementById('f-min-rate-val');
+    const expireEl = document.getElementById('f-expire');
+    const radiusEl = document.getElementById('f-radius');
 
-        } catch (err) {
-            console.error('[InfiniteScroll] 오류:', err);
-            isListEnd = true;
-            observer.unobserve(sentinel);
-            const hasAnyCard = document.querySelectorAll('#store-list-container .store-card').length > 0;
-            if (!hasAnyCard) endMsg.textContent = '現在ご利用可能な店舗がありません';
-            endMsg.style.display = 'block';
-        } finally {
-            isFetching = false;
-            if (!isListEnd) loader.style.display = 'none';
+    if (priceEl)  priceEl.value  = '';
+    if (rateEl)   rateEl.value   = '0';
+    if (rateVal)  rateVal.textContent = '0%';
+    if (expireEl) expireEl.value = '';
+    if (radiusEl) radiusEl.value = '';
+
+    filterState.category            = '';
+    filterState.maxDiscountPrice    = null;
+    filterState.minDiscountRate     = 0;
+    filterState.expireWithinMinutes = null;
+    filterState.radius              = INIT_RADIUS;
+
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+    const allBtn = document.querySelector('.cat-btn[data-category=""]');
+    if (allBtn) allBtn.classList.add('active');
+
+    applyFilter();
+}
+
+let filterTimer = null;
+function scheduleFilterApply() {
+    clearTimeout(filterTimer);
+    filterTimer = setTimeout(applyFilter, 400);
+}
+
+/* =========================================================
+   필터 파라미터 통일
+========================================================= */
+function syncFilterUiToState() {
+    // category, sortBy는 selectCategory()/selectSort() 버튼 onclick에서 직접 세팅
+    const priceEl  = document.getElementById('f-max-price');
+    const rateEl   = document.getElementById('f-min-rate');
+    const expireEl = document.getElementById('f-expire');
+    const radiusEl = document.getElementById('f-radius');
+
+    filterState.maxDiscountPrice    = priceEl  && priceEl.value  ? priceEl.value  : null;
+    filterState.minDiscountRate     = rateEl   && rateEl.value   ? parseInt(rateEl.value, 10) : 0;
+    filterState.expireWithinMinutes = expireEl && expireEl.value ? expireEl.value : null;
+
+    if (radiusEl && radiusEl.value) {
+        filterState.radius = parseFloat(radiusEl.value);
+    }
+}
+
+function buildBboxFilterParams() {
+    syncFilterUiToState();
+
+    const bounds = map.getBounds();
+    const sw     = bounds.getSouthWest();
+    const ne     = bounds.getNorthEast();
+    const center = map.getCenter();
+
+    filterState.centerLat = center.lat;
+    filterState.centerLng = center.lng;
+
+    if (!filterState.radius || Number.isNaN(filterState.radius)) {
+        if (INIT_RADIUS) {
+            filterState.radius = INIT_RADIUS;
+        } else {
+            filterState.radius = calcRadiusFromBounds(center, ne);
         }
     }
 
-   
-    const observer = new IntersectionObserver(
-        entries => { if (entries[0].isIntersecting) loadNextPage(); },
-        { root: listContainer, rootMargin: '0px', threshold: 0 }
-    );
+    const params = new URLSearchParams();
+    params.set('minLat', sw.lat);
+    params.set('maxLat', ne.lat);
+    params.set('minLng', sw.lng);
+    params.set('maxLng', ne.lng);
+
+    params.set('centerLat', filterState.centerLat);
+    params.set('centerLng', filterState.centerLng);
+
+    if (filterState.radius != null)              params.set('radius', filterState.radius);
+    if (filterState.category)                    params.set('category', filterState.category);
+    if (filterState.sortBy)                      params.set('sortBy', filterState.sortBy);
+    if (filterState.maxDiscountPrice != null)    params.set('maxDiscountPrice', filterState.maxDiscountPrice);
+    if (filterState.minDiscountRate > 0)         params.set('minDiscountRate', filterState.minDiscountRate);
+    if (filterState.expireWithinMinutes != null) params.set('expireWithinMinutes', filterState.expireWithinMinutes);
+
+    return params;
+}
+
+function buildListParams() {
+    const params = new URLSearchParams();
+    params.set('page', currentPage);
+    params.set('size', PAGE_SIZE);
+
+    if (listCenterLat != null) params.set('centerLat', listCenterLat);
+    if (listCenterLng != null) params.set('centerLng', listCenterLng);
+    if (listRadius != null)    params.set('radius', listRadius);
+
+    if (filterState.category)                    params.set('category', filterState.category);
+    if (filterState.sortBy)                      params.set('sortBy', filterState.sortBy);
+    if (filterState.maxDiscountPrice != null)    params.set('maxDiscountPrice', filterState.maxDiscountPrice);
+    if (filterState.minDiscountRate > 0)         params.set('minDiscountRate', filterState.minDiscountRate);
+    if (filterState.expireWithinMinutes != null) params.set('expireWithinMinutes', filterState.expireWithinMinutes);
+
+    return params;
+}
+
+/* =========================================================
+   리스트 초기화 / 로딩
+========================================================= */
+function clearListCards() {
+    let child = listContainer.firstChild;
+    while (child && child !== sentinel) {
+        const next = child.nextSibling;
+        listContainer.removeChild(child);
+        child = next;
+    }
+}
+
+function resetListForNewRegion(lat, lng, radius) {
+    listCenterLat = lat;
+    listCenterLng = lng;
+    listRadius    = radius;
+
+    clearListCards();
+
+    currentPage = 0;
+    isListEnd   = false;
+    isFetching  = false;
+
+    loader.style.display = 'none';
+    endMsg.style.display = 'none';
+    endMsg.textContent   = '周辺のすべての店舗を読み込みました';
+
+    observer.unobserve(sentinel);
     observer.observe(sentinel);
-	
- // ▼ 추가: 서버 렌더링 카드가 없으면 observer 대기 없이 즉시 호출
-    const initialCards = document.querySelectorAll('#store-list-container .store-card').length;
-    if (initialCards === 0) {
-        // 아무 가게도 없을 수 있으므로 바로 첫 로드 실행
-        loadNextPage();
-    }
 
-    
-    /* ── 즐겨찾기 토글 (팝업 하트 버튼) ── */
-    async function toggleFavoriteFromPopup(button) {
-        const storeId = button.getAttribute('data-store-id');
-        if (!storeId) return;
+    loadNextPage();
+}
 
-        try {
-            const res = await fetch(`/api/stores/${storeId}/favorite/toggle`, {
-                method: 'POST',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            });
+async function loadNextPage() {
+    if (isFetching || isListEnd) return;
 
-            if (res.status === 401) {
-                alert('お気に入りはログイン後にご利用いただけます。');
-                return;
+    isFetching = true;
+    loader.style.display = 'flex';
+
+    try {
+        const params = buildListParams();
+        const resp = await fetch(`/api/stores?${params.toString()}`);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+        const data = await resp.json();
+        const content = Array.isArray(data.content) ? data.content : [];
+
+        if (content.length === 0) {
+            isListEnd = true;
+            loader.style.display = 'none';
+
+            const hasAnyCard = document.querySelectorAll('#store-list-container .store-card').length > 0;
+            if (!hasAnyCard) {
+                endMsg.textContent = '現在ご利用可能な店舗がありません';
             }
-            if (!res.ok) {
-                console.error('お気に入りトグル失敗', res.status);
-                return;
-            }
+            endMsg.style.display = 'block';
+            observer.unobserve(sentinel);
+            return;
+        }
 
-            const data  = await res.json();
-            const isFav = !!data.favorited;
-            button.dataset.favorited = isFav ? 'true' : 'false';
-            const icon = button.querySelector('.fav-icon');
-            if (isFav) {
-                button.classList.add('is-fav');
-                icon.textContent = '♥';
-            } else {
-                button.classList.remove('is-fav');
-                icon.textContent = '♡';
-            }
-        } catch (err) {
-            console.error('お気に入りトグル中エラー', err);
+        content.forEach(store => {
+            sentinel.insertAdjacentHTML('beforebegin', buildCardHtml(store));
+        });
+
+        currentPage++;
+
+        if (data.last === true || content.length < PAGE_SIZE) {
+            isListEnd = true;
+            loader.style.display = 'none';
+            endMsg.style.display = 'block';
+            observer.unobserve(sentinel);
+        }
+    } catch (err) {
+        console.error('[InfiniteScroll] 오류:', err);
+        isListEnd = true;
+        observer.unobserve(sentinel);
+
+        const hasAnyCard = document.querySelectorAll('#store-list-container .store-card').length > 0;
+        if (!hasAnyCard) {
+            endMsg.textContent = '現在ご利用可能な店舗がありません';
+        }
+        endMsg.style.display = 'block';
+    } finally {
+        isFetching = false;
+        if (!isListEnd) {
+            loader.style.display = 'none';
         }
     }
+}
+
+/* =========================================================
+   핀 / 리스트 동기화
+========================================================= */
+async function reloadPinsAndList() {
+    try {
+        const params = buildBboxFilterParams();
+
+        const resp = await fetch(`/api/stores/pins/bbox?${params.toString()}`);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+        const pins = await resp.json();
+        replacePins(pins);
+
+        resetListForNewRegion(filterState.centerLat, filterState.centerLng, filterState.radius);
+    } catch (err) {
+        console.error('BBox reload error:', err);
+    }
+}
+
+async function applyFilter() {
+    await reloadPinsAndList();
+}
+
+/* =========================================================
+   초기 핀 — 지도 준비 후 bbox + INIT_RADIUS 기준으로 로딩
+   serverPins(서버 렌더링)는 radius 없이 전체를 반환하므로 사용하지 않음
+========================================================= */
+map.whenReady(function () {
+    const bounds = map.getBounds();
+    const sw = bounds.getSouthWest();
+    const ne = bounds.getNorthEast();
+
+    let url = `/api/stores/pins/bbox?minLat=${sw.lat}&maxLat=${ne.lat}&minLng=${sw.lng}&maxLng=${ne.lng}`;
+    url += `&centerLat=${REGION_LAT}&centerLng=${REGION_LNG}`;
+    if (INIT_RADIUS) url += `&radius=${INIT_RADIUS}`;
+
+    fetch(url)
+        .then(r => r.ok ? r.json() : [])
+        .then(pins => renderPins(pins))
+        .catch(err => console.error('初期ピン取得エラー:', err));
+});
+
+/* whenReady 제거 — 초기 핀은 /api/stores/pins 캐시로 로딩, 이후 moveend/applyFilter가 갱신 */
+
+/* =========================================================
+   GPS
+========================================================= */
+if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+        pos => {
+            const myLat = pos.coords.latitude;
+            const myLng = pos.coords.longitude;
+
+            isProgrammaticMove = true;
+            map.setView([myLat, myLng], DEFAULT_ZOOM);
+
+            L.circleMarker([myLat, myLng], {
+                radius: 10,
+                color: '#4F7F68',
+                fillColor: '#6FAF8F',
+                fillOpacity: 0.6,
+                weight: 2
+            }).bindPopup('<b>📍 現在地</b>').addTo(map);
+
+            filterState.centerLat = myLat;
+            filterState.centerLng = myLng;
+            filterState.radius    = INIT_RADIUS || filterState.radius;
+
+            applyFilter();
+        },
+        err => console.info('[Deu-Shu] GPS拒否 → リージョン座標維持:', REGION_NAME, err.message)
+    );
+}
+
+/* =========================================================
+   moveend
+========================================================= */
+map.on('moveend', function () {
+    if (isProgrammaticMove) {
+        isProgrammaticMove = false;
+        return;
+    }
+
+    clearTimeout(moveTimer);
+    moveTimer = setTimeout(async () => {
+        await reloadPinsAndList();
+    }, 300);
+});
+
+/* =========================================================
+   IntersectionObserver
+========================================================= */
+const observer = new IntersectionObserver(
+    entries => {
+        if (entries[0].isIntersecting) {
+            loadNextPage();
+        }
+    },
+    {
+        root: listContainer,
+        rootMargin: '0px',
+        threshold: 0
+    }
+);
+
+observer.observe(sentinel);
+
+/* =========================================================
+   필터 UI 이벤트
+========================================================= */
+const filterBtn = document.getElementById('btn-apply-filter');
+if (filterBtn) {
+    filterBtn.addEventListener('click', function () {
+        applyFilter();
+    });
+}
+
+/* =========================================================
+   즐겨찾기
+========================================================= */
+async function toggleFavoriteFromPopup(button) {
+    const storeId = button.getAttribute('data-store-id');
+    if (!storeId) return;
+
+    try {
+        const res = await fetch(`/api/stores/${storeId}/favorite/toggle`, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+
+        if (res.status === 401) {
+            alert('お気に入りはログイン後にご利用いただけます。');
+            return;
+        }
+
+        if (!res.ok) {
+            console.error('お気に入りトグル失敗', res.status);
+            return;
+        }
+
+        const data  = await res.json();
+        const isFav = !!data.favorited;
+
+        button.dataset.favorited = isFav ? 'true' : 'false';
+        const icon = button.querySelector('.fav-icon');
+
+        if (isFav) {
+            button.classList.add('is-fav');
+            icon.textContent = '♥';
+        } else {
+            button.classList.remove('is-fav');
+            icon.textContent = '♡';
+        }
+    } catch (err) {
+        console.error('お気に入りトグル中エラー', err);
+    }
+}
 
 /*]]>*/
 </script>

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.deushu.store.mapper.ItemRepository">
+
+    <!--
+        DB 컬럼명(snake_case) → Java 필드명(camelCase) 매핑 정의
+        예: store_id → storeId, original_price → originalPrice
+    -->
+    <resultMap id="itemResultMap" type="com.deushu.order.domain.ItemEntity">
+        <id     property="id"            column="id"/>
+        <result property="storeId"       column="store_id"/>
+        <result property="name"          column="name"/>
+        <result property="originalPrice" column="original_price"/>
+        <result property="discountPrice" column="discount_price"/>
+        <result property="discountRate"  column="discount_rate"/>
+        <result property="stock"         column="stock"/>
+        <result property="expireAt"      column="expire_at"/>
+        <result property="thumbnailUrl"  column="thumbnail_url"/>
+        <result property="createdAt"     column="created_at"/>
+        <result property="updatedAt"     column="updated_at"/>
+        <result property="deletedAt"     column="deleted_at"/>
+    </resultMap>
+
+    <!-- ── items 조회 ───────────────────────────────────────────────── -->
+
+    <!-- 가게 ID로 활성 상품 목록 조회 (논리삭제 제외, 최신순) -->
+    <select id="findByStoreId" parameterType="Long" resultMap="itemResultMap">
+        SELECT id, store_id, name, original_price, discount_price,
+               discount_rate, stock, expire_at, thumbnail_url,
+               created_at, updated_at, deleted_at
+        FROM items
+        WHERE store_id   = #{storeId}
+          AND deleted_at IS NULL
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 상품 ID로 단건 조회 -->
+    <select id="findById" parameterType="Long" resultMap="itemResultMap">
+        SELECT id, store_id, name, original_price, discount_price,
+               discount_rate, stock, expire_at, thumbnail_url,
+               created_at, updated_at, deleted_at
+        FROM items
+        WHERE id         = #{itemId}
+          AND deleted_at IS NULL
+    </select>
+
+    <!-- ── items 등록 / 수정 / 삭제 ────────────────────────────────── -->
+
+    <!-- 신규 상품 등록 -->
+    <insert id="insert" parameterType="com.deushu.order.domain.ItemEntity"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO items (store_id, name, original_price, discount_price,
+                           discount_rate, stock, expire_at, thumbnail_url)
+        VALUES (#{storeId}, #{name}, #{originalPrice}, #{discountPrice},
+                #{discountRate}, #{stock}, #{expireAt}, #{thumbnailUrl})
+    </insert>
+
+    <!-- 상품 정보 수정 -->
+    <update id="update" parameterType="com.deushu.order.domain.ItemEntity">
+        UPDATE items
+        SET name           = #{name},
+            original_price = #{originalPrice},
+            discount_price = #{discountPrice},
+            discount_rate  = #{discountRate},
+            stock          = #{stock},
+            expire_at      = #{expireAt},
+            thumbnail_url  = #{thumbnailUrl},
+            updated_at     = NOW()
+        WHERE id         = #{id}
+          AND store_id   = #{storeId}
+          AND deleted_at IS NULL
+    </update>
+
+    <!-- 상품 논리삭제 (deleted_at 설정) -->
+    <update id="delete" parameterType="Long">
+        UPDATE items
+        SET deleted_at = NOW()
+        WHERE id = #{itemId}
+    </update>
+
+</mapper>

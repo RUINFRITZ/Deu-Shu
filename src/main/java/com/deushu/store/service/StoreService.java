@@ -106,16 +106,20 @@ public class StoreService {
      *
      * @param bbox Leaflet map.getBounds() 기반 SW/NE 좌표
      */
-    public List<StoreMapDto> getStorePinsByBbox(Bbox bbox) {
+    public List<StoreMapDto> getStorePinsByBbox(Bbox bbox, StoreFilterRequest filter) {
         if (bbox == null || !bbox.isValid()) {
             log.warn("[요구사항4] 유효하지 않은 Bbox → 빈 리스트 반환");
             return List.of();
         }
-        log.debug("[요구사항4] Bbox 핀 조회 | lat=[{},{}] lng=[{},{}]",
-                  bbox.getMinLat(), bbox.getMaxLat(), bbox.getMinLng(), bbox.getMaxLng());
-        return storeMapper.findStorePinsByBbox(bbox);
-    }
 
+        log.debug("[BBox+Filter] 핀 조회 | bbox=({}, {}, {}, {}) category={} sortBy={} minRate={} maxPrice={} expireWithin={}",
+                bbox.getMinLat(), bbox.getMaxLat(), bbox.getMinLng(), bbox.getMaxLng(),
+                filter.getCategory(), filter.getSortBy(),
+                filter.getMinDiscountRate(), filter.getMaxDiscountPrice(),
+                filter.getExpireWithinMinutes());
+
+        return storeMapper.findStorePinsByBboxFiltered(bbox, filter);
+    }
     // ══════════════════════════════════════════════════════════════
     // FR-M03  가게 상세 정보 조회
     // ══════════════════════════════════════════════════════════════
@@ -164,24 +168,6 @@ public class StoreService {
             .build();
     }
 
-    // ══════════════════════════════════════════════════════════════
-    // FR-M04  필터 기반 가게 검색
-    // ══════════════════════════════════════════════════════════════
-
-    /**
-     * FR-M04
-     * 카테고리, 할인율, 가격대, 마감시간, 거리 등의 필터를 적용해
-     * 조건에 맞는 가게 핀 목록을 반환한다.
-     * 사용자별 실시간 필터이므로 캐시 미적용.
-     *
-     * @param filter 필터 파라미터 DTO
-     */
-    public List<StoreMapDto> filterStores(StoreFilterRequest filter) {
-        log.debug("[FR-M04] 필터 검색 | category={} minRate={} maxPrice={} expireWithin={}",
-                  filter.getCategory(), filter.getMinDiscountRate(),
-                  filter.getMaxDiscountPrice(), filter.getExpireWithinMinutes());
-        return storeMapper.findStorePinsFiltered(filter);
-    }
 
     // ══════════════════════════════════════════════════════════════
     // FR-M05  캐시 무효화
@@ -222,13 +208,11 @@ public class StoreService {
      * @param centerLng 경도 (거리 계산 및 반경 필터용, nullable)
      * @param radius    조회 반경 km (nullable → 전체)
      */
-    public NearbyStoreResponse getStoresByPage(int page, int size,
-                                                Double centerLat, Double centerLng,
-                                                Double radius) {
+    public NearbyStoreResponse getStoresByPage(int page, int size, StoreFilterRequest filter) {
         int offset = page * size;
-        List<StoreMapDto> content =
-            storeMapper.findStoresByPage(centerLat, centerLng, radius, offset, size);
-        long total = storeMapper.countActiveStores(centerLat, centerLng, radius);
+
+        List<StoreMapDto> content = storeMapper.findStoresByPageFiltered(filter, offset, size);
+        long total = storeMapper.countActiveStoresFiltered(filter);
 
         return NearbyStoreResponse.of(content, page, size, total);
     }

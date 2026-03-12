@@ -36,19 +36,30 @@ function updateHeaderAuth() {
     fetch('/api/auth/me')
     .then(function(res) { return res.json(); })
     .then(function(data) {
-        var heroCta = document.getElementById('heroCta');
+        var heroCta        = document.getElementById('heroCta');
+        var mypageLink     = document.getElementById('dropdownMypageLink');
+        var ownerLink      = document.getElementById('dropdownOwnerLink');
+
         if (data.success) {
             document.getElementById('btnAuthGuest').style.display = 'none';
             document.getElementById('userMenuWrap').style.display = 'block';
             var name = (data.lastName || '') + (data.firstName || '');
             if (!name) name = data.email;
             document.getElementById('headerUserName').textContent = name;
-            // 메인페이지 히어로 버튼 숨기기
             if (heroCta) heroCta.style.display = 'none';
+
+            // role 에 따라 드롭다운 메뉴 표시 전환
+            var isOwner = (data.role === 'ROLE_OWNER' || data.role === 'ROLE_ADMIN');
+            // マイページ: 일반 회원(ROLE_USER)만 표시
+            if (mypageLink) mypageLink.style.display = isOwner ? 'none' : 'flex';
+            // オーナーページ: ROLE_OWNER / ROLE_ADMIN 만 표시
+            if (ownerLink)  ownerLink.style.display  = isOwner ? 'flex' : 'none';
         } else {
             document.getElementById('btnAuthGuest').style.display = '';
             document.getElementById('userMenuWrap').style.display = 'none';
-            if (heroCta) heroCta.style.display = '';
+            if (heroCta)    heroCta.style.display    = '';
+            if (mypageLink) mypageLink.style.display = 'flex'; // 로그아웃 시 기본값 복원
+            if (ownerLink)  ownerLink.style.display  = 'none';
         }
     })
     .catch(function() {
@@ -56,12 +67,11 @@ function updateHeaderAuth() {
         document.getElementById('userMenuWrap').style.display = 'none';
     });
 }
-
 function handleLogout() {
     fetch('/api/auth/logout', { method: 'POST' })
     .then(function() {
         showToast('ログアウトしました', 'success');
-        setTimeout(function() { location.reload(); }, 1000);
+        setTimeout(function() { window.location.href = '/'; }, 1000);
     })
     .catch(function() { location.reload(); });
 }
@@ -69,8 +79,23 @@ function handleLogout() {
 // 페이지 로드 시 로그인 상태 확인
 document.addEventListener('DOMContentLoaded', function() {
     updateHeaderAuth();
+	bindBusinessNumberFormatter('bizRegBizNum', clearBizVerify);
+	
+	// 비즈니스 로그인 Enter 키 처리
+	var bizEmailInput = document.getElementById('bizLoginEmail');
+	var bizPwInput    = document.getElementById('bizLoginPw');
 
-    // 유저 메뉴 드롭다운 JS 제어 (CSS hover 대신 사용 — 토스트 겹침 문제 방지)
+	function handleBizLoginEnter(e) {
+	    if (e.key === 'Enter') {
+	        e.preventDefault();
+	        handleBizLogin();
+	    }
+	}
+
+	if (bizEmailInput) bizEmailInput.addEventListener('keydown', handleBizLoginEnter);
+	if (bizPwInput)    bizPwInput.addEventListener('keydown', handleBizLoginEnter);
+    
+	// 유저 메뉴 드롭다운 JS 제어 (CSS hover 대신 사용 — 토스트 겹침 문제 방지)
     var menu = document.getElementById('userMenuWrap');
     if (!menu) return;
     var dropdown = document.getElementById('userDropdown');
@@ -92,31 +117,6 @@ document.addEventListener('DOMContentLoaded', function() {
     dropdown.addEventListener('mouseleave', closeDropdown);
 });
 
-/* =============================================================
-   Mock 데이터 — 사업자번호 조회용 임시 DB
-   실제 구현 시: GET /api/business/verify?number=xxx 로 대체
-   응답 형식: { status, last_name, first_name, store_name, address }
-============================================================= */
-const MOCK_BUSINESS_DB = {
-    '1234567890': {
-        status: 'ACTIVE',
-        last_name: '田中', first_name: '一郎',
-        store_name: '田中ベーカリー',
-        address: '東京都渋谷区1-1-1'
-    },
-    '9876543210': {
-        status: 'ACTIVE',
-        last_name: '山田', first_name: '花子',
-        store_name: '山田カフェ',
-        address: '大阪府大阪市2-3-4'
-    },
-    '1111111111': {
-        status: 'CLOSED',
-        last_name: '鈴木', first_name: '次郎',
-        store_name: '鈴木食堂',
-        address: '名古屋市3-4-5'
-    }
-};
 
 /* 사업자번호 인증 완료 여부 */
 var bizVerified = false;
@@ -313,40 +313,17 @@ function verifyBusinessNumber() {
     var okText       = document.getElementById('bizVerifyOkText');
     var enteredLast  = document.getElementById('bizRegLastName').value.trim();
     var enteredFirst = document.getElementById('bizRegFirstName').value.trim();
+    var verifyBtn    = document.querySelector('.btn-verify');
 
+    // 초기화
     bizVerified = false;
     okNote.classList.remove('show');
+    clearBizVerify();
 
-    var sn = document.getElementById('bizRegStoreName');
-    var sa = document.getElementById('bizRegStoreAddress');
-    if (sn) { sn.value = ''; sn.classList.remove('is-ok'); }
-    if (sa) { sa.value = ''; sa.classList.remove('is-ok'); }
-
+    // 입력값 검증
     if (!num) {
         setInputState('bizRegBizNum', 'is-error');
         showFieldMsg('bizRegBizNumMsg', '事業者番号を入力してください');
-        return;
-    }
-    if (num.length < 10) {
-        setInputState('bizRegBizNum', 'is-error');
-        showFieldMsg('bizRegBizNumMsg', '10桁以上の数字を入力してください');
-        return;
-    }
-
-    var record = MOCK_BUSINESS_DB[num];
-    if (!record) {
-        setInputState('bizRegBizNum', 'is-error');
-        showFieldMsg('bizRegBizNumMsg', '⚠ 登録されていない事業者番号です');
-        return;
-    }
-    if (record.status === 'CLOSED') {
-        setInputState('bizRegBizNum', 'is-error');
-        showFieldMsg('bizRegBizNumMsg', '⚠ この事業者は廃業済みです');
-        return;
-    }
-    if (record.status === 'SUSPENDED') {
-        setInputState('bizRegBizNum', 'is-error');
-        showFieldMsg('bizRegBizNumMsg', '⚠ この事業者は現在停止中です');
         return;
     }
     if (!enteredLast || !enteredFirst) {
@@ -354,21 +331,83 @@ function verifyBusinessNumber() {
         showFieldMsg('bizRegBizNumMsg', '⚠ 先に STEP 1 の代表者名（姓・名）を入力してください');
         return;
     }
-    if (enteredLast !== record.last_name || enteredFirst !== record.first_name) {
-        setInputState('bizRegBizNum', 'is-error');
-        showFieldMsg('bizRegBizNumMsg', '⚠ 代表者名が一致しません（登録名：' + record.last_name + ' ' + record.first_name + '）');
-        return;
+
+    // 버튼 로딩 상태
+    if (verifyBtn) {
+        verifyBtn.disabled = true;
+        verifyBtn.textContent = '確認中...';
     }
 
-    bizVerified = true;
-    setInputState('bizRegBizNum', 'is-ok');
-    showFieldMsg('bizRegBizNumMsg', '');
-    okNote.classList.add('show');
-    okText.textContent = '✔ 照合完了：' + record.store_name + '（代表：' + record.last_name + ' ' + record.first_name + '）';
-    sn.value = record.store_name;
-    sa.value = record.address;
-    sn.classList.add('is-ok');
-    sa.classList.add('is-ok');
+    // 실제 API 호출 — GET /api/auth/verify-business/{number}
+    // SecurityConfig 에서 /api/auth/** 를 permitAll() 하므로 비로그인도 접근 가능
+    fetch('/api/auth/verify-business/' + encodeURIComponent(num))
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+        if (!data.success) {
+            setInputState('bizRegBizNum', 'is-error');
+            showFieldMsg('bizRegBizNumMsg', data.message || '⚠ 登録されていない事業者番号です');
+            return;
+        }
+
+        // 서버에서 반환된 대표자 성명과 입력값 대조
+        if (data.lastName !== enteredLast || data.firstName !== enteredFirst) {
+            setInputState('bizRegBizNum', 'is-error');
+            showFieldMsg('bizRegBizNumMsg',
+                '⚠ 代表者名が一致しません（登録名：' + data.lastName + ' ' + data.firstName + '）');
+            return;
+        }
+
+        // 인증 성공
+        bizVerified = true;
+        setInputState('bizRegBizNum', 'is-ok');
+        showFieldMsg('bizRegBizNumMsg', '');
+        okNote.classList.add('show');
+        okText.textContent = '✔ 照合完了：' + data.storeName
+            + '（代表：' + data.lastName + ' ' + data.firstName + '）';
+
+        // 가게 이름 · 주소 자동입력 (disabled 필드)
+        var sn = document.getElementById('bizRegStoreName');
+        var sa = document.getElementById('bizRegStoreAddress');
+        if (sn) { sn.value = data.storeName  || ''; sn.classList.add('is-ok'); }
+        if (sa) { sa.value = data.address    || ''; sa.classList.add('is-ok'); }
+    })
+    .catch(function() {
+        setInputState('bizRegBizNum', 'is-error');
+        showFieldMsg('bizRegBizNumMsg', 'サーバーエラーが発生しました。再度お試しください');
+    })
+    .finally(function() {
+        // 버튼 원복
+        if (verifyBtn) {
+            verifyBtn.disabled = false;
+            verifyBtn.textContent = '照合';
+        }
+    });
+}
+// 하이픈 자동삽입
+function formatBusinessNumber(value) {
+    var digits = String(value || '').replace(/\D/g, '').slice(0, 10);
+
+    if (digits.length > 5) {
+        return digits.replace(/(\d{3})(\d{2})(\d{1,5})/, '$1-$2-$3');
+    }
+    if (digits.length > 3) {
+        return digits.replace(/(\d{3})(\d{1,2})/, '$1-$2');
+    }
+    return digits;
+}
+
+function bindBusinessNumberFormatter(inputId, onFormatted) {
+    var input = document.getElementById(inputId);
+    if (!input) return;
+
+    input.addEventListener('input', function(e) {
+        var formatted = formatBusinessNumber(e.target.value);
+        e.target.value = formatted;
+
+        if (typeof onFormatted === 'function') {
+            onFormatted();
+        }
+    });
 }
 
 function clearBizVerify() {
@@ -380,7 +419,6 @@ function clearBizVerify() {
     if (sn) { sn.value = ''; sn.classList.remove('is-ok'); }
     if (sa) { sa.value = ''; sa.classList.remove('is-ok'); }
 }
-
 
 /* =============================================================
    폼 제출 핸들러
@@ -484,7 +522,9 @@ function handleUserRegister() {
     });
 }
 
-/* 비즈니스 로그인 — POST /api/auth/login (백엔드 미구현, 프론트만 연결) */
+/* 비즈니스 로그인 — POST /api/auth/owner-login
+   ROLE_USER 전용인 /api/auth/login 대신 오너 전용 엔드포인트 호출
+   응답에 role 포함 → /api/auth/me 이중 호출 없이 즉시 리다이렉트 */
 function handleBizLogin() {
     var email = document.getElementById('bizLoginEmail').value.trim();
     var pw    = document.getElementById('bizLoginPw').value;
@@ -502,7 +542,11 @@ function handleBizLogin() {
     }
     if (!ok) return;
 
-    fetch('/api/auth/login', {
+    // 버튼 로딩 상태
+    var loginBtn = document.querySelector('#panelBizLogin .btn-orange-full');
+    if (loginBtn) { loginBtn.disabled = true; loginBtn.textContent = 'ログイン中...'; }
+
+    fetch('/api/auth/owner-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email, password: pw })
@@ -511,7 +555,10 @@ function handleBizLogin() {
     .then(function(data) {
         if (data.success) {
             closeModal();
-            location.reload();
+            showToast('ログインしました', 'success');
+            updateHeaderAuth();
+            // 응답의 role 로 즉시 리다이렉트 결정 (/api/auth/me 이중 호출 없음)
+            setTimeout(function() { location.href = '/owner'; }, 800);
         } else {
             setInputState('bizLoginEmail', 'is-error');
             showFieldMsg('bizLoginEmailMsg', data.message || 'ログインに失敗しました');
@@ -519,11 +566,16 @@ function handleBizLogin() {
     })
     .catch(function() {
         showFieldMsg('bizLoginEmailMsg', 'サーバーエラーが発生しました');
+    })
+    .finally(function() {
+        if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'ビジネスログイン'; }
     });
 }
 
-/* 비즈니스 회원 가입 — POST /api/auth/signup/owner (백엔드 미구현, 프론트만 연결) */
+
+/* 사업자 회원가입 — POST /api/auth/owner-signup */
 function handleBizRegister() {
+    // 사업자번호 인증 완료 여부 확인
     if (!bizVerified) {
         setInputState('bizRegBizNum', 'is-error');
         showFieldMsg('bizRegBizNumMsg', '先に事業者番号の認証を完了してください');
@@ -549,14 +601,31 @@ function handleBizRegister() {
         showFieldMsg('bizRegEmailMsg', '正しいメールアドレスを入力してください');
         ok = false;
     }
-    if (pw !== pwC) {
+    if (calcPwStrength(pw) < 2) {
+        setInputState('bizRegPw', 'is-error');
+        showFieldMsg('bizRegPwCMsg', 'パスワードは8文字以上で、英字・数字を含めてください');
+        ok = false;
+    }
+    if (pw !== pwC || !pwC) {
         setInputState('bizRegPwC', 'is-error');
         showFieldMsg('bizRegPwCMsg', 'パスワードが一致しません');
         ok = false;
     }
+    if (!lastName || !firstName) {
+        showFieldMsg('bizRegEmailMsg', '代表者名を入力してください');
+        ok = false;
+    }
+    if (!lastKana || !firstKana) {
+        showFieldMsg('bizRegEmailMsg', 'フリガナを入力してください');
+        ok = false;
+    }
+    if (!phone || !isValidPhone(phone)) {
+        showFieldMsg('bizRegEmailMsg', '正しい電話番号を入力してください');
+        ok = false;
+    }
     if (!ok) return;
 
-    fetch('/api/auth/signup/owner', {
+    fetch('/api/auth/owner-signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -575,9 +644,16 @@ function handleBizRegister() {
     .then(function(res) { return res.json(); })
     .then(function(data) {
         if (data.success) {
-            alert('ビジネス登録が完了しました。ログインしてください。');
-            showPanel('panelBizLogin');
-            setTabActive('tabBizLogin');
+            // alert() 대신 showToast() 로 교체
+            showToast('ビジネス登録が完了しました。ログインしてください', 'success');
+            // 사업자 로그인 패널로 이동
+            setTimeout(function() {
+                showPanel('panelBizLogin');
+                setTabActive('tabBizLogin');
+                // 이메일 자동 입력 (편의성)
+                var loginEmail = document.getElementById('bizLoginEmail');
+                if (loginEmail) loginEmail.value = email;
+            }, 1200);
         } else {
             showFieldMsg('bizRegEmailMsg', data.message || 'ビジネス登録に失敗しました');
         }

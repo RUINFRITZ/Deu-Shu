@@ -1,5 +1,5 @@
 -- =========================================================================
--- [ ドゥーシュー DB Schema V1.3 ]
+-- [ ドゥーシュー DB Schema V1.4 ]
 -- =========================================================================
 
 -- 1. 会員テーブル (Members) - べさん担当領域
@@ -35,6 +35,7 @@ CREATE TABLE stores (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME DEFAULT NULL COMMENT '論理削除フラグ（店舗閉鎖時）',
+    info TEXT DEFAULT NULL COMMENT '店舗からのお知らせ・説明文',
     FOREIGN KEY (owner_id) REFERENCES members(id) ON DELETE CASCADE
 );
 

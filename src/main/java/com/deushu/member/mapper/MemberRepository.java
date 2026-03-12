@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 import com.deushu.member.domain.MemberEntity;
 import com.deushu.order.dto.MyPageOrderResponseDto;
@@ -32,6 +33,21 @@ public interface MemberRepository {
     // 회원 탈퇴 (논리삭제 — deleted_at 설정)
     void withdraw(Long id);
     
+    // 사업자 회원가입 (ROLE_OWNER)
+    void insertOwner(MemberEntity member);
+
+    /**
+     * loginId(=username, 로그인 시 입력하는 ID 또는 email)로 회원 PK 조회.
+     * OrderController / OwnerPickupController 에서 CustomUserDetails 없이
+     * memberId를 추출할 때 사용.
+     *
+     * ★ members 테이블 컬럼명이 다르다면 아래 SQL 수정 필요:
+     *   - login_id 컬럼명이 'email' 이면  → WHERE email = #{loginId}
+     *   - login_id 컬럼명이 'username' 이면 → WHERE username = #{loginId}
+     */
+    @Select("SELECT id FROM members WHERE login_id = #{loginId} AND deleted_at IS NULL LIMIT 1")
+    Long findIdByLoginId(@Param("loginId") String loginId);
+
     // =====================================================================
     // マイページ：本日のピックアップ対象注文を照会
     // =====================================================================

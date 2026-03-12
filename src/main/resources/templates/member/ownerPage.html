@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>オーナーページ — ドゥーシュー</title>
+
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+<!-- Bootstrap 5 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Bootstrap Icons -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+<!-- flatpickr CSS -->
+<link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
+
+<!-- 공통 CSS / 오너 전용 CSS -->
+<link rel="stylesheet" th:href="@{/css/style.css}">
+<link rel="stylesheet" th:href="@{/css/owner.css}">
+
+<style>
+/* ── 오너 레이아웃 (Bootstrap5 보완) ─────────────────────────────────── */
+body { font-family: 'Noto Sans JP', sans-serif; background: #f7f8fa; }
+
+/* 사이드바 */
+.owner-sidebar {
+    min-height: 100vh;
+    background: linear-gradient(180deg, #1a472a 0%, #2d6a4f 100%);
+    padding: 0;
+    position: sticky;
+    top: 0;
+    max-height: 100vh;
+    overflow-y: auto;
+}
+.sidebar-profile {
+    padding: 2rem 1.2rem 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    text-align: center;
+}
+.profile-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+.profile-name  { color: #fff; font-weight: 700; font-size: 0.95rem; }
+.profile-email { color: rgba(255,255,255,0.65); font-size: 0.75rem; margin-top: 0.2rem; }
+.profile-badge {
+    display: inline-block; margin-top: 0.6rem;
+    background: #f4a832; color: #fff;
+    font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.7rem;
+    border-radius: 20px; letter-spacing: 1px;
+}
+.sidebar-nav { padding: 1rem 0.75rem; }
+.sidebar-nav-item {
+    display: flex; align-items: center; gap: 0.6rem;
+    width: 100%; padding: 0.7rem 1rem;
+    background: none; border: none; border-radius: 8px;
+    color: rgba(255,255,255,0.8); font-size: 0.88rem; text-align: left;
+    cursor: pointer; transition: all 0.15s; text-decoration: none;
+}
+.sidebar-nav-item:hover  { background: rgba(255,255,255,0.12); color: #fff; }
+.sidebar-nav-item.active { background: rgba(255,255,255,0.2);  color: #fff; font-weight: 600; }
+.sidebar-divider { height: 1px; background: rgba(255,255,255,0.15); margin: 0.5rem 1rem; }
+
+/* 메인 콘텐츠 */
+.owner-main { padding: 2rem 1.5rem; min-height: 100vh; }
+@media (max-width: 767.98px) { .owner-main { padding: 1rem 0.75rem; } }
+
+/* 섹션 전환 */
+.owner-section          { display: none; }
+.owner-section.active   { display: block; }
+
+/* 섹션 타이틀 */
+.section-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 1.5rem;
+    color: #1a472a; display: flex; align-items: center; gap: 0.5rem; }
+
+/* 정보 카드 */
+.info-card { background: #fff; border-radius: 12px; padding: 1.5rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 1.5rem; }
+.info-card-title { font-size: 0.7rem; font-weight: 700; letter-spacing: 2px;
+    color: #aaa; margin-bottom: 1.2rem; }
+
+/* required 별표 */
+.required { color: #e74c3c; }
+
+/* 주소 행 */
+.address-row { display: flex; gap: 0.5rem; }
+.address-row input { flex: 1; }
+
+/* 커스텀 시간 선택기 */
+.time-picker-wrap { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+.time-picker-wrap .ampm-sel  { width: 85px; }
+.time-picker-wrap .hour-sel  { width: 70px; }
+.time-picker-wrap .min-sel   { width: 70px; }
+.time-picker-wrap .sep       { color: #555; font-weight: 600; }
+
+/* 대표이미지 */
+.thumbnail-preview { width: 100px; height: 100px; object-fit: cover;
+    border-radius: 8px; border: 1px solid #dee2e6; margin-top: 0.5rem; }
+
+/* 사진 그리드 */
+.photo-grid { display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 0.8rem; }
+.photo-item { position: relative; border-radius: 8px; overflow: hidden;
+    aspect-ratio: 1; background: #f0f0f0; }
+.photo-item img { width: 100%; height: 100%; object-fit: cover; }
+.photo-delete { position: absolute; top: 4px; right: 4px;
+    background: rgba(0,0,0,0.55); color: #fff; border: none;
+    border-radius: 50%; width: 24px; height: 24px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; font-size: 0.75rem; }
+.photo-add-box { aspect-ratio: 1; border: 2px dashed #ccc; border-radius: 8px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: #aaa; cursor: pointer; gap: 0.3rem; font-size: 0.8rem;
+    transition: all 0.15s; }
+.photo-add-box:hover { border-color: #2d6a4f; color: #2d6a4f; }
+
+/* 상품 그리드 */
+.item-grid { display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
+.item-card { background: #fff; border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07); overflow: hidden;
+    display: flex; flex-direction: column; }
+.item-card-img { height: 130px; background: #f5f5f5;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; font-size: 2rem; color: #ccc; }
+.item-card-img img { width:100%; height:100%; object-fit:cover; }
+.item-card-body { padding: 0.8rem; flex: 1; }
+.item-card-name { font-weight: 600; font-size: 0.88rem; margin-bottom: 0.4rem; }
+.price-original { text-decoration: line-through; color: #aaa; font-size: 0.78rem; }
+.price-discount  { color: #e74c3c; font-weight: 700; font-size: 0.95rem; margin-left: 0.3rem; }
+.item-badge { background: #fef3c7; color: #b45309; font-size: 0.7rem;
+    font-weight: 700; padding: 0.1rem 0.4rem; border-radius: 4px; margin-left: 0.2rem; }
+.item-meta { font-size: 0.75rem; color: #666; margin-top: 0.25rem; }
+.item-card-actions { display: flex; gap: 0.4rem; padding: 0 0.8rem 0.8rem; }
+
+/* 매출 통계 카드 */
+.sales-stat-grid { display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.8rem;
+    margin-bottom: 1.5rem; }
+.sales-stat-card { background: #fff; border-radius: 10px; padding: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06); text-align: center; }
+.sales-stat-label { font-size: 0.75rem; color: #888; margin-bottom: 0.3rem; }
+.sales-stat-value { font-size: 1.4rem; font-weight: 700; color: #1a472a; }
+.sales-stat-value.revenue { color: #e74c3c; }
+
+/* 상품 모달 */
+.modal-overlay { display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5); z-index: 1050;
+    align-items: center; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal-box { background: #fff; border-radius: 14px; width: 90%; max-width: 520px;
+    max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 40px rgba(0,0,0,0.18); }
+.modal-header { display: flex; align-items: center; justify-content: space-between;
+    padding: 1.2rem 1.5rem; border-bottom: 1px solid #eee; }
+.modal-header h3 { margin: 0; font-size: 1.1rem; font-weight: 700; }
+.modal-close { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #888; }
+.modal-body { padding: 1.5rem; }
+
+/* 토스트 */
+.owner-toast-wrap { position: fixed; top: 1rem; right: 1rem; z-index: 2000;
+    display: flex; flex-direction: column; gap: 0.5rem; }
+.owner-toast { background: #1a472a; color: #fff; padding: 0.75rem 1.2rem;
+    border-radius: 8px; font-size: 0.88rem; box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    opacity: 0; transform: translateY(-8px); transition: all 0.25s; }
+.owner-toast.show { opacity: 1; transform: translateY(0); }
+.owner-toast.error { background: #c0392b; }
+
+/* 스피너 */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { display: inline-block; animation: spin 0.8s linear infinite; }
+
+/* flatpickr 폰트 통일 */
+.flatpickr-calendar { font-family: 'Noto Sans JP', sans-serif !important; }
+
+/* 모바일 헤더 메뉴 바 */
+.owner-mobile-bar { background: #1a472a; padding: 0.6rem 1rem;
+    display: flex; align-items: center; gap: 0.75rem; }
+.owner-mobile-bar .store-title { color: #fff; font-size: 0.88rem; font-weight: 600; flex: 1; }
+</style>
+</head>
+
+<body>
+
+<!-- ── 공통 헤더 ─────────────────────────────────────────────────────── -->
+<div th:replace="~{fragments/header :: header}"></div>
+
+<!-- ── 모바일용 상단 바 + Offcanvas 토글 ─────────────────────────────── -->
+<div class="owner-mobile-bar d-md-none">
+    <button class="btn btn-sm btn-outline-light" type="button"
+            data-bs-toggle="offcanvas" data-bs-target="#ownerSidebarCanvas"
+            aria-controls="ownerSidebarCanvas">
+        <i class="bi bi-list fs-5"></i>
+    </button>
+    <span class="store-title"><i class="bi bi-shop"></i> オーナーダッシュボード</span>
+</div>
+
+<!-- ── 모바일 Offcanvas 사이드바 ─────────────────────────────────────── -->
+<div class="offcanvas offcanvas-start text-bg-dark" tabindex="-1"
+     id="ownerSidebarCanvas" style="background:linear-gradient(180deg,#1a472a,#2d6a4f)!important; width:240px;">
+    <div class="offcanvas-header border-bottom border-light border-opacity-25">
+        <div class="d-flex flex-column">
+            <div class="text-white fw-bold" id="sidebarNameCanvas">読み込み中...</div>
+            <div class="small text-white-50" id="sidebarEmailCanvas"></div>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body px-2">
+        <nav class="sidebar-nav" style="padding:0;">
+            <button class="sidebar-nav-item active" onclick="switchSection('store-info',this)" data-bs-dismiss="offcanvas">
+                <i class="bi bi-shop"></i> 店舗情報
+            </button>
+            <button class="sidebar-nav-item" onclick="switchSection('store-photos',this)" data-bs-dismiss="offcanvas">
+                <i class="bi bi-images"></i> 店舗写真
+            </button>
+            <button class="sidebar-nav-item" onclick="switchSection('store-notice',this)" data-bs-dismiss="offcanvas">
+                <i class="bi bi-megaphone"></i> お知らせ・説明
+            </button>
+            <button class="sidebar-nav-item" onclick="switchSection('items',this);loadItems();" data-bs-dismiss="offcanvas">
+                <i class="bi bi-bag-plus"></i> 商品管理
+            </button>
+            <div class="sidebar-divider"></div>
+            <button class="sidebar-nav-item" onclick="switchSection('sales',this)" data-bs-dismiss="offcanvas">
+                <i class="bi bi-bar-chart-line"></i> 売上精算
+            </button>
+            <button class="sidebar-nav-item" onclick="switchSection('pickup',this);initQrScanner();" data-bs-dismiss="offcanvas">
+                <i class="bi bi-qr-code-scan"></i> ピックアップ確認
+            </button>
+            <div class="sidebar-divider"></div>
+            <a class="sidebar-nav-item" th:href="@{/mypage}" data-bs-dismiss="offcanvas">
+                <i class="bi bi-person"></i> マイページへ
+            </a>
+        </nav>
+    </div>
+</div>
+
+<!-- ── 메인 레이아웃 ─────────────────────────────────────────────────── -->
+<div class="container-fluid g-0">
+<div class="row g-0">
+
+    <!-- ── PC 고정 사이드바 (md 이상) ──────────────────────────────── -->
+    <aside class="col-md-3 col-xl-2 d-none d-md-flex flex-column owner-sidebar">
+        <div class="sidebar-profile">
+            <div class="profile-icon">🏪</div>
+            <div class="profile-name"  id="sidebarName">読み込み中...</div>
+            <div class="profile-email" id="sidebarEmail"></div>
+            <div class="profile-badge">OWNER</div>
+        </div>
+        <nav class="sidebar-nav">
+            <button class="sidebar-nav-item active" onclick="switchSection('store-info',this)">
+                <i class="bi bi-shop"></i> 店舗情報
+            </button>
+            <button class="sidebar-nav-item" onclick="switchSection('store-photos',this)">
+                <i class="bi bi-images"></i> 店舗写真
+            </button>
+            <button class="sidebar-nav-item" onclick="switchSection('store-notice',this)">
+                <i class="bi bi-megaphone"></i> お知らせ・説明
+            </button>
+            <button class="sidebar-nav-item" onclick="switchSection('items',this);loadItems();">
+                <i class="bi bi-bag-plus"></i> 商品管理
+            </button>
+            <div class="sidebar-divider"></div>
+            <button class="sidebar-nav-item" onclick="switchSection('sales',this)">
+                <i class="bi bi-bar-chart-line"></i> 売上精算
+            </button>
+            <button class="sidebar-nav-item" onclick="switchSection('pickup',this);initQrScanner();">
+                <i class="bi bi-qr-code-scan"></i> ピックアップ確認
+            </button>
+            <div class="sidebar-divider"></div>
+            <a class="sidebar-nav-item" th:href="@{/mypage}">
+                <i class="bi bi-person"></i> マイページへ
+            </a>
+        </nav>
+    </aside>
+
+    <!-- ── 메인 콘텐츠 영역 ─────────────────────────────────────────── -->
+    <main class="col-md-9 col-xl-10 col-12 owner-main">
+
+        <!-- ============================================================
+             섹션 1: 가게 기본 정보
+        ============================================================ -->
+  		<section class="owner-section active" id="section-store-info">
+            <h2 class="section-title"><i class="bi bi-shop"></i> 店舗基本情報</h2>
+
+            <div class="info-card">
+                <div class="info-card-title">STORE INFO</div>
+
+                <div class="row g-3">
+
+                    <!-- ① 사업자등록번호 + 조회 버튼 (최상단) -->
+                    <div class="col-12">
+                        <label class="form-label fw-bold">
+                            事業者登録番号 <span class="required">*</span>
+                        </label>
+                        <div class="d-flex gap-2">
+                            <input type="text" class="form-control" id="bizNumberInput"
+						       placeholder="例: 123-45-67890"
+						       style="max-width: 320px;">
+                            <button class="btn btn-success flex-shrink-0"
+                                    id="btnRefreshAddress" onclick="refreshAddress()">
+                                <i class="bi bi-search"></i> 照会
+                            </button>
+                        </div>
+                        <div class="form-text">番号を入力して「照会」を押すと店舗名・住所が自動入力されます</div>
+                    </div>
+
+                    <!-- 구분선 -->
+                    <div class="col-12"><hr class="my-1"></div>
+
+                    <!-- 가게 이름 (자동입력 or 수동 수정 가능) -->
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">店舗名 <span class="required">*</span></label>
+                        <input type="text" class="form-control" id="storeName"
+                               placeholder="照会すると自動入力されます">
+                    </div>
+
+                    <!-- 업종 카테고리 -->
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">業種カテゴリ <span class="required">*</span></label>
+                        <select class="form-select" id="storeCategory">
+                            <option value="">── 業種を選択 ──</option>
+                            <option value="SUSHI">🍣 寿司</option>
+                            <option value="BAKERY">🥐 ベーカリー</option>
+                            <option value="LUNCHBOX">🍱 お弁当</option>
+                            <option value="CAFE">☕ カフェ</option>
+                            <option value="SIDEDISH">🥗 惣菜</option>
+                        </select>
+                    </div>
+
+                    <!-- 주소 (readonly, 자동입력) -->
+                    <div class="col-12">
+                        <label class="form-label">住所 <span class="required">*</span></label>
+                        <input type="text" class="form-control" id="storeAddress"
+                               placeholder="照会すると自動入力されます"
+                               readonly style="background:#f8f9fa; cursor:not-allowed;">
+                        <div class="form-text">※ 住所の変更が必要な場合は「照会」ボタンを再度押してください</div>
+                    </div>
+
+                    <!-- lat/lng hidden -->
+                    <input type="hidden" id="storeLat">
+                    <input type="hidden" id="storeLng">
+
+                    <!-- ② 영업 시간 커스텀 선택기 (午前/午後) -->
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">開店時間 <span class="required">*</span></label>
+                        <div class="time-picker-wrap">
+                            <select class="form-select ampm-sel" id="storeOpenAmPm">
+                                <option value="AM">午前</option>
+                                <option value="PM">午後</option>
+                            </select>
+                            <select class="form-select hour-sel" id="storeOpenHour">
+                                <option>1</option><option>2</option><option>3</option>
+                                <option>4</option><option>5</option><option>6</option>
+                                <option>7</option><option>8</option><option>9</option>
+                                <option>10</option><option>11</option><option>12</option>
+                            </select>
+                            <span class="sep">時</span>
+                            <select class="form-select min-sel" id="storeOpenMin">
+                                <option value="00">00</option><option value="10">10</option>
+                                <option value="15">15</option><option value="20">20</option>
+                                <option value="30">30</option><option value="40">40</option>
+                                <option value="45">45</option><option value="50">50</option>
+                            </select>
+                            <span class="sep">分</span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">閉店時間 <span class="required">*</span></label>
+                        <div class="time-picker-wrap">
+                            <select class="form-select ampm-sel" id="storeCloseAmPm">
+                                <option value="AM">午前</option>
+                                <option value="PM">午後</option>
+                            </select>
+                            <select class="form-select hour-sel" id="storeCloseHour">
+                                <option>1</option><option>2</option><option>3</option>
+                                <option>4</option><option>5</option><option>6</option>
+                                <option>7</option><option>8</option><option>9</option>
+                                <option>10</option><option>11</option><option>12</option>
+                            </select>
+                            <span class="sep">時</span>
+                            <select class="form-select min-sel" id="storeCloseMin">
+                                <option value="00">00</option><option value="10">10</option>
+                                <option value="15">15</option><option value="20">20</option>
+                                <option value="30">30</option><option value="40">40</option>
+                                <option value="45">45</option><option value="50">50</option>
+                            </select>
+                            <span class="sep">分</span>
+                        </div>
+                    </div>
+
+                    <!-- ③ 대표 이미지 — 파일 첨부 → S3 업로드 -->
+                    <div class="col-12">
+                        <label class="form-label">代表画像 (サムネイル)</label>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <input type="file" class="d-none" id="storeThumbnailFile"
+                                   accept="image/*" onchange="uploadStoreThumbnail(this)">
+                            <button type="button" class="btn btn-outline-secondary btn-sm"
+                                    onclick="document.getElementById('storeThumbnailFile').click()">
+                                <i class="bi bi-upload"></i> ファイルを選択
+                            </button>
+                            <span class="text-muted small" id="storeThumbnailFileName">未選択</span>
+                            <span class="badge bg-secondary d-none" id="storeThumbnailUploading">
+                                <span class="spin d-inline-block">⟳</span> アップロード中...
+                            </span>
+                        </div>
+                        <!-- 업로드 완료 후 URL 저장용 hidden + 미리보기 -->
+                        <input type="hidden" id="storeThumbnailUrl">
+                        <div id="storeThumbnailPreview" class="mt-2"></div>
+                        <div class="form-text">店舗一覧リストのカードに表示される代表画像です（推奨: 600×400px）</div>
+                    </div>
+
+                    <!-- 저장 버튼 -->
+                    <div class="col-12 text-center">
+                        <button class="btn btn-success px-4" id="storeSubmitBtn" onclick="saveStore()">
+                            <i class="bi bi-check2-circle"></i> 店舗情報を登録する
+                        </button>
+                    </div>
+                </div><!-- /row -->
+            </div><!-- /info-card -->
+        </section>
+        <!-- ============================================================
+             섹션 2: 가게 추가 사진
+        ============================================================ -->
+        <section class="owner-section" id="section-store-photos">
+            <h2 class="section-title"><i class="bi bi-images"></i> 店舗写真</h2>
+
+            <div class="info-card">
+                <div class="info-card-title">STORE PHOTOS</div>
+                <p class="text-muted small mb-3">
+                    店舗の雰囲気や商品を伝える写真を複数枚追加できます。
+                </p>
+                <div class="photo-grid" id="photoGrid">
+                    <!-- ③ 파일 첨부로 사진 추가 -->
+                    <div class="photo-add-box" onclick="triggerPhotoUpload()">
+                        <i class="bi bi-plus-circle fs-4"></i>
+                        <span>写真を追加</span>
+                    </div>
+                </div>
+                <input type="file" class="d-none" id="storePhotoFile"
+                       accept="image/*" onchange="uploadStorePhoto(this)">
+            </div>
+        </section>
+
+        <!-- ============================================================
+             섹션 3: 가게 알림 / 설명
+        ============================================================ -->
+        <section class="owner-section" id="section-store-notice">
+            <h2 class="section-title"><i class="bi bi-megaphone"></i> お知らせ・店舗説明</h2>
+
+            <div class="info-card">
+                <div class="info-card-title">NOTICE &amp; DESCRIPTION</div>
+                <p class="text-muted small mb-3">
+                    お客様に向けた一言メッセージや店舗の説明を入力してください。<br>
+                    店舗詳細ページに表示されます。
+                </p>
+                <div class="mb-3">
+                    <label class="form-label">お知らせ・店舗説明</label>
+                    <textarea class="form-control" id="storeInfo" rows="6"
+                              placeholder="例: 毎日焼きたてパンをご用意しています。賞味期限が近い分を特別割引でご提供中！"></textarea>
+                </div>
+                <div class="text-end">
+                    <button class="btn btn-success" onclick="saveStore()">
+                        <i class="bi bi-save"></i> 保存する
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================
+             섹션 4: 상품 관리
+        ============================================================ -->
+        <section class="owner-section" id="section-items">
+            <h2 class="section-title"><i class="bi bi-bag-plus"></i> 商品管理</h2>
+
+            <div class="d-flex justify-content-end mb-3">
+                <button class="btn btn-success" onclick="openItemModal()">
+                    <i class="bi bi-plus-lg"></i> 商品を登録する
+                </button>
+            </div>
+
+            <div class="item-grid" id="itemGrid">
+                <div class="text-center py-5 text-muted" style="grid-column:1/-1;">
+                    <i class="bi bi-arrow-repeat fs-4 d-block mb-2"></i>読み込み中...
+                </div>
+            </div>
+        </section>
+        <!-- ================================================================
+    		 섹션 6: QR ピックアップ確認
+		================================================================ -->
+		<div class="owner-section" id="section-pickup">
+		    <h2 class="section-title"><i class="bi bi-qr-code-scan"></i> ピックアップ確認</h2>
+		
+		    <div class="row g-3">
+		        <!-- 카메라 스캔 -->
+		        <div class="col-12 col-md-6">
+		            <div class="info-card">
+		                <div class="info-card-title">📷 QRスキャン</div>
+		                <p class="small text-muted mb-3">カメラでお客様のQRコードを読み取ってください</p>
+		                <!-- html5-qrcode 가 이 div 안에 카메라 뷰를 주입 -->
+		                <div id="qr-reader" style="width:100%; border-radius:10px; overflow:hidden;"></div>
+		                <div class="mt-2 d-flex gap-2">
+		                    <button class="btn btn-success btn-sm" id="btnStartScan" onclick="startQrScan()">
+		                        <i class="bi bi-camera"></i> スキャン開始
+		                    </button>
+		                    <button class="btn btn-outline-secondary btn-sm d-none" id="btnStopScan" onclick="stopQrScan()">
+		                        <i class="bi bi-stop-circle"></i> 停止
+		                    </button>
+		                </div>
+		            </div>
+		        </div>
+		
+		        <!-- 수동 입력 + 결과 -->
+		        <div class="col-12 col-md-6">
+		            <div class="info-card">
+		                <div class="info-card-title">🔍 手動入力 / 確認結果</div>
+		                <div class="input-group mb-3">
+		                    <input type="text" class="form-control form-control-sm"
+		                           id="pickupCodeInput" placeholder="ピックアップコードを貼り付け"
+		                           onkeydown="if(event.key==='Enter') verifyPickup()">
+		                    <button class="btn btn-outline-success btn-sm" onclick="verifyPickup()">
+		                        照会
+		                    </button>
+		                </div>
+		
+		                <!-- 에러 메시지 -->
+		                <div id="pickupError" class="d-none alert alert-danger py-2 small"></div>
+		
+		                <!-- 조회 결과 -->
+		                <div id="pickupResult" class="d-none">
+		                    <hr class="my-2">
+		                    <div class="mb-2">
+		                        <span id="pickupStatusBadge" class="badge fs-6"></span>
+		                    </div>
+		                    <div class="row g-1 small" id="pickupOrderInfo"></div>
+		                    <button class="btn btn-success w-100 mt-3 d-none" id="btnCompletePickup"
+		                            onclick="completePickup()">
+		                        <i class="bi bi-check2-circle"></i> ピックアップ完了にする
+		                    </button>
+		                </div>
+		            </div>
+		        </div>
+		    </div>
+		</div>
+        
+
+        <!-- ============================================================
+             섹션 5: 매출 정산
+        ============================================================ -->
+        <section class="owner-section" id="section-sales">
+            <h2 class="section-title"><i class="bi bi-bar-chart-line"></i> 売上精算</h2>
+
+            <div class="d-flex align-items-center gap-3 flex-wrap mb-3">
+                <button class="btn btn-outline-success" id="btnRefreshSales" onclick="loadSales(true)">
+                    <i class="bi bi-arrow-clockwise"></i> 今すぐ更新
+                </button>
+                <span class="text-muted small">
+                    最終更新: <span id="salesRefreshedAt">—</span>
+                    &nbsp;｜&nbsp; 毎日12:00に自動更新されます
+                </span>
+            </div>
+
+            <div class="sales-stat-grid">
+                <div class="sales-stat-card">
+                    <div class="sales-stat-label">💰 総売上 (決済完了)</div>
+                    <div class="sales-stat-value revenue" id="salesRevenue">—</div>
+                </div>
+                <div class="sales-stat-card">
+                    <div class="sales-stat-label">📦 総注文数</div>
+                    <div class="sales-stat-value" id="salesOrders">—</div>
+                </div>
+                <div class="sales-stat-card">
+                    <div class="sales-stat-label">✅ ピックアップ完了</div>
+                    <div class="sales-stat-value" id="salesPickup">—</div>
+                </div>
+                <div class="sales-stat-card">
+                    <div class="sales-stat-label">⏳ 決済待ち</div>
+                    <div class="sales-stat-value" id="salesPending">—</div>
+                </div>
+                <div class="sales-stat-card">
+                    <div class="sales-stat-label">❌ キャンセル</div>
+                    <div class="sales-stat-value" id="salesCanceled">—</div>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <div class="info-card-title">直近30日間の日別売上</div>
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>日付</th>
+                                <th>注文件数</th>
+                                <th class="text-end">売上金額</th>
+                            </tr>
+                        </thead>
+                        <tbody id="salesDailyBody">
+                            <tr>
+                                <td colspan="3" class="text-center text-muted py-4">
+                                    「今すぐ更新」ボタンを押すとデータが表示されます
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+</div><!-- /row -->
+</div><!-- /container-fluid -->
+
+<!-- ── 공통 푸터 ─────────────────────────────────────────────────────── -->
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<!-- ================================================================
+     상품 등록/수정 모달
+================================================================ -->
+<div class="modal-overlay" id="itemModalOverlay">
+    <div class="modal-box">
+
+        <div class="modal-header">
+            <h3 id="itemModalTitle">商品を登録する</h3>
+            <button class="modal-close" onclick="closeItemModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <div class="modal-body">
+            <form id="itemForm" onsubmit="return false;">
+                <div class="row g-3">
+
+                    <!-- 상품명 -->
+                    <div class="col-12">
+                        <label class="form-label">商品名 <span class="required">*</span></label>
+                        <input type="text" class="form-control" id="itemName"
+                               placeholder="例: 特上サーモン寿司セット">
+                    </div>
+
+                    <!-- 정가 / 할인가 -->
+                    <div class="col-6">
+                        <label class="form-label">定価 (円) <span class="required">*</span></label>
+                        <input type="number" class="form-control" id="itemOriginalPrice" min="0"
+                               placeholder="例: 2000" oninput="updateDiscountRatePreview()">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">割引価格 (円) <span class="required">*</span></label>
+                        <input type="number" class="form-control" id="itemDiscountPrice" min="0"
+                               placeholder="例: 1000" oninput="updateDiscountRatePreview()">
+                    </div>
+
+                    <!-- 할인율 -->
+                    <div class="col-12">
+                        <label class="form-label">
+                            割引率 (%)
+                            <span id="discountRatePreview" class="ms-2 small fw-bold text-success"></span>
+                        </label>
+                        <input type="number" class="form-control" id="itemDiscountRate"
+                               min="0" max="100" placeholder="定価・割引価格入力で自動計算">
+                    </div>
+
+                    <!-- 재고 -->
+                    <div class="col-12 col-sm-6">
+                        <label class="form-label">在庫数 <span class="required">*</span></label>
+                        <input type="number" class="form-control" id="itemStock"
+                               min="0" placeholder="例: 5">
+                    </div>
+
+                    <!-- ⑥ 판매 기한 — flatpickr 일본어 달력 -->
+                    <div class="col-12 col-sm-6">
+                        <label class="form-label">販売期限 <span class="required">*</span></label>
+                        <input type="text" class="form-control" id="itemExpireAt"
+                               placeholder="年 / 月 / 日 時:分" readonly>
+                        <div class="form-text">※ この日時を過ぎると廃棄対象となります</div>
+                    </div>
+
+                    <!-- ⑦ 상품 이미지 — 파일 첨부 → S3 업로드 -->
+                    <div class="col-12">
+                        <label class="form-label">商品画像</label>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <input type="file" class="d-none" id="itemThumbnailFile"
+                                   accept="image/*" onchange="uploadItemThumbnail(this)">
+                            <button type="button" class="btn btn-outline-secondary btn-sm"
+                                    onclick="document.getElementById('itemThumbnailFile').click()">
+                                <i class="bi bi-upload"></i> ファイルを選択
+                            </button>
+                            <span class="text-muted small" id="itemThumbnailFileName">未選択</span>
+                            <span class="badge bg-secondary d-none" id="itemThumbnailUploading">
+                                <span class="spin d-inline-block">⟳</span> アップロード中...
+                            </span>
+                        </div>
+                        <input type="hidden" id="itemThumbnailUrl">
+                        <div id="itemThumbnailPreview" class="mt-2"></div>
+                    </div>
+
+                    <!-- 저장 버튼 -->
+                    <div class="col-12">
+                        <button class="btn btn-success w-100" onclick="saveItem()">
+                            <i class="bi bi-check2-circle"></i> 保存する
+                        </button>
+                    </div>
+
+                </div><!-- /row -->
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ── 토스트 컨테이너 ───────────────────────────────────────────────── -->
+<div class="owner-toast-wrap" id="toastWrap"></div>
+
+
+<!-- ================================================================
+     스크립트 로드 순서
+================================================================ -->
+<!-- Bootstrap 5 JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- flatpickr JS + 일본어 locale -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ja.js"></script>
+
+<!-- QR 스캐너 (html5-qrcode) -->
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+<!-- 공통 스크립트 -->
+<script th:src="@{/js/script.js}"></script>
+<!-- 오너 전용 스크립트 -->
+<script th:src="@{/js/owner.js}"></script>
+
+<script>
+/* ── QR ピックアップ確認 ─────────────────────────────────────────────── */
+let _qrScanner       = null;
+let _currentPickCode = null;
+
+/** 픽업 섹션 진입 시 html5-qrcode 초기화 (중복 방지) */
+function initQrScanner() {
+    if (_qrScanner) return;
+    _qrScanner = new Html5Qrcode('qr-reader');
+}
+
+/** 카메라 스캔 시작 */
+async function startQrScan() {
+    if (!_qrScanner) initQrScanner();
+    try {
+        await _qrScanner.start(
+            { facingMode: 'environment' },
+            { fps: 10, qrbox: { width: 220, height: 220 } },
+            (decoded) => {
+                document.getElementById('pickupCodeInput').value = decoded;
+                stopQrScan();
+                verifyPickup(decoded);
+            }
+        );
+        document.getElementById('btnStartScan').classList.add('d-none');
+        document.getElementById('btnStopScan').classList.remove('d-none');
+    } catch (e) {
+        showToast('カメラの起動に失敗しました', 'error');
+    }
+}
+
+/** 카메라 스캔 중지 */
+async function stopQrScan() {
+    document.getElementById('btnStartScan').classList.remove('d-none');
+    document.getElementById('btnStopScan').classList.add('d-none');
+    if (_qrScanner && _qrScanner.isScanning) await _qrScanner.stop();
+}
+
+/** pickupCode 조회 */
+async function verifyPickup(code) {
+    const pickupCode = code || document.getElementById('pickupCodeInput').value.trim();
+    if (!pickupCode) { showToast('コードを入力してください', 'error'); return; }
+    _currentPickCode = pickupCode;
+
+    const errEl    = document.getElementById('pickupError');
+    const resultEl = document.getElementById('pickupResult');
+    errEl.classList.add('d-none');
+    resultEl.classList.add('d-none');
+
+    try {
+        const res  = await fetch(`/api/owner/pickup/${encodeURIComponent(pickupCode)}`);
+        const json = await res.json();
+
+        if (!res.ok || !json.success) {
+            errEl.textContent = json.message || '注文が見つかりません';
+            errEl.classList.remove('d-none');
+            return;
+        }
+
+        const o = json.data;
+        const statusMap = {
+            PAYMENT_PENDING:   { label: '決済待ち',              cls: 'bg-warning text-dark' },
+            PAYMENT_COMPLETED: { label: '決済完了・ピックアップ待ち', cls: 'bg-success' },
+            PICKUP_COMPLETED:  { label: 'ピックアップ済み',       cls: 'bg-secondary' },
+            CANCELED:          { label: 'キャンセル済み',         cls: 'bg-danger' },
+        };
+        const s = statusMap[o.orderStatus] || { label: o.orderStatus, cls: 'bg-secondary' };
+
+        const badge = document.getElementById('pickupStatusBadge');
+        badge.textContent = s.label;
+        badge.className   = 'badge fs-6 ' + s.cls;
+
+        document.getElementById('pickupOrderInfo').innerHTML = `
+            <div class="col-5 text-muted">注文番号</div><div class="col-7 fw-bold">#${o.orderId}</div>
+            <div class="col-5 text-muted">合計金額</div><div class="col-7 fw-bold">¥${Number(o.totalPrice).toLocaleString()}</div>
+            <div class="col-5 text-muted">商品種類</div><div class="col-7">${o.itemCount}種類</div>
+            <div class="col-5 text-muted">注文日時</div><div class="col-7">${o.createdAt || '—'}</div>
+        `;
+
+        const complBtn = document.getElementById('btnCompletePickup');
+        complBtn.classList.toggle('d-none', o.orderStatus !== 'PAYMENT_COMPLETED');
+        resultEl.classList.remove('d-none');
+
+    } catch (e) {
+        errEl.textContent = 'サーバーエラーが発生しました';
+        errEl.classList.remove('d-none');
+    }
+}
+
+/** 픽업 완료 처리 */
+async function completePickup() {
+    if (!_currentPickCode) return;
+    if (!confirm('ピックアップ完了にしますか？')) return;
+
+    try {
+        const res  = await fetch(`/api/owner/pickup/${encodeURIComponent(_currentPickCode)}/complete`, {
+            method: 'PATCH'
+        });
+        const json = await res.json();
+
+        if (res.ok && json.success) {
+            showToast('ピックアップ完了に更新しました');
+            const badge = document.getElementById('pickupStatusBadge');
+            badge.textContent = 'ピックアップ済み';
+            badge.className   = 'badge fs-6 bg-secondary';
+            document.getElementById('btnCompletePickup').classList.add('d-none');
+        } else {
+            showToast(json.message || '更新に失敗しました', 'error');
+        }
+    } catch (e) {
+        showToast('サーバーエラーが発生しました', 'error');
+    }
+}
+</script>
+
+</body>
+</html>

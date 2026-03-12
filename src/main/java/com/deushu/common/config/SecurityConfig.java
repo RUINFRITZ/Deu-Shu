@@ -90,7 +90,14 @@ public class SecurityConfig {
                 // -----------------------------------------------------------------
                 // マイページ画面 (IndexControllerの @GetMapping("/mypage") と対応)
                 .requestMatchers("/mypage").authenticated()
-                
+	            // -----------------------------------------------------------------
+	            // [7] Owner(사업자) 도메인
+	            // -----------------------------------------------------------------
+	            // 오너 페이지 화면 (IndexController 의 @GetMapping("/owner") 와 대응)
+	            .requestMatchers("/owner").hasAnyRole("OWNER", "ADMIN")
+	            // 오너 API — 가게·상품·매출 관련 CRUD
+	            .requestMatchers("/api/owner/**").hasAnyRole("OWNER", "ADMIN")
+	            
                 // [ パクさん領域 ] 今後実装する注文・決済API
                 .requestMatchers(HttpMethod.GET, "/api/v1/orders/my").hasRole("USER") // 추가
                 .requestMatchers("/api/v1/orders/**").hasRole("USER")

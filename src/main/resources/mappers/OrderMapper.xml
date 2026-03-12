@@ -4,6 +4,91 @@
 
 <mapper namespace="com.deushu.order.mapper.OrderMapper">
 
+    <select id="findItemByIdWithPessimisticLock" resultType="com.deushu.order.domain.ItemEntity">
+        SELECT *
+        FROM items
+        WHERE id = #{id}
+        FOR UPDATE
+    </select>
+
+    <update id="updateItemStock" parameterType="com.deushu.order.domain.ItemEntity">
+        UPDATE items
+        SET stock = #{stock},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <insert id="insertOrder" parameterType="com.deushu.order.domain.OrderEntity" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO orders (member_id, store_id, order_status, total_price, pickup_code, created_at, updated_at)
+        VALUES (#{memberId}, #{storeId}, #{orderStatus}, #{totalPrice}, #{pickupCode}, NOW(), NOW())
+    </insert>
+
+    <insert id="insertOrderItems">
+        INSERT INTO order_items (order_id, item_id, quantity, order_price, created_at)
+        VALUES
+        <foreach collection="orderItems" item="item" separator=",">
+            (#{item.orderId}, #{item.itemId}, #{item.quantity}, #{item.orderPrice}, NOW())
+        </foreach>
+    </insert>
+
+	<select id="findOrderById" resultType="com.deushu.order.domain.OrderEntity">
+        SELECT *
+        FROM orders
+        WHERE id = #{id}
+    </select>
+
+    <update id="updateOrderStatus" parameterType="com.deushu.order.domain.OrderEntity">
+        UPDATE orders
+        SET order_status = #{orderStatus},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+    
+     <!-- ══════════════════════════════════════════════════════════════
+         ★ 신규 추가 1: pickupCode로 주문 단건 조회
+         OrderQrService.verifyPickup() / completePickup() 에서 사용
+    ══════════════════════════════════════════════════════════════ -->
+    <select id="findOrderByPickupCode"
+            parameterType="string"
+            resultType="com.deushu.order.domain.OrderEntity">
+        SELECT
+            id,
+            member_id   AS memberId,
+            store_id    AS storeId,
+            order_status AS orderStatus,
+            total_price  AS totalPrice,
+            pickup_code  AS pickupCode,
+            created_at   AS createdAt,
+            updated_at   AS updatedAt
+        FROM orders
+        WHERE pickup_code = #{pickupCode}
+        LIMIT 1
+    </select>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         ★ 신규 추가 2: 주문 상품 종류 수 조회
+         OrderQrService.verifyPickup() 에서 사용
+    ══════════════════════════════════════════════════════════════ -->
+    <select id="countOrderItems"
+            parameterType="long"
+            resultType="int">
+        SELECT COUNT(*)
+        FROM order_items
+        WHERE order_id = #{orderId}
+    </select>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         ★ 신규 추가 3: pickupCode 기반 주문 상태 변경
+         OrderQrService.completePickup() 에서 사용
+         PAYMENT_COMPLETED → PICKUP_COMPLETED
+    ══════════════════════════════════════════════════════════════ -->
+    <update id="updateStatusByPickupCode">
+        UPDATE orders
+        SET
+            order_status = #{status},
+            updated_at   = NOW()
+        WHERE pickup_code = #{pickupCode}
+    </update>
 	<select id="findItemByIdWithPessimisticLock"
 		resultType="com.deushu.order.domain.ItemEntity">
 		SELECT *
