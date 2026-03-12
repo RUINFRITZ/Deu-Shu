@@ -4,6 +4,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -123,4 +124,18 @@ public class OrderController {
         return ApiResponse.onSuccess(orders);
     }
     
+    /*
+     * FR-P03: キャンセル・期限切れ注文の再決済(クローン) API
+     */
+    @PostMapping("/{orderId}/reorder")
+    public ApiResponse<Map<String, Object>> reorder(
+            @PathVariable("orderId") Long oldOrderId,
+            @AuthenticationPrincipal Long memberId
+    ) {
+        log.info("再決済リクエスト受信: 旧注文ID={}, ユーザーID={}", oldOrderId, memberId);
+        
+        // 新しい注文IDと金額をMapで返却 (PortOne連携用)
+        Map<String, Object> newOrderData = orderService.recreateOrderFromFailed(memberId, oldOrderId);
+        return ApiResponse.onSuccess(newOrderData);
+    }
 }

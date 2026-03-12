@@ -99,6 +99,7 @@ public class SecurityConfig {
 	            .requestMatchers("/api/owner/**").hasAnyRole("OWNER", "ADMIN")
 	            
                 // [ パクさん領域 ] 今後実装する注文・決済API
+                .requestMatchers(HttpMethod.GET, "/api/v1/orders/my").hasRole("USER") // 추가
                 .requestMatchers("/api/v1/orders/**").hasRole("USER")
                 .requestMatchers("/api/v1/owner/**").hasAnyRole("OWNER", "ADMIN")
 

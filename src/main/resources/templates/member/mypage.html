@@ -663,6 +663,8 @@
 	    }
 	}
 	</style>
+	
+	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
 
@@ -877,8 +879,9 @@
                 店舗スタッフにこのQRコードを提示してください。
             </p>
             
-            <div id="qrcodeBox" style="display: flex; justify-content: center; margin-bottom: 1.5rem;">
-                </div>
+            <div id="qrcodeBox" style="display: flex; justify-content: center; margin-bottom: 1.5rem;"></div>
+                
+            <div id="pickupCodeText" style="text-align: center; font-size: 1.5rem; font-weight: 900; color: var(--charcoal); letter-spacing: 0.1em; margin-bottom: 1.5rem; font-family: 'Noto Sans JP', sans-serif;"></div>
 
             <p style="font-size: 0.8rem; color: var(--error); font-weight: bold;">
                 ※ 受取完了後はリストから自動的に削除されます。
@@ -888,6 +891,8 @@
         </div>
     </div>
 </div>
+
+<script src="https://cdn.iamport.kr/v1/iamport.js"></script>
 
 <script>
 const DEFAULT_ITEM_IMAGE = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIiB2aWV3Qm94PSIwIDAgMTUwIDE1MCI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIxNTAiIHJ4PSIxMCIgZmlsbD0iI0Y4RkFGRCIvPjxwYXRoIGQ9Ik05NiA1Mkg5MFY0NEM5MCAzNS4xNjM0IDgzLjI4NDMgMjggNzUgMjhDNjYuNzE1NyAyOCA2MCAzNS4xNjM0IDYwIDQ0VjUySDU0QzQ5LjU4MTcgNTIgNDYgNTUuNTgxNyA0NiA2MFYxMTBDNDYgMTE0LjQxOCA0OS41ODE3IDExOCA1NCAxMThIOTZDMTAwLjQxOCAxMTggMTA0IDExNC40MTggMTA0IDExMFY2MEMxMDQgNTUuNTgxNyAxMDAuNDE4IDUyIDk2IDUyWk04NCA0NFY1Mkg2NlY0NEM2NiAzOC40Nzc4IDcwLjA3NTQgMzQuNzI3MyA3NSAzNC43MzczQzc5LjkyNDYgMzQuNzM3MyA4NCAzOC40Nzc4IDg0IDQ0Wk04NiA1Mkg2NFY0NEM2NCAzNy4zNzI2IDY4LjkyNDkgMzIgNzUgMzJDODEuMDc1MSAzMiA4NiAzNy4zNzI2IDg2IDQ0VjUyWiIgZmlsbD0iI0E3RjNEMCIvPjxwYXRoIGQ9Ik05NiA1Nkg1NEM1MS43OTA5IDU2IDUwIDU3Ljc5MDkgNTAgNjBWMTEwQzUwIDExMi4yMDkgNTEuNzkwOSAxMTQgNTQgMTE0SDk2Qzk4LjIwOTEgMTE0IDEwMCAxMTIuMjA5IDEwMCAxMTBWNjBDMTAwIDU3Ljc5MDkgOTguMjA5MSA1NiA5NiA1NlpNNzUgOTQuNjI5QzczIDEwMCA3MiAxMDIuNzE0IDcyIDEwMi43MTRDNzIgMTAyLjcxNCA3MCAxMDMgNjguOTE0IDExNEM2Ny44Mjg1IDEyNSA3MCAxMzIgNzUgMTMyQzc5Ljk5OTIgMTMyIDgxLjk5OTEgMTI1IDgwLjk5ODggMTE0Qzc5Ljk5OTIgMTAzIDc4IDEwMi43MTQgNzggMTAyLjcxNEM3OCAxMDIuNzE0IDc3IDEwMCA3NSA5NC42Mjl6IiBmaWxsPSIjMDY1Zjg2IiBmaWxsLW9wYWNpdHk9IjAuMDUiLz48L3N2Zz4=';
@@ -1073,71 +1078,6 @@ async function loadTodayPickupOrders() {
 }
 
 /*
- * 取得した注文データ配列を元に、HTMLカード要素を生成してDOMに挿入します。
- */
-function renderPickupOrders(orders) {
-    const container = document.getElementById('pickupContainer');
-
-    if (!orders || orders.length === 0) {
-        container.innerHTML = `
-            <div class="coming-soon">
-                <i class="bi bi-box-seam"></i>
-                <p>現在、本日受け取る予定の商品はありません。</p>
-            </div>`;
-        return;
-    }
-
-    // Wide-Grid コンテナを開く
-    let html = '<div class="card-grid-container single-col">';
-    
-    orders.forEach(order => {
-        const storeName = order.storeName || '店舗名不明';
-        const totalPrice = order.totalPrice ? order.totalPrice.toLocaleString() : '0';
-        const pickupCode = order.pickupCode || '';
-        const orderTime = order.orderTime || '';
-        const itemCount = order.itemCount > 1 ? `外 ${order.itemCount - 1}件` : '';
-        
-        const mainItemName = order.mainItemName || '商品名未定';
-        const displayItemName = order.itemCount > 1 ? `${mainItemName} 外 ${order.itemCount - 1}件` : mainItemName;
-        const imgUrl = order.imageUrl || DEFAULT_ITEM_IMAGE;
-
-        html += `
-            <div class="info-card" style="border-left: 4px solid var(--primary); display: flex; flex-direction: column;">
-                
-                <div style="display: flex; gap: 1.5rem; margin-bottom: 1.0rem;">
-                    <div style="flex-shrink: 0;">
-                        <img src="${imgUrl}" alt="${mainItemName}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border);">
-                    </div>
-                    
-                    <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
-                        <div class="info-card-title" style="margin-bottom: 0.3rem; color: var(--primary);">
-                            <i class="bi bi-shop"></i> ${storeName}
-                        </div>
-                        <h3 style="font-size: 1.4rem; font-weight: 700; color: var(--charcoal); margin-bottom: 0.4rem;">
-                            ${displayItemName}
-                        </h3>
-                        <p style="font-size: 0.85rem; color: var(--mid-gray); margin: 0;">
-                            決済時間: ${orderTime} &nbsp;|&nbsp; 決済金額: <strong style="color:var(--charcoal); font-size:1rem;">${totalPrice}円</strong>
-                        </p>
-                    </div>
-                </div>
-
-                <div style="border-top: 1px solid #f3f4f6; padding-top: 1rem; text-align: right;">
-                    <button class="btn-save" style="padding: 0.8rem 1.6rem; font-size: 1.22rem;" 
-                            onclick="openQRModal('${pickupCode}', '${storeName}')">
-                        <i class="bi bi-qr-code-scan"></i> 受け取り用 QR表示
-                    </button>
-                </div>
-
-            </div>
-        `;
-    });
-
-    html += '</div>';
-    container.innerHTML = html;
-}
-
-/*
  * モーダルを開き、QRCode.js を使用してピックアップコード(UUID等)のQRを生成・描画します。
  */
 function openQRModal(pickupCode, storeName) {
@@ -1155,7 +1095,7 @@ function openQRModal(pickupCode, storeName) {
         // 既存のQRコードを初期化（重複生成防止）
         qrContainer.innerHTML = ''; 
 
-        // 🚨 [核心] QRコードの生成処理
+        // QRコードの生成処理
         new QRCode(qrContainer, {
             text: pickupCode,
             width: 180,
@@ -1164,6 +1104,11 @@ function openQRModal(pickupCode, storeName) {
             colorLight: "#ffffff",
             correctLevel: QRCode.CorrectLevel.H
         });
+    }
+    
+    const codeTextContainer = document.getElementById('pickupCodeText');
+    if (codeTextContainer) {
+        codeTextContainer.textContent = pickupCode;
     }
 
     // 既存のモーダルUIを開くロジックを再利用
@@ -1227,64 +1172,91 @@ async function loadOrderHistory() {
 }
 
 /*
- * 取得した注文履歴データ配列を元に、HTMLカード要素を生成してDOMに挿入します。
+ * 本日のピックアップ ＆ 注文履歴 のレンダリングロジック共通化
  */
-function renderOrderHistory(orders) {
-    const container = document.getElementById('historyContainer');
-
+function renderPickupOrders(orders) {
+    const container = document.getElementById('pickupContainer');
     if (!orders || orders.length === 0) {
-        container.innerHTML = `
-            <div class="coming-soon">
-                <i class="bi bi-receipt"></i>
-                <p>過去の注文履歴がありません。</p>
-            </div>`;
+        container.innerHTML = `<div class="coming-soon"><i class="bi bi-box-seam"></i><p>現在、本日受け取る予定の商品はありません。</p></div>`;
         return;
     }
+    _renderCards(orders, container, true);
+}
+
+function renderOrderHistory(orders) {
+    const container = document.getElementById('historyContainer');
+    if (!orders || orders.length === 0) {
+        container.innerHTML = `<div class="coming-soon"><i class="bi bi-receipt"></i><p>過去の注文履歴がありません。</p></div>`;
+        return;
+    }
+    _renderCards(orders, container, false);
+}
+
+// カード生成用 共通ヘルパー関数
+function _renderCards(orders, container, isPickupTab) {
     let html = '<div class="card-grid-container single-col">';
     
     orders.forEach(order => {
         const storeName = order.storeName || '店舗名不明';
         const totalPrice = order.totalPrice ? order.totalPrice.toLocaleString() : '0';
+        const pickupCode = order.pickupCode || '';
         const orderTime = order.orderTime || '';
-        
         const mainItemName = order.mainItemName || '商品名未定';
         const displayItemName = order.itemCount > 1 ? `${mainItemName} 外 ${order.itemCount - 1}件` : mainItemName;
         const imgUrl = order.imageUrl || DEFAULT_ITEM_IMAGE;
         
         let statusBadge = '';
+        let bottomAction = '';
+
+        // 状態別のUI分岐処理 (CANCELED, EXPIRED から再決済ボタンを削除)
         if (order.orderStatus === 'PICKED_UP') {
             statusBadge = `<span style="font-size:0.75rem; background:var(--mid-gray); color:#fff; padding:0.2rem 0.6rem; border-radius:4px;">受取完了</span>`;
+            bottomAction = `<span style="color:var(--mid-gray); font-size: 0.95rem; font-weight: bold;">商品の受け取りが完了しました</span>`;
+            
         } else if (order.orderStatus === 'PAYMENT_COMPLETED') {
             statusBadge = `<span style="font-size:0.75rem; background:var(--primary); color:#fff; padding:0.2rem 0.6rem; border-radius:4px;">決済完了</span>`;
+            // ピックアップタブならQRボタン表示、履歴タブなら金額強調
+            if (isPickupTab) {
+                bottomAction = `<button class="btn-save" style="padding: 0.8rem 1.6rem; font-size: 1.2rem;" onclick="openQRModal('${pickupCode}', '${storeName}')"><i class="bi bi-qr-code-scan"></i> 受け取り用 QR表示</button>`;
+            } else {
+                bottomAction = `<strong style="font-size:1.4rem; color: var(--primary);">${totalPrice}円</strong>`;
+            }
+            
+        } else if (order.orderStatus === 'PAYMENT_PENDING') {
+            // 決済中断 (5分以内のゴールデンタイム対象のみ再決済ボタンを表示)
+            statusBadge = `<span style="font-size:0.75rem; background:#FF9800; color:#fff; padding:0.2rem 0.6rem; border-radius:4px;">決済中断</span>`;
+            bottomAction = `<button class="btn-save" style="padding: 0.5rem 1rem; font-size: 0.9rem; background: var(--primary);" onclick="executeReorder('${order.orderId}')"><i class="bi bi-arrow-clockwise"></i> 再決済する</button>`;
+            
         } else {
+            // キャンセル または 期限切れ (ボタン表示なし、履歴として残すのみ)
             statusBadge = `<span style="font-size:0.75rem; background:var(--error); color:#fff; padding:0.2rem 0.6rem; border-radius:4px;">キャンセル</span>`;
+            bottomAction = `<strong style="font-size:1.4rem; color: var(--mid-gray); text-decoration: line-through;">${totalPrice}円</strong>`;
         }
 
         html += `
-            <div class="info-card" style="display: flex; flex-direction: column;">
+            <div class="info-card" style="${order.orderStatus === 'PAYMENT_COMPLETED' && isPickupTab ? 'border-left: 4px solid var(--primary);' : ''} display: flex; flex-direction: column;">
                 
-                <div style="display: flex; gap: 1.5rem; margin-bottom: 1rem;">
+                <div style="display: flex; gap: 1.5rem; margin-bottom: 1.0rem;">
                     <div style="flex-shrink: 0;">
-                        <img src="${imgUrl}" alt="${mainItemName}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); opacity: ${order.orderStatus === 'PICKED_UP' ? '0.6' : '1'};">
+                        <img src="${imgUrl}" alt="${mainItemName}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); opacity: ${order.orderStatus === 'PICKED_UP' || order.orderStatus === 'CANCELED' || order.orderStatus === 'EXPIRED' ? '0.5' : '1'};">
                     </div>
                     
-                    <div style="flex: 1;">
-                        <div style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                        <div style="margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.5rem;">
                             ${statusBadge}
-                            <span style="font-size:0.8rem; color:var(--mid-gray);">${orderTime}</span>
+                            <span class="info-card-title" style="margin:0; color: var(--primary);"><i class="bi bi-shop"></i> ${storeName}</span>
                         </div>
-                        <div class="info-card-title" style="margin-bottom: 0.3rem; color: var(--charcoal); font-size: 0.9rem;">
-                            <i class="bi bi-shop"></i> ${storeName}
-                        </div>
-                        <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--charcoal); margin: 0;">
+                        <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--charcoal); margin-bottom: 0.4rem;">
                             ${displayItemName}
                         </h3>
+                        <p style="font-size: 0.85rem; color: var(--mid-gray); margin: 0;">
+                            決済時間: ${orderTime} &nbsp;|&nbsp; 決済金額: <strong style="color:var(--charcoal); font-size:1rem;">${totalPrice}円</strong>
+                        </p>
                     </div>
                 </div>
 
-                <div style="border-top: 1px solid #f3f4f6; padding-top: 0.8rem; text-align: right;">
-                    <span style="font-size: 0.95rem; color: var(--mid-gray); margin-right: 0.5rem;">合計金額:</span>
-                    <strong style="font-size:1.4rem; color: var(--charcoal);">${totalPrice}円</strong>
+                <div style="border-top: 1px solid #f3f4f6; padding-top: 1rem; display: flex; justify-content: flex-end; align-items: center;">
+                    ${bottomAction}
                 </div>
 
             </div>
@@ -1310,6 +1282,104 @@ function switchSection(name, btn) {
         loadOrderHistory();
     } else if (name === 'pickup') {
         loadTodayPickupOrders(); // 既存のピックアップ関数
+    }
+}
+
+/*
+ * 再決済処理と PortOne 呼び出し関数 (バグ修正)
+ */
+async function executeReorder(oldOrderId) {
+
+	// 1. 既存のブラウザの confirm() の代わりに、SweetAlert2 の洗練されたモーダルを使用します
+    const swalResult = await Swal.fire({
+        title: '再決済を行いますか？',
+        text: 'この注文内容でもう一度決済を進行します。',
+        
+        icon: 'success', 
+        iconColor: '#065f46',
+        
+        showCancelButton: true,
+        confirmButtonColor: '#065f46', // ドゥーシューのプライマリーカラー (var(--primary))
+        cancelButtonColor: '#9ca3af',  // ミッドグレー (var(--mid-gray))
+        confirmButtonText: 'はい、決済します',
+        cancelButtonText: 'キャンセル',
+        reverseButtons: true // キャンセルボタンを左、確認ボタンを右に配置 (UXの定石)
+    });
+	
+    if (!swalResult.isConfirmed) return;
+	
+    try {
+        // 2. バックエンドに注文クローンを要請
+        const response = await fetch(`/api/v1/orders/${oldOrderId}/reorder`, { method: 'POST' });
+        
+        if (!response.ok) {
+            const errData = await response.json();
+            // ここも Swal に変更可能ですが、緊急エラーなので一旦 alert を維持するか Swal.fire に変更します。
+            await Swal.fire({
+                icon: 'error',
+                title: '再決済エラー',
+                text: errData.message || '在庫が不足しているか、販売が終了したため再決済できません。',
+                confirmButtonColor: '#065f46'
+            });
+            window.location.reload(); 
+            return;
+        }
+
+        const result = await response.json();
+        
+        if (result.isSuccess === false || result.success === false) {
+            await Swal.fire({ icon: 'error', title: 'エラー', text: result.message || '再決済の準備に失敗しました。', confirmButtonColor: '#065f46' });
+            return;
+        }
+
+        const newOrder = result.data || result; 
+        
+        if (!newOrder.orderId || !newOrder.totalPrice) {
+            await Swal.fire({ icon: 'error', title: 'エラー', text: '決済情報が正しく取得できませんでした。', confirmButtonColor: '#065f46' });
+            return;
+        }
+
+        // 3. PortOne 決済モジュールの呼び出し
+        const IMP = window.IMP; 
+        IMP.init("imp41118237"); 
+        
+        IMP.request_pay({
+            pg: "tosspayments",
+            pay_method: "card",
+            merchant_uid: `REORDER_${newOrder.orderId}_${new Date().getTime()}`,
+            name: "ドゥーシュー 再決済",
+            amount: newOrder.totalPrice,
+            buyer_email: document.getElementById('infoEmail').innerText || "test@test.com",
+            buyer_name: document.getElementById('infoName').innerText || "お客様"
+        }, async function (rsp) {
+            if (rsp.success || (rsp.imp_uid && !rsp.error_msg && !rsp.error_code)) {
+                try {
+                    const verifyRes = await fetch(`/api/v1/orders/${newOrder.orderId}/payment`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ impUid: rsp.imp_uid })
+                    });
+                    const verifyData = await verifyRes.json();
+                    
+                    if (verifyData.isSuccess || verifyData.success) {
+                        showToast('再決済が完了しました！', 'success');
+                        setTimeout(() => window.location.reload(), 1500); 
+                    } else {
+                        showToast('決済検証に失敗しました。', 'error');
+                        setTimeout(() => window.location.reload(), 1500);
+                    }
+                } catch(e) {
+                    showToast('サーバーエラーが発生しました。', 'error');
+                }
+            } else {
+                showToast(`決済キャンセル: ${rsp.error_msg || 'ユーザーによる中止'}`, 'error');
+                setTimeout(() => window.location.reload(), 1500);
+            }
+        });
+
+    } catch (error) {
+        console.error("再決済中にエラー:", error);
+        Swal.fire({ icon: 'error', title: 'ネットワークエラー', text: '通信に失敗しました。', confirmButtonColor: '#065f46' });
     }
 }
 

@@ -14,4 +14,8 @@ public interface ReviewMapper {
     int existsByOrderId(@Param("orderId") long orderId);
 
     int insert(ReviewCreateRequest req);
+
+    // 리뷰 삭제 (논리 삭제 — 본인만 가능)
+    int deleteById(@Param("reviewId") long reviewId,
+                   @Param("memberId") long memberId);
 }
