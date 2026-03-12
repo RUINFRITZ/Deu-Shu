@@ -17,8 +17,6 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -569,15 +567,14 @@ public class OwnerController {
     @GetMapping("/pickup/{pickupCode}")
     public ResponseEntity<ApiResponse<PickupVerifyResponse>> getPickupOrder(
             @PathVariable("pickupCode") String pickupCode,
-            @AuthenticationPrincipal UserDetails userDetails
+            HttpSession session  // ★ @AuthenticationPrincipal → HttpSession 으로 교체
     ) {
-        Long ownerId = extractMemberIdFromPrincipal(userDetails);
-        if (ownerId == null) return ResponseEntity.status(401).build();
+        MemberEntity owner = getOwner(session);  // ★ 기존 방식 그대로 재사용
+        if (owner == null) return ResponseEntity.status(401).build();
 
-        PickupVerifyResponse result = orderQrService.verifyPickup(pickupCode, ownerId);
+        PickupVerifyResponse result = orderQrService.verifyPickup(pickupCode, owner.getId());
         return ResponseEntity.ok(ApiResponse.onSuccess(result));
     }
-
     // ── 오너: 픽업 완료 처리 ──────────────────────────────────────────
     /**
      * PATCH /api/owner/pickup/{pickupCode}/complete
@@ -587,18 +584,14 @@ public class OwnerController {
     @PatchMapping("/pickup/{pickupCode}/complete")
     public ResponseEntity<ApiResponse<String>> completePickup(
             @PathVariable("pickupCode") String pickupCode,
-            @AuthenticationPrincipal UserDetails userDetails
+            HttpSession session  // ★ 동일하게 교체
     ) {
-        Long ownerId = extractMemberIdFromPrincipal(userDetails);
-        if (ownerId == null) return ResponseEntity.status(401).build();
+        MemberEntity owner = getOwner(session);
+        if (owner == null) return ResponseEntity.status(401).build();
 
-        orderQrService.completePickup(pickupCode, ownerId);
+        orderQrService.completePickup(pickupCode, owner.getId());
         return ResponseEntity.ok(ApiResponse.onSuccess("ピックアップ完了に更新しました。"));
     }
 
-    private Long extractMemberIdFromPrincipal(UserDetails userDetails) {
-        if (userDetails == null) return null;
-        String loginId = userDetails.getUsername();
-        return memberRepository.findIdByLoginId(loginId);
-    }
+
 }
