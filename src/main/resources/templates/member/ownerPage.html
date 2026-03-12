@@ -781,7 +781,7 @@ async function verifyPickup(code) {
         const res  = await fetch(`/api/owner/pickup/${encodeURIComponent(pickupCode)}`);
         const json = await res.json();
 
-        if (!res.ok || !json.success) {
+        if (!res.ok || !json.isSuccess) {
             errEl.textContent = json.message || '注文が見つかりません';
             errEl.classList.remove('d-none');
             return;
@@ -828,7 +828,7 @@ async function completePickup() {
         });
         const json = await res.json();
 
-        if (res.ok && json.success) {
+        if (res.ok && json.isSuccess) {
             showToast('ピックアップ完了に更新しました');
             const badge = document.getElementById('pickupStatusBadge');
             badge.textContent = 'ピックアップ済み';

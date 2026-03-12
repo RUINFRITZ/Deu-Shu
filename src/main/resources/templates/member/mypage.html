@@ -1209,7 +1209,7 @@ function _renderCards(orders, container, isPickupTab) {
         let bottomAction = '';
 
         // 状態別のUI分岐処理 (CANCELED, EXPIRED から再決済ボタンを削除)
-        if (order.orderStatus === 'PICKED_UP') {
+        if (order.orderStatus === 'PICKUP_COMPLETED') {
             statusBadge = `<span style="font-size:0.75rem; background:var(--mid-gray); color:#fff; padding:0.2rem 0.6rem; border-radius:4px;">受取完了</span>`;
             bottomAction = `<span style="color:var(--mid-gray); font-size: 0.95rem; font-weight: bold;">商品の受け取りが完了しました</span>`;
             
