@@ -117,7 +117,7 @@ public class AuthController {
         return ResponseEntity.ok(result);
     }
 
-    // 일반 회원 로그인 — POST /api/auth/login
+ // 일반 회원 로그인 — POST /api/auth/login
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@RequestBody LoginRequest req,
                                                      HttpSession session) {
@@ -131,35 +131,30 @@ public class AuthController {
             return ResponseEntity.badRequest().body(result);
         }
 
-        if (!"ROLE_USER".equals(회원.getRole())) {
+        String role = 회원.getRole();
+        if (!"ROLE_USER".equals(role) && !"ROLE_ADMIN".equals(role) && !"ROLE_OWNER".equals(role)) {
             result.put("success", false);
             result.put("message", "一般会員アカウントではありません");
             return ResponseEntity.badRequest().body(result);
         }
 
         session.setAttribute("memberId", 회원.getId());
-        
-        // =====================================================================
-        // Spring Security コンテキストとの強制同期ブリッジコード
-        // =====================================================================
-        // ユーザーの権限(ROLE_USERなど)をSecurityが理解できる形(GrantedAuthority)に変換
-        List<GrantedAuthority> authorities = 
+
+        List<GrantedAuthority> authorities =
                 Collections.singletonList(new SimpleGrantedAuthority(회원.getRole()));
-        
-        // パスワードは既に検証済みなのでnullを渡し、プリンシパルとしてPK(会員ID)を登録
-        Authentication authentication = 
+
+        Authentication authentication =
                 new UsernamePasswordAuthenticationToken(회원.getId(), null, authorities);
-        
-        // Securityのグローバルコンテキストに認証完了オブジェクトをセット
+
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        
-        // 以降のAPIリクエストでも認証状態を維持できるよう、セッションにContextを明示的に保存
-        session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, 
+
+        session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
                 SecurityContextHolder.getContext());
-        // =====================================================================
 
         result.put("success", true);
         result.put("message", "ログイン成功");
+        result.put("role", 회원.getRole());
+        result.put("memberId", 회원.getId());
         return ResponseEntity.ok(result);
     }
 

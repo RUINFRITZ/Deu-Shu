@@ -193,3 +193,42 @@ INSERT INTO items (store_id, name, original_price, discount_price, discount_rate
 VALUES (1, '自家製玉子焼き', 500, 300, 40, 10, DATE_ADD(NOW(), INTERVAL 3 HOUR));
 
 commit;
+
+-- ================================================================
+-- [Deu-Shu] 관리자 계정 생성 SQL
+-- 실행 순서: 이 파일만 MySQL에서 실행하면 됨
+--
+-- 로그인 정보
+--   email   : admin@deushu.jp
+--   password: Admin1234!
+--
+-- members 테이블이 NOT NULL 컬럼을 요구하므로
+-- 관리자에게 의미없는 컬럼은 '-' 더미값으로 채움
+-- ================================================================
+
+INSERT INTO members (
+    email,
+    password,
+    last_name,
+    first_name,
+    last_name_kana,
+    first_name_kana,
+    phone,
+    role,
+    esg_point
+) VALUES (
+    'admin@deushu.jp',
+    '$2b$12$CVMceu2TWPe01ZjrB5X6FehWqEKa82vBSmwd3TRVCIfkAecEYURTS',
+    '-',
+    '-',
+    '-',
+    '-',
+    '-',
+    'ROLE_ADMIN',
+    0
+);
+
+-- 확인용
+SELECT id, email, role, created_at
+FROM members
+WHERE role = 'ROLE_ADMIN';

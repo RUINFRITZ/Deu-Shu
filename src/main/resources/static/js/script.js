@@ -43,7 +43,13 @@ function updateHeaderAuth() {
             var name = (data.lastName || '') + (data.firstName || '');
             if (!name) name = data.email;
             document.getElementById('headerUserName').textContent = name;
-            // 메인페이지 히어로 버튼 숨기기
+
+            // ✅ 여기에 추가
+            var adminLink = document.getElementById('adminMenuLink');
+            if (adminLink) {
+                adminLink.style.display = (data.role === 'ROLE_ADMIN') ? 'flex' : 'none';
+            }
+
             if (heroCta) heroCta.style.display = 'none';
         } else {
             document.getElementById('btnAuthGuest').style.display = '';

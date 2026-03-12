@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.deushu.admin.mapper.AdminMapper">
+
+    <!-- ══════════════════════════════════════════════
+         대시보드
+    ══════════════════════════════════════════════ -->
+
+    <select id="findTodayStats" resultType="com.deushu.admin.dto.AdminDto$Dashboard">
+        SELECT
+            (SELECT COUNT(*) FROM orders
+             WHERE DATE(created_at) = CURDATE()
+               AND order_status != 'CANCELED') AS orderCount,
+            (SELECT COALESCE(SUM(total_price), 0) FROM orders
+             WHERE DATE(created_at) = CURDATE()
+               AND order_status != 'CANCELED') AS totalSales,
+            (SELECT COUNT(*) FROM members
+             WHERE deleted_at IS NULL) AS memberCount,
+            (SELECT COUNT(*) FROM stores
+             WHERE deleted_at IS NULL) AS activeStoreCount
+    </select>
+
+    <select id="findWeeklySales" resultType="com.deushu.admin.dto.AdminDto$DailySales">
+        SELECT
+            DATE(created_at)        AS saleDate,
+            COUNT(*)                AS orderCount,
+            COALESCE(SUM(total_price), 0) AS totalSales
+        FROM orders
+        WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+          AND order_status != 'CANCELED'
+        GROUP BY DATE(created_at)
+        ORDER BY saleDate
+    </select>
+
+    <select id="findCategoryOrderStats" resultType="com.deushu.admin.dto.AdminDto$CategoryStat">
+        SELECT
+            s.category              AS category,
+            COUNT(o.id)             AS orderCount,
+            COALESCE(SUM(o.total_price), 0) AS totalSales
+        FROM orders o
+        JOIN stores s ON o.store_id = s.id
+        WHERE o.order_status != 'CANCELED'
+        GROUP BY s.category
+        ORDER BY orderCount DESC
+    </select>
+
+    <!-- ══════════════════════════════════════════════
+         회원
+    ══════════════════════════════════════════════ -->
+
+    <select id="findAllMembers" resultType="com.deushu.admin.dto.AdminDto$MemberRow">
+        SELECT
+            id, email, last_name AS lastName, first_name AS firstName,
+            last_name_kana AS lastNameKana, first_name_kana AS firstNameKana,
+            phone, role, esg_point AS esgPoint,
+            created_at AS createdAt, updated_at AS updatedAt, deleted_at AS deletedAt
+        FROM members
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (email LIKE CONCAT('%', #{keyword}, '%')
+                  OR last_name LIKE CONCAT('%', #{keyword}, '%')
+                  OR first_name LIKE CONCAT('%', #{keyword}, '%')
+                  OR phone LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="role != null and role != ''">
+                AND role = #{role}
+            </if>
+            <if test="onlyActive">
+                AND deleted_at IS NULL
+            </if>
+        </where>
+        ORDER BY created_at DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="countAllMembers" resultType="int">
+        SELECT COUNT(*) FROM members
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (email LIKE CONCAT('%', #{keyword}, '%')
+                  OR last_name LIKE CONCAT('%', #{keyword}, '%')
+                  OR first_name LIKE CONCAT('%', #{keyword}, '%')
+                  OR phone LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="role != null and role != ''">
+                AND role = #{role}
+            </if>
+            <if test="onlyActive">
+                AND deleted_at IS NULL
+            </if>
+        </where>
+    </select>
+
+    <update id="updateMemberRole">
+        UPDATE members SET role = #{role}, updated_at = NOW() WHERE id = #{id}
+    </update>
+
+    <update id="updateEsgPoint">
+        UPDATE members SET esg_point = #{esgPoint}, updated_at = NOW() WHERE id = #{id}
+    </update>
+
+    <update id="deleteMember">
+        UPDATE members SET deleted_at = NOW() WHERE id = #{id}
+    </update>
+
+    <!-- ══════════════════════════════════════════════
+         가게
+    ══════════════════════════════════════════════ -->
+
+    <select id="findAllStores" resultType="com.deushu.admin.dto.AdminDto$StoreRow">
+        SELECT
+            s.id, s.name, s.category, s.address, s.business_number AS businessNumber,
+            s.open_time AS openTime, s.close_time AS closeTime,
+            s.thumbnail_url AS thumbnailUrl,
+            s.created_at AS createdAt, s.deleted_at AS deletedAt,
+            m.id AS ownerId, m.email AS ownerEmail,
+            CONCAT(m.last_name, ' ', m.first_name) AS ownerName
+        FROM stores s
+        JOIN members m ON s.owner_id = m.id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (s.name LIKE CONCAT('%', #{keyword}, '%')
+                  OR s.address LIKE CONCAT('%', #{keyword}, '%')
+                  OR m.email LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="category != null and category != ''">
+                AND s.category = #{category}
+            </if>
+            <if test="status != null and status == 'ACTIVE'">
+                AND s.deleted_at IS NULL
+            </if>
+            <if test="status != null and status == 'INACTIVE'">
+                AND s.deleted_at IS NOT NULL
+            </if>
+        </where>
+        ORDER BY s.created_at DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <update id="deactivateStore">
+        UPDATE stores SET deleted_at = NOW() WHERE id = #{id}
+    </update>
+
+    <update id="restoreStore">
+        UPDATE stores SET deleted_at = NULL WHERE id = #{id}
+    </update>
+
+    <!-- ══════════════════════════════════════════════
+         주문
+    ══════════════════════════════════════════════ -->
+
+    <select id="findAllOrders" resultType="com.deushu.admin.dto.AdminDto$OrderRow">
+        SELECT
+            o.id, o.order_status AS orderStatus, o.total_price AS totalPrice,
+            o.pickup_code AS pickupCode, o.created_at AS createdAt,
+            CONCAT(m.last_name, ' ', m.first_name) AS memberName,
+            m.email AS email,
+            s.name AS storeName,
+            (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = o.id) AS itemCount
+        FROM orders o
+        JOIN members m ON o.member_id = m.id
+        JOIN stores  s ON o.store_id  = s.id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (m.email LIKE CONCAT('%', #{keyword}, '%')
+                  OR m.last_name LIKE CONCAT('%', #{keyword}, '%')
+                  OR s.name LIKE CONCAT('%', #{keyword}, '%')
+                  OR o.pickup_code LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="status != null and status != ''">
+                AND o.order_status = #{status}
+            </if>
+        </where>
+        ORDER BY o.created_at DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <update id="updateOrderStatus">
+        UPDATE orders SET order_status = #{status}, updated_at = NOW() WHERE id = #{id}
+    </update>
+
+    <!-- ══════════════════════════════════════════════
+         리뷰
+    ══════════════════════════════════════════════ -->
+
+    <select id="findAllReviews" resultType="com.deushu.admin.dto.AdminDto$ReviewRow">
+        SELECT
+            r.id, r.title, r.content, r.rating,
+            r.photo_url AS photoUrl,
+            r.created_at AS createdAt, r.deleted_at AS deletedAt,
+            CONCAT(m.last_name, ' ', m.first_name) AS memberName,
+            m.email AS email,
+            s.name AS storeName
+        FROM reviews r
+        JOIN members m ON r.member_id = m.id
+        JOIN stores  s ON r.store_id  = s.id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (r.title LIKE CONCAT('%', #{keyword}, '%')
+                  OR r.content LIKE CONCAT('%', #{keyword}, '%')
+                  OR m.email LIKE CONCAT('%', #{keyword}, '%')
+                  OR s.name LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="maxRating != null">
+                AND r.rating &lt;= #{maxRating}
+            </if>
+        </where>
+        ORDER BY r.created_at DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <update id="deleteReview">
+        UPDATE reviews SET deleted_at = NOW() WHERE id = #{id}
+    </update>
+
+</mapper>
