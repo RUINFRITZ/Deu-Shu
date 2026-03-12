@@ -877,8 +877,9 @@
                 店舗スタッフにこのQRコードを提示してください。
             </p>
             
-            <div id="qrcodeBox" style="display: flex; justify-content: center; margin-bottom: 1.5rem;">
-                </div>
+            <div id="qrcodeBox" style="display: flex; justify-content: center; margin-bottom: 1.5rem;"></div>
+                
+            <div id="pickupCodeText" style="text-align: center; font-size: 1.5rem; font-weight: 900; color: var(--charcoal); letter-spacing: 0.1em; margin-bottom: 1.5rem; font-family: 'Noto Sans JP', sans-serif;"></div>
 
             <p style="font-size: 0.8rem; color: var(--error); font-weight: bold;">
                 ※ 受取完了後はリストから自動的に削除されます。
@@ -1155,7 +1156,7 @@ function openQRModal(pickupCode, storeName) {
         // 既存のQRコードを初期化（重複生成防止）
         qrContainer.innerHTML = ''; 
 
-        // 🚨 [核心] QRコードの生成処理
+        // QRコードの生成処理
         new QRCode(qrContainer, {
             text: pickupCode,
             width: 180,
@@ -1164,6 +1165,11 @@ function openQRModal(pickupCode, storeName) {
             colorLight: "#ffffff",
             correctLevel: QRCode.CorrectLevel.H
         });
+    }
+    
+    const codeTextContainer = document.getElementById('pickupCodeText');
+    if (codeTextContainer) {
+        codeTextContainer.textContent = pickupCode;
     }
 
     // 既存のモーダルUIを開くロジックを再利用
