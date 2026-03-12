@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.deushu.store.mapper.FavoriteMapper">
+
+    <!-- ── 즐겨찾기 추가 (중복 무시) ── -->
+    <insert id="insert">
+        INSERT IGNORE INTO favorites (member_id, store_id, created_at)
+        VALUES (#{memberId}, #{storeId}, NOW())
+    </insert>
+
+    <!-- ── 즐겨찾기 삭제 ── -->
+    <delete id="delete">
+        DELETE FROM favorites
+         WHERE member_id = #{memberId}
+           AND store_id  = #{storeId}
+    </delete>
+
+    <!-- ── 즐겨찾기 여부 확인 ── -->
+    <select id="exists" resultType="boolean">
+        SELECT COUNT(1) > 0
+          FROM favorites
+         WHERE member_id = #{memberId}
+           AND store_id  = #{storeId}
+    </select>
+
+    <!-- ── 회원의 즐겨찾기 storeId 목록 ── -->
+    <select id="findStoreIdsByMember" resultType="long">
+        SELECT store_id
+          FROM favorites
+         WHERE member_id = #{memberId}
+         ORDER BY created_at DESC
+    </select>
+
+    <!-- ── 마이페이지용: 즐겨찾기 가게 상세 목록 (JOIN) ── -->
+    <select id="findFavoriteStoresByMember" resultType="com.deushu.store.dto.FavoriteStoreDto">
+        SELECT
+            s.id           AS storeId,
+            s.name         AS storeName,
+            s.category     AS category,
+            s.address      AS address,
+            s.open_time    AS openTime,
+            s.close_time   AS closeTime,
+            f.created_at   AS favoritedAt,
+            (
+                SELECT si.image_url
+                  FROM store_images si
+                 WHERE si.store_id = s.id
+                 ORDER BY si.id ASC
+                 LIMIT 1
+            ) AS thumbnailUrl
+          FROM favorites f
+          JOIN stores s ON s.id = f.store_id
+         WHERE f.member_id = #{memberId}
+         ORDER BY f.created_at DESC
+    </select>
+
+    <!-- ── 특정 가게 즐겨찾기 수 ── -->
+    <select id="countByStore" resultType="int">
+        SELECT COUNT(1)
+          FROM favorites
+         WHERE store_id = #{storeId}
+    </select>
+
+</mapper>
