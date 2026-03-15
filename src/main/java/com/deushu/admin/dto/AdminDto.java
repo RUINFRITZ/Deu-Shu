@@ -22,6 +22,10 @@ public class AdminDto {
         private long totalSales;
         private int memberCount;
         private int activeStoreCount;
+        private int totalStoreCount;
+        private int yesterdayOrderCount;
+        private long yesterdaySales;
+        private int newMemberThisWeek;
     }
 
     /** 일별 매출 — AdminMapper.findWeeklySales */

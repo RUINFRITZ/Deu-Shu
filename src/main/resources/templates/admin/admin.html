@@ -219,10 +219,7 @@
     box-shadow: 2px 2px 0 var(--border);
 }
 
-.stat-card:hover {
-    box-shadow: 4px 4px 0 var(--primary);
-    transform: translate(-1px, -1px);
-}
+
 
 .stat-icon {
     width: 44px;
@@ -283,51 +280,6 @@
 
 .admin-card-title i { color: var(--primary); }
 .admin-card-body { padding: 1.2rem 1.4rem; }
-
-/* =============================================
-   SQL 패널 — 기존 sql-banner 스타일 확장
-============================================= */
-.sql-panel {
-    background: var(--charcoal);
-    border: 1px solid var(--sql-border, #3a3a3a);
-    border-left: 4px solid var(--primary);
-    border-radius: 0 8px 8px 0;
-    padding: 1rem 1.2rem;
-    margin-bottom: 1.2rem;
-}
-
-.sql-panel-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.65rem;
-    color: #666;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-bottom: 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-.sql-panel-label::before {
-    content: '';
-    display: inline-block;
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--primary-light);
-}
-
-.sql-code {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.77rem;
-    color: #e2e8f0;
-    line-height: 1.75;
-    white-space: pre;
-    overflow-x: auto;
-}
-.sql-kw  { color: #F28940; font-weight: 600; }
-.sql-fn  { color: #68D391; }
-.sql-str { color: #FBD38D; }
-.sql-cmt { color: #718096; font-style: italic; }
-.sql-col { color: #90CDF4; }
 
 /* =============================================
    필터 바
@@ -532,16 +484,17 @@ tbody tr:hover td { background: var(--primary-pale); }
 .chart-bar-wrap {
     background: linear-gradient(to bottom, var(--primary-pale) 0%, #fff 100%);
     border-radius: 8px;
-    padding: 1.2rem 1rem 2rem;
+    padding: 2rem 1rem 1.8rem;
     height: 180px;
     display: flex;
     align-items: flex-end;
     gap: 6px;
     position: relative;
+    overflow: hidden;
 }
 
 .chart-bar-wrap::before {
-    content: '今週の売上推移 (万円)';
+    content: '今週の売上推移';
     position: absolute;
     top: 0.7rem; left: 1rem;
     font-size: 0.68rem;
@@ -554,8 +507,7 @@ tbody tr:hover td { background: var(--primary-pale); }
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
-    height: 100%;
+    gap: 3px;
     justify-content: flex-end;
 }
 
@@ -564,7 +516,7 @@ tbody tr:hover td { background: var(--primary-pale); }
     border-radius: 4px 4px 0 0;
     background: linear-gradient(to top, var(--primary), var(--primary-light));
     opacity: 0.85;
-    transition: opacity 0.15s;
+    transition: opacity 0.15s, height 0.3s ease;
     cursor: pointer;
     min-height: 4px;
 }
@@ -866,10 +818,6 @@ tbody tr:hover td { background: var(--primary-pale); }
 
             <div class="sidebar-divider"></div>
             <div class="sidebar-section-label">システム</div>
-
-            <button class="sidebar-nav-item" onclick="showSection('sql', this)">
-                <i class="bi bi-terminal"></i> SQLリファレンス
-            </button>
             <button class="sidebar-cache-btn" onclick="evictCache()">
                 <i class="bi bi-arrow-repeat"></i> キャッシュ初期化
             </button>
@@ -919,7 +867,7 @@ tbody tr:hover td { background: var(--primary-pale); }
                     <div>
                         <div class="stat-label">全会員数</div>
                         <div class="stat-value" id="dashMemberCount">-</div>
-                        <div class="stat-delta">累計登録数</div>
+                        <div class="stat-delta" id="dashMemberDelta">読み込み中...</div>
                     </div>
                 </div>
                 <div class="stat-card">
@@ -954,7 +902,9 @@ tbody tr:hover td { background: var(--primary-pale); }
                                 <circle cx="50" cy="50" r="38" fill="none" stroke="#F0DDD0" stroke-width="16"/>
                                 <text x="50" y="54" text-anchor="middle" font-size="10" font-weight="700" fill="#1C1C1C" font-family="JetBrains Mono" id="donutTotal">-</text>
                             </svg>
-                            <div style="width:100%;" id="donutLegend"></div>
+                            <div style="width:100%;" id="donutLegend">
+                                <p style="color:var(--light-gray);font-size:0.78rem;text-align:center;">読み込み中...</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -992,6 +942,7 @@ tbody tr:hover td { background: var(--primary-pale); }
                     <div class="section-subtitle">全会員の照会・役割変更・ESGポイント調整ができます</div>
                 </div>
             </div>
+
 
             <div class="filter-bar">
                 <div class="filter-search-wrap">
@@ -1037,6 +988,7 @@ tbody tr:hover td { background: var(--primary-pale); }
                     <div class="section-subtitle">登録店舗の停止・復旧・カテゴリ別フィルタリングができます</div>
                 </div>
             </div>
+
 
             <div class="filter-bar">
                 <div class="filter-search-wrap">
@@ -1085,6 +1037,7 @@ tbody tr:hover td { background: var(--primary-pale); }
                 </div>
             </div>
 
+
             <div class="filter-bar">
                 <div class="filter-search-wrap">
                     <i class="bi bi-search"></i>
@@ -1125,6 +1078,7 @@ tbody tr:hover td { background: var(--primary-pale); }
                 </div>
             </div>
 
+
             <div class="filter-bar">
                 <div class="filter-search-wrap">
                     <i class="bi bi-search"></i>
@@ -1155,35 +1109,6 @@ tbody tr:hover td { background: var(--primary-pale); }
             </div>
         </div>
 
-
-        <!-- ─── SQL 레퍼런스 ─── -->
-        <div class="admin-section" id="sec-sql">
-            <div class="section-header">
-                <div>
-                    <div class="section-title"><i class="bi bi-terminal"></i> SQLリファレンス</div>
-                    <div class="section-subtitle">管理者機能で使用するMyBatisマッパーSQL一覧</div>
-                </div>
-            </div>
-
-            <div class="admin-card">
-                <div class="admin-card-header"><span class="admin-card-title"><i class="bi bi-bar-chart"></i> ダッシュボード統計</span></div>
-                <div class="admin-card-body">
-                </div>
-            </div>
-
-            <div class="admin-card">
-                <div class="admin-card-header"><span class="admin-card-title"><i class="bi bi-people"></i> 会員管理SQL</span></div>
-                <div class="admin-card-body">
-                </div>
-            </div>
-
-            <div class="admin-card">
-                <div class="admin-card-header"><span class="admin-card-title"><i class="bi bi-shop"></i> 店舗管理SQL</span></div>
-                <div class="admin-card-body">
-                </div>
-            </div>
-        </div>
-
     </div><!-- /admin-content -->
 </div><!-- /admin-wrap -->
 </main>
@@ -1203,7 +1128,7 @@ tbody tr:hover td { background: var(--primary-pale); }
 <div class="admin-overlay" id="roleModal">
     <div class="admin-modal">
         <div class="admin-modal-header">
-            <span class="admin-modal-title"><i class="bi bi-person-gear"></i> 役割変更</span>
+            <span class="admin-modal-title"><i class="bi bi-gear"></i> 役割変更</span>
             <button class="admin-modal-close" onclick="closeModal('roleModal')"><i class="bi bi-x-lg"></i></button>
         </div>
         <div class="admin-modal-body">
@@ -1212,10 +1137,10 @@ tbody tr:hover td { background: var(--primary-pale); }
             </p>
             <div class="modal-fg">
                 <label class="modal-label">変更する役割</label>
-                <select class="modal-input" id="roleModalSelect" onchange="updateRoleModalSql()">
-                    <option value="ROLE_USER">ROLE_USER（一般会員）</option>
-                    <option value="ROLE_OWNER">ROLE_OWNER（店舗オーナー）</option>
-                    <option value="ROLE_ADMIN">ROLE_ADMIN（管理者）</option>
+                <select class="modal-input" id="roleModalSelect">
+                    <option value="ROLE_USER">一般会員</option>
+                    <option value="ROLE_OWNER">店舗オーナー</option>
+                    <option value="ROLE_ADMIN">管理者</option>
                 </select>
             </div>
         </div>
@@ -1230,7 +1155,7 @@ tbody tr:hover td { background: var(--primary-pale); }
 <div class="admin-overlay" id="esgModal">
     <div class="admin-modal">
         <div class="admin-modal-header">
-            <span class="admin-modal-title"><i class="bi bi-leaf"></i> ESGポイント調整</span>
+            <span class="admin-modal-title"><i class="bi bi-heart"></i> ESGポイント調整</span>
             <button class="admin-modal-close" onclick="closeModal('esgModal')"><i class="bi bi-x-lg"></i></button>
         </div>
         <div class="admin-modal-body">
@@ -1266,7 +1191,7 @@ tbody tr:hover td { background: var(--primary-pale); }
             </p>
             <div class="modal-fg">
                 <label class="modal-label">変更するステータス</label>
-                <select class="modal-input" id="orderModalSelect" onchange="updateOrderModalSql()">
+                <select class="modal-input" id="orderModalSelect">
                     <option value="PAYMENT_PENDING">PAYMENT_PENDING（決済待ち）</option>
                     <option value="PAYMENT_COMPLETED">PAYMENT_COMPLETED（決済完了）</option>
                     <option value="CANCELLED">CANCELLED（キャンセル）</option>
@@ -1303,7 +1228,12 @@ function showSection(id, btn) {
     if (btn) btn.classList.add('active');
 }
 
-// ── 바 차트 API 연동 ──
+// ── 실제 데이터 ──
+let MEMBERS = [], STORES = [], ORDERS = [], REVIEWS = [];
+let currentMemberId = null, currentOrderId = null;
+let filteredMembers = [], filteredStores = [], filteredOrders = [], filteredReviews = [];
+
+// ── 바 차트 ──
 function loadBarChart() {
     fetch('/api/admin/dashboard/weekly-sales')
         .then(r => r.json())
@@ -1311,25 +1241,39 @@ function loadBarChart() {
             const wrap = document.getElementById('barChart');
             wrap.innerHTML = '';
             const list = res.data || [];
-            if (!list.length) return;
-            const maxSales = Math.max(...list.map(d => d.totalSales), 1);
             const dayNames = ['日','月','火','水','木','金','土'];
-            list.forEach(d => {
-                const date = new Date(d.saleDate);
-                const dayLabel = dayNames[date.getDay()];
-                const h = Math.round((d.totalSales / maxSales) * 90) + 5;
+            const salesMap = {};
+            list.forEach(d => { salesMap[d.saleDate] = d; });
+            const days = [];
+            for (let i = 6; i >= 0; i--) {
+                const dt = new Date();
+                dt.setDate(dt.getDate() - i);
+                const key = dt.toISOString().split('T')[0];
+                days.push({
+                    label: dayNames[dt.getDay()],
+                    totalSales: salesMap[key] ? salesMap[key].totalSales : 0,
+                    orderCount: salesMap[key] ? salesMap[key].orderCount : 0
+                });
+            }
+            const maxSales = Math.max(...days.map(d => d.totalSales), 1);
+            const maxBarPx = 110;
+            days.forEach(d => {
+                const barH = Math.max(4, Math.round((d.totalSales / maxSales) * maxBarPx));
                 const col = document.createElement('div');
                 col.className = 'bar-col';
                 col.innerHTML = `
-                    <div class="bar-fill" style="height:${h}%;" title="${dayLabel}: ¥${d.totalSales.toLocaleString()} (${d.orderCount}件)"></div>
-                    <span class="bar-day">${dayLabel}</span>`;
+                    <div class="bar-fill" style="height:${barH}px;" title="${d.label}: ¥${d.totalSales.toLocaleString()} (${d.orderCount}件)"></div>
+                    <span class="bar-day">${d.label}</span>`;
                 wrap.appendChild(col);
             });
         })
-        .catch(() => {});
+        .catch(() => {
+            document.getElementById('barChart').innerHTML =
+                '<p style="color:var(--light-gray);text-align:center;width:100%;font-size:0.8rem;">読み込み失敗</p>';
+        });
 }
 
-// ── 도넛 차트 API 연동 ──
+// ── 도넛 차트 ──
 function loadDonutChart() {
     fetch('/api/admin/dashboard/category-stats')
         .then(r => r.json())
@@ -1344,22 +1288,17 @@ function loadDonutChart() {
                 SIDEDISH: { label:'惣菜',       color:'#9333EA' }
             };
             const total = list.reduce((s, d) => s + d.orderCount, 0);
-            const circumference = 2 * Math.PI * 38; // ≈ 238.76
+            const circumference = 2 * Math.PI * 38;
             const svg = document.getElementById('donutSvg');
             document.getElementById('donutTotal').textContent = total + '件';
-
-            // 기존 circle 제거 후 재생성
             svg.querySelectorAll('circle:not(:first-child)').forEach(c => c.remove());
             let offset = 0;
             list.forEach(d => {
                 const cat = categoryMap[d.category] || { label: d.category, color: '#999' };
                 const arc = (d.orderCount / total) * circumference;
                 const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                circle.setAttribute('cx', '50');
-                circle.setAttribute('cy', '50');
-                circle.setAttribute('r', '38');
-                circle.setAttribute('fill', 'none');
-                circle.setAttribute('stroke', cat.color);
+                circle.setAttribute('cx', '50'); circle.setAttribute('cy', '50'); circle.setAttribute('r', '38');
+                circle.setAttribute('fill', 'none'); circle.setAttribute('stroke', cat.color);
                 circle.setAttribute('stroke-width', '16');
                 circle.setAttribute('stroke-dasharray', `${arc} ${circumference - arc}`);
                 circle.setAttribute('stroke-dashoffset', -offset);
@@ -1367,8 +1306,6 @@ function loadDonutChart() {
                 svg.insertBefore(circle, document.getElementById('donutTotal'));
                 offset += arc;
             });
-
-            // 범례 렌더
             const legend = document.getElementById('donutLegend');
             legend.innerHTML = '';
             list.forEach(d => {
@@ -1385,12 +1322,7 @@ function loadDonutChart() {
         .catch(() => {});
 }
 
-// ── 실제 데이터 (API에서 로드) ──
-let MEMBERS = [], STORES = [], ORDERS = [], REVIEWS = [];
-let currentMemberId = null, currentOrderId = null;
-let filteredMembers = [], filteredStores = [], filteredOrders = [], filteredReviews = [];
-
-// ── 대시보드 통계 API 연동 ──
+// ── 대시보드 통계 ──
 function loadDashboardStats() {
     fetch('/api/admin/dashboard/stats')
         .then(r => r.json())
@@ -1398,118 +1330,167 @@ function loadDashboardStats() {
             if (!res.data) return;
             const d = res.data;
             document.getElementById('dashOrderCount').textContent = d.orderCount.toLocaleString();
+            const orderDeltaEl = document.getElementById('dashOrderDelta');
+            if (d.yesterdayOrderCount > 0) {
+                const diff = d.orderCount - d.yesterdayOrderCount;
+                const pct = Math.round((diff / d.yesterdayOrderCount) * 100);
+                orderDeltaEl.style.color = diff >= 0 ? '#16a34a' : '#dc2626';
+                orderDeltaEl.textContent = `${diff >= 0 ? '↑' : '↓'} 昨日比 ${diff >= 0 ? '+' : ''}${pct}%`;
+            } else {
+                orderDeltaEl.style.color = '#9ca3af';
+                orderDeltaEl.textContent = '昨日データなし';
+            }
             const sales = d.totalSales >= 10000
                 ? '¥' + (d.totalSales / 10000).toFixed(1) + '万'
                 : '¥' + d.totalSales.toLocaleString();
             document.getElementById('dashTotalSales').textContent = sales;
+            const salesDeltaEl = document.getElementById('dashSalesDelta');
+            if (d.yesterdaySales > 0) {
+                const diff = d.totalSales - d.yesterdaySales;
+                const pct = Math.round((diff / d.yesterdaySales) * 100);
+                salesDeltaEl.style.color = diff >= 0 ? '#16a34a' : '#dc2626';
+                salesDeltaEl.textContent = `${diff >= 0 ? '↑' : '↓'} 昨日比 ${diff >= 0 ? '+' : ''}${pct}%`;
+            } else {
+                salesDeltaEl.style.color = '#9ca3af';
+                salesDeltaEl.textContent = '昨日データなし';
+            }
             document.getElementById('dashMemberCount').textContent = d.memberCount.toLocaleString();
+            const memberDeltaEl = document.getElementById('dashMemberDelta');
+            if (d.newMemberThisWeek > 0) {
+                memberDeltaEl.style.color = '#16a34a';
+                memberDeltaEl.textContent = `↑ 今週 +${d.newMemberThisWeek}名`;
+            } else {
+                memberDeltaEl.style.color = '#9ca3af';
+                memberDeltaEl.textContent = '今週 新規なし';
+            }
             document.getElementById('dashStoreCount').textContent = d.activeStoreCount.toLocaleString();
-            document.getElementById('dashOrderDelta').textContent = '本日の注文';
-            document.getElementById('dashSalesDelta').textContent = '本日の売上合計';
-            document.getElementById('dashStoreDelta').textContent = '営業中店舗数';
+            const storeDeltaEl = document.getElementById('dashStoreDelta');
+            storeDeltaEl.style.color = '#9ca3af';
+            storeDeltaEl.textContent = d.totalStoreCount ? `全${d.totalStoreCount}店舗中` : '営業中店舗数';
         })
         .catch(() => {
-            document.getElementById('dashOrderCount').textContent = '-';
+            ['dashOrderCount','dashTotalSales','dashMemberCount','dashStoreCount']
+                .forEach(id => document.getElementById(id).textContent = '-');
         });
 }
 
-// ── 대시보드 최근 주문/회원 API 연동 ──
+// ── 대시보드 최근목록 ──
 function loadDashboardRecent() {
-    // 최근 주문 4건
-    fetch('/api/admin/orders?page=0&size=4')
-        .then(r => r.json())
-        .then(res => {
-            const ol = document.getElementById('recentOrdersList');
-            ol.innerHTML = '';
-            const list = res.data || [];
-            if (!list.length) { ol.innerHTML = '<p style="color:var(--light-gray);text-align:center;">データなし</p>'; return; }
-            list.forEach(o => {
-                const statusMap = { PAYMENT_COMPLETED:'完了', PAYMENT_PENDING:'保留中', CANCELED:'キャンセル', PICKUP_COMPLETED:'受取済', EXPIRED:'期限切れ' };
-                ol.innerHTML += `
-                <div class="recent-list-item">
-                    <div class="recent-icon"><i class="bi bi-bag"></i></div>
-                    <div class="recent-info">
-                        <div class="recent-name">${o.memberName} — ${o.storeName}</div>
-                        <div class="recent-meta">${o.createdAt} · ${statusMap[o.orderStatus]||o.orderStatus}</div>
-                    </div>
-                    <div class="recent-price">¥${o.totalPrice.toLocaleString()}</div>
-                </div>`;
-            });
+    const ol = document.getElementById('recentOrdersList');
+    const statusMap = {
+        PAYMENT_COMPLETED:'完了', PAYMENT_PENDING:'保留中',
+        CANCELLED:'キャンセル', CANCELED:'キャンセル',
+        PICKUP_COMPLETED:'受取済', EXPIRED:'期限切れ'
+    };
+    if (ORDERS.length) {
+        ol.innerHTML = '';
+        ORDERS.slice(0,4).forEach(o => {
+            const st = o.orderStatus || o.status || '';
+            const ca = o.createdAt ? String(o.createdAt).replace('T',' ').substring(0,16) : '-';
+            ol.innerHTML += `
+            <div class="recent-list-item">
+                <div class="recent-icon"><i class="bi bi-bag"></i></div>
+                <div class="recent-info">
+                    <div class="recent-name">${o.memberName} — ${o.storeName}</div>
+                    <div class="recent-meta">${ca} · ${statusMap[st]||st}</div>
+                </div>
+                <div class="recent-price">¥${(o.totalPrice||0).toLocaleString()}</div>
+            </div>`;
         });
-
-    // 최근 회원 4명
-    fetch('/api/admin/members?page=0&size=4')
-        .then(r => r.json())
-        .then(res => {
-            const ml = document.getElementById('recentMembersList');
-            ml.innerHTML = '';
-            const list = res.data || [];
-            if (!list.length) { ml.innerHTML = '<p style="color:var(--light-gray);text-align:center;">データなし</p>'; return; }
-            list.forEach(m => {
-                const roleLabel = m.role.replace('ROLE_','');
-                const roleClass = m.role === 'ROLE_OWNER' ? 'badge-owner' : 'badge-user';
-                const iconStyle = m.role === 'ROLE_OWNER' ? 'background:var(--primary-pale);color:var(--primary);' : 'background:#eff6ff;color:#2563eb;';
-                ml.innerHTML += `
-                <div class="recent-list-item">
-                    <div class="recent-icon" style="${iconStyle}"><i class="bi bi-person"></i></div>
-                    <div class="recent-info">
-                        <div class="recent-name">${m.lastName} ${m.firstName}</div>
-                        <div class="recent-meta">${m.email}</div>
-                    </div>
-                    <span class="badge ${roleClass}">${roleLabel}</span>
-                </div>`;
-            });
+    }
+    const ml = document.getElementById('recentMembersList');
+    if (MEMBERS.length) {
+        ml.innerHTML = '';
+        MEMBERS.slice(0,4).forEach(m => {
+            const roleLabel = m.role.replace('ROLE_','');
+            const roleClass = m.role === 'ROLE_OWNER' ? 'badge-owner' : m.role === 'ROLE_ADMIN' ? 'badge-admin' : 'badge-user';
+            const iconStyle = m.role === 'ROLE_OWNER' ? 'background:var(--primary-pale);color:var(--primary);' : 'background:#eff6ff;color:#2563eb;';
+            ml.innerHTML += `
+            <div class="recent-list-item">
+                <div class="recent-icon" style="${iconStyle}"><i class="bi bi-person"></i></div>
+                <div class="recent-info">
+                    <div class="recent-name">${m.lastName} ${m.firstName}</div>
+                    <div class="recent-meta">${m.email}</div>
+                </div>
+                <span class="badge ${roleClass}">${roleLabel}</span>
+            </div>`;
         });
+    }
 }
 
-// ── 회원 API 로드 ──
+// ── 회원 로드 ──
 function loadMembers() {
-    fetch('/api/admin/members?page=0&size=100')
+    document.getElementById('memberTbody').innerHTML =
+        '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--light-gray);">読み込み中...</td></tr>';
+    fetch('/api/admin/members?page=0&size=200')
         .then(r => r.json())
         .then(res => {
             MEMBERS = res.data || [];
             filteredMembers = [...MEMBERS];
             renderMembers(filteredMembers);
+            loadDashboardRecent();
+        })
+        .catch(() => {
+            document.getElementById('memberTbody').innerHTML =
+                '<tr><td colspan="9" style="text-align:center;padding:2rem;color:#dc2626;">読み込み失敗</td></tr>';
         });
 }
 
-// ── 주문 API 로드 ──
-function loadOrders() {
-    fetch('/api/admin/orders?page=0&size=100')
-        .then(r => r.json())
-        .then(res => {
-            ORDERS = res.data || [];
-            filteredOrders = [...ORDERS];
-            renderOrders(filteredOrders);
-        });
-}
-
-// ── 리뷰 API 로드 ──
-function loadReviews() {
-    fetch('/api/admin/reviews?page=0&size=100')
-        .then(r => r.json())
-        .then(res => {
-            REVIEWS = res.data || [];
-            filteredReviews = [...REVIEWS];
-            renderReviews(filteredReviews);
-        });
-}
-
-// ── 가게 API 로드 ──
+// ── 가게 로드 ──
 function loadStores() {
-    fetch('/api/admin/stores?page=0&size=100')
+    document.getElementById('storeTbody').innerHTML =
+        '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--light-gray);">読み込み中...</td></tr>';
+    fetch('/api/admin/stores?page=0&size=200')
         .then(r => r.json())
         .then(res => {
             STORES = res.data || [];
             filteredStores = [...STORES];
             renderStores(filteredStores);
+        })
+        .catch(() => {
+            document.getElementById('storeTbody').innerHTML =
+                '<tr><td colspan="9" style="text-align:center;padding:2rem;color:#dc2626;">読み込み失敗</td></tr>';
         });
 }
 
-// ── 페이지 로드 시 전체 초기화 ──
+// ── 주문 로드 ──
+function loadOrders() {
+    document.getElementById('orderTbody').innerHTML =
+        '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--light-gray);">読み込み中...</td></tr>';
+    fetch('/api/admin/orders?page=0&size=200')
+        .then(r => r.json())
+        .then(res => {
+            ORDERS = res.data || [];
+            filteredOrders = [...ORDERS];
+            renderOrders(filteredOrders);
+            loadDashboardRecent();
+        })
+        .catch(() => {
+            document.getElementById('orderTbody').innerHTML =
+                '<tr><td colspan="9" style="text-align:center;padding:2rem;color:#dc2626;">読み込み失敗</td></tr>';
+        });
+}
+
+// ── 리뷰 로드 ──
+function loadReviews() {
+    document.getElementById('reviewTbody').innerHTML =
+        '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--light-gray);">読み込み中...</td></tr>';
+    fetch('/api/admin/reviews?page=0&size=200')
+        .then(r => r.json())
+        .then(res => {
+            REVIEWS = res.data || [];
+            filteredReviews = [...REVIEWS];
+            renderReviews(filteredReviews);
+        })
+        .catch(() => {
+            document.getElementById('reviewTbody').innerHTML =
+                '<tr><td colspan="8" style="text-align:center;padding:2rem;color:#dc2626;">読み込み失敗</td></tr>';
+        });
+}
+
+// ── DOMContentLoaded ──
 document.addEventListener('DOMContentLoaded', function() {
     loadDashboardStats();
-    loadDashboardRecent();
     loadBarChart();
     loadDonutChart();
     loadMembers();
@@ -1522,22 +1503,26 @@ document.addEventListener('DOMContentLoaded', function() {
 function renderMembers(data) {
     const t = document.getElementById('memberTbody');
     t.innerHTML = '';
-    if (!data.length) { t.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--light-gray);">データがありません</td></tr>'; return; }
+    if (!data.length) {
+        t.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--light-gray);">データがありません</td></tr>';
+        return;
+    }
     data.forEach(m => {
         const del = !!m.deletedAt;
         const rbc = m.role==='ROLE_ADMIN'?'badge-admin':m.role==='ROLE_OWNER'?'badge-owner':'badge-user';
+        const createdDate = m.createdAt ? String(m.createdAt).substring(0,10) : '-';
         t.innerHTML += `<tr style="${del?'opacity:0.5;':''}">
             <td class="text-mono text-sm">#${m.id}</td>
             <td><span class="fw-700">${m.lastName} ${m.firstName}</span><br><span class="text-sm text-muted">${m.lastNameKana} ${m.firstNameKana}</span></td>
             <td class="text-sm">${m.email}</td>
-            <td class="text-sm text-mono">${m.phone}</td>
+            <td class="text-sm text-mono">${m.phone||'-'}</td>
             <td><span class="badge ${rbc}">${m.role.replace('ROLE_','')}</span></td>
-            <td class="text-mono text-sm">${m.esgPoint.toLocaleString()} pt</td>
-            <td class="text-sm text-muted">${m.createdAt}</td>
+            <td class="text-mono text-sm">${(m.esgPoint||0).toLocaleString()} pt</td>
+            <td class="text-sm text-muted">${createdDate}</td>
             <td><span class="badge ${del?'badge-deleted':'badge-active'}">${del?'退会済':'有効'}</span></td>
             <td><div class="action-btns">
-                ${!del?`<button class="btn-admin btn-admin-outline" onclick="openRoleModal(${m.id})"><i class="bi bi-person-gear"></i></button>`:''}
-                <button class="btn-admin btn-admin-ghost" onclick="openEsgModal(${m.id})"><i class="bi bi-leaf"></i></button>
+                ${!del?`<button class="btn-admin btn-admin-outline" onclick="openRoleModal(${m.id})" title="役割変更"><i class="bi bi-gear"></i></button>`:''}
+                <button class="btn-admin btn-admin-outline" onclick="openEsgModal(${m.id})" title="ESGポイント調整"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 100 180" fill="currentColor"><path d="M50 5 C70 5,95 25,95 60 C95 100,75 135,50 155 C25 135,5 100,5 60 C5 25,30 5,50 5 Z"/><line x1="50" y1="10" x2="50" y2="150" stroke="white" stroke-width="3" stroke-linecap="round"/><line x1="50" y1="45" x2="22" y2="65" stroke="white" stroke-width="2" stroke-linecap="round"/><line x1="50" y1="70" x2="18" y2="88" stroke="white" stroke-width="2" stroke-linecap="round"/><line x1="50" y1="95" x2="20" y2="110" stroke="white" stroke-width="2" stroke-linecap="round"/><line x1="50" y1="45" x2="78" y2="65" stroke="white" stroke-width="2" stroke-linecap="round"/><line x1="50" y1="70" x2="82" y2="88" stroke="white" stroke-width="2" stroke-linecap="round"/><line x1="50" y1="95" x2="80" y2="110" stroke="white" stroke-width="2" stroke-linecap="round"/></svg></button>
             </div></td>
         </tr>`;
     });
@@ -1564,17 +1549,26 @@ const catLabel = {BAKERY:'ベーカリー',SUSHI:'お寿司',LUNCHBOX:'お弁当
 function renderStores(data) {
     const t = document.getElementById('storeTbody');
     t.innerHTML = '';
-    if (!data.length) { t.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--light-gray);">データがありません</td></tr>'; return; }
+    if (!data.length) {
+        t.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--light-gray);">データがありません</td></tr>';
+        return;
+    }
     data.forEach(s => {
         const del = !!s.deletedAt;
+        const fmtTime = v => {
+            if (!v) return '-';
+            if (Array.isArray(v)) return String(v[0]).padStart(2,'0')+':'+String(v[1]).padStart(2,'0');
+            return String(v).substring(0,5);
+        };
+        const createdDate = s.createdAt ? String(s.createdAt).substring(0,10) : '-';
         t.innerHTML += `<tr style="${del?'opacity:0.5;':''}">
             <td class="text-mono text-sm">#${s.id}</td>
             <td class="fw-700">${s.name}</td>
-            <td><span class="badge ${catBadge[s.category]}">${catLabel[s.category]}</span></td>
-            <td class="text-sm">${s.ownerName}<br><span class="text-muted">${s.ownerEmail}</span></td>
-            <td class="text-sm text-muted">${s.address}</td>
-            <td class="text-sm text-mono">${s.openTime}〜${s.closeTime}</td>
-            <td class="text-sm text-muted">${s.createdAt}</td>
+            <td><span class="badge ${catBadge[s.category]||''}">${catLabel[s.category]||s.category}</span></td>
+            <td class="text-sm">${s.ownerName||'-'}<br><span class="text-muted">${s.ownerEmail||''}</span></td>
+            <td class="text-sm text-muted">${s.address||'-'}</td>
+            <td class="text-sm text-mono">${fmtTime(s.openTime)}〜${fmtTime(s.closeTime)}</td>
+            <td class="text-sm text-muted">${createdDate}</td>
             <td><span class="badge ${del?'badge-deleted':'badge-active'}">${del?'閉店':'営業中'}</span></td>
             <td><div class="action-btns">
                 ${!del
@@ -1600,23 +1594,36 @@ function filterStores() {
 }
 
 // ── 주문 테이블 ──
-const statusBadge = {PAYMENT_PENDING:'badge-pending',PAYMENT_COMPLETED:'badge-completed',CANCELLED:'badge-cancelled'};
-const statusLabel = {PAYMENT_PENDING:'決済待ち',PAYMENT_COMPLETED:'決済完了',CANCELLED:'キャンセル'};
+const statusBadge = {
+    PAYMENT_PENDING:'badge-pending', PAYMENT_COMPLETED:'badge-completed',
+    CANCELLED:'badge-cancelled', CANCELED:'badge-cancelled',
+    PICKUP_COMPLETED:'badge-completed', EXPIRED:'badge-deleted'
+};
+const statusLabel = {
+    PAYMENT_PENDING:'決済待ち', PAYMENT_COMPLETED:'決済完了',
+    CANCELLED:'キャンセル', CANCELED:'キャンセル',
+    PICKUP_COMPLETED:'受取済', EXPIRED:'期限切れ'
+};
 
 function renderOrders(data) {
     const t = document.getElementById('orderTbody');
     t.innerHTML = '';
-    if (!data.length) { t.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--light-gray);">データがありません</td></tr>'; return; }
+    if (!data.length) {
+        t.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--light-gray);">データがありません</td></tr>';
+        return;
+    }
     data.forEach(o => {
+        const st = o.orderStatus || o.status || '';
+        const createdAt = o.createdAt ? String(o.createdAt).replace('T',' ').substring(0,16) : '-';
         t.innerHTML += `<tr>
             <td class="text-mono text-sm fw-700">#${o.id}</td>
-            <td class="text-sm">${o.memberName}<br><span class="text-muted">${o.email}</span></td>
-            <td class="fw-700 text-sm">${o.storeName}</td>
-            <td class="text-mono fw-700 text-primary">¥${o.totalPrice.toLocaleString()}</td>
-            <td class="text-sm text-muted">${o.itemCount}個</td>
-            <td class="text-mono text-sm">${o.pickupCode}</td>
-            <td><span class="badge ${statusBadge[o.status]}">${statusLabel[o.status]}</span></td>
-            <td class="text-sm text-muted">${o.createdAt}</td>
+            <td class="text-sm">${o.memberName||'-'}<br><span class="text-muted">${o.email||''}</span></td>
+            <td class="fw-700 text-sm">${o.storeName||'-'}</td>
+            <td class="text-mono fw-700 text-primary">¥${(o.totalPrice||0).toLocaleString()}</td>
+            <td class="text-sm text-muted">${o.itemCount||0}個</td>
+            <td class="text-mono text-sm">${o.pickupCode||'-'}</td>
+            <td><span class="badge ${statusBadge[st]||''}">${statusLabel[st]||st}</span></td>
+            <td class="text-sm text-muted">${createdAt}</td>
             <td><button class="btn-admin btn-admin-outline" onclick="openOrderModal(${o.id})"><i class="bi bi-pencil"></i> 変更</button></td>
         </tr>`;
     });
@@ -1627,9 +1634,9 @@ function filterOrders() {
     const kw = document.getElementById('orderSearch').value.toLowerCase();
     const st = document.getElementById('orderStatusFilter').value;
     filteredOrders = ORDERS.filter(o => {
-        const mk = !kw || o.email.toLowerCase().includes(kw) || o.storeName.toLowerCase().includes(kw);
-        const ms = !st || o.status === st;
-        return mk && ms;
+        const mk = !kw || (o.email||'').toLowerCase().includes(kw) || (o.storeName||'').toLowerCase().includes(kw);
+        const os = o.orderStatus || o.status || '';
+        return mk && (!st || os === st);
     });
     renderOrders(filteredOrders);
 }
@@ -1638,18 +1645,23 @@ function filterOrders() {
 function renderReviews(data) {
     const t = document.getElementById('reviewTbody');
     t.innerHTML = '';
-    if (!data.length) { t.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--light-gray);">データがありません</td></tr>'; return; }
+    if (!data.length) {
+        t.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--light-gray);">データがありません</td></tr>';
+        return;
+    }
     data.forEach(r => {
-        const stars = '★'.repeat(r.rating) + '☆'.repeat(5-r.rating);
-        const sc = r.rating<=2?'var(--error)':r.rating<=3?'var(--warning, #d97706)':'#f59e0b';
+        const rating = Math.round(r.rating || 0);
+        const stars = '★'.repeat(rating) + '☆'.repeat(Math.max(0, 5-rating));
+        const sc = rating<=2?'#dc2626':rating<=3?'#d97706':'#f59e0b';
+        const createdDate = r.createdAt ? String(r.createdAt).substring(0,10) : '-';
         t.innerHTML += `<tr>
             <td class="text-mono text-sm">#${r.id}</td>
-            <td class="fw-700 text-sm">${r.storeName}</td>
-            <td class="text-sm">${r.memberName}<br><span class="text-muted">${r.email}</span></td>
-            <td class="fw-700 text-sm">${r.title}</td>
-            <td class="text-sm text-muted" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.content}</td>
+            <td class="fw-700 text-sm">${r.storeName||'-'}</td>
+            <td class="text-sm">${r.memberName||'-'}<br><span class="text-muted">${r.email||''}</span></td>
+            <td class="fw-700 text-sm">${r.title||''}</td>
+            <td class="text-sm text-muted" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.content||''}</td>
             <td style="color:${sc};">${stars}</td>
-            <td class="text-sm text-muted">${r.createdAt}</td>
+            <td class="text-sm text-muted">${createdDate}</td>
             <td><button class="btn-admin btn-admin-danger" onclick="deleteReview(${r.id})"><i class="bi bi-trash"></i> 削除</button></td>
         </tr>`;
     });
@@ -1660,112 +1672,153 @@ function filterReviews() {
     const kw = document.getElementById('reviewSearch').value.toLowerCase();
     const mr = parseInt(document.getElementById('reviewRatingFilter').value) || 99;
     filteredReviews = REVIEWS.filter(r => {
-        const mk = !kw || r.storeName.toLowerCase().includes(kw) || r.content.toLowerCase().includes(kw);
-        return mk && r.rating <= mr;
+        const mk = !kw || (r.storeName||'').toLowerCase().includes(kw) || (r.content||'').toLowerCase().includes(kw);
+        return mk && (r.rating||0) <= mr;
     });
     renderReviews(filteredReviews);
 }
-
 
 // ── 모달 ──
 function openModal(id)  { document.getElementById(id).classList.add('active'); }
 function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
+function memberDisplayName(m) {
+    const name = ((m.lastName||'') + ' ' + (m.firstName||'')).trim();
+    return name || m.email || 'ID:'+m.id;
+}
+
 function openRoleModal(id) {
     currentMemberId = id;
     const m = MEMBERS.find(x=>x.id===id);
-    document.getElementById('roleModalName').textContent = m.lastName+' '+m.firstName;
+    if (!m) return;
+    document.getElementById('roleModalName').textContent = memberDisplayName(m);
     document.getElementById('roleModalSelect').value = m.role;
-    updateRoleModalSql();
     openModal('roleModal');
 }
-function updateRoleModalSql() {
-    const r = document.getElementById('roleModalSelect').value;
-    document.getElementById('roleModalSql').innerHTML =
-        `<span class="sql-kw">UPDATE</span> <span class="sql-col">members</span>\n`+
-        `<span class="sql-kw">SET</span>    <span class="sql-col">role</span> = <span class="sql-str">'${r}'</span>, <span class="sql-col">updated_at</span> = <span class="sql-fn">NOW()</span>\n`+
-        `<span class="sql-kw">WHERE</span>  <span class="sql-col">id</span> = <span class="sql-str">${currentMemberId}</span>`;
-}
+
 function confirmRoleChange() {
-    const r = document.getElementById('roleModalSelect').value;
+    const role = document.getElementById('roleModalSelect').value;
     const m = MEMBERS.find(x=>x.id===currentMemberId);
-    m.role = r;
-    renderMembers(filteredMembers);
-    closeModal('roleModal');
-    showToast(`${m.lastName}${m.firstName}様の役割を ${r.replace('ROLE_','')} に変更しました`, 'success');
+    if (!m) return;
+    fetch(`/api/admin/members/${currentMemberId}/role`, {
+        method: 'PATCH',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ role })
+    })
+    .then(r => { if (!r.ok) throw new Error(); })
+    .then(() => {
+        m.role = role;
+        renderMembers(filteredMembers);
+        closeModal('roleModal');
+        showToast(`${memberDisplayName(m)}様の役割を ${role.replace('ROLE_','')} に変更しました`, 'success');
+    })
+    .catch(() => showToast('役割変更に失敗しました', 'error'));
 }
 
 function openEsgModal(id) {
     currentMemberId = id;
     const m = MEMBERS.find(x=>x.id===id);
-    document.getElementById('esgModalName').textContent = m.lastName+' '+m.firstName;
-    document.getElementById('esgModalCurrent').value = m.esgPoint+' pt';
-    document.getElementById('esgModalNew').value = m.esgPoint;
+    if (!m) return;
+    document.getElementById('esgModalName').textContent = memberDisplayName(m);
+    document.getElementById('esgModalCurrent').value = (m.esgPoint||0)+' pt';
+    document.getElementById('esgModalNew').value = m.esgPoint||0;
     openModal('esgModal');
 }
+
 function confirmEsgChange() {
     const pt = parseInt(document.getElementById('esgModalNew').value);
     if (isNaN(pt)||pt<0) { showToast('正しいポイントを入力してください', 'error'); return; }
     const m = MEMBERS.find(x=>x.id===currentMemberId);
-    m.esgPoint = pt;
-    renderMembers(filteredMembers);
-    closeModal('esgModal');
-    showToast(`${m.lastName}${m.firstName}様のESGポイントを ${pt}pt に変更しました`, 'success');
+    if (!m) return;
+    fetch(`/api/admin/members/${currentMemberId}/esg-point`, {
+        method: 'PATCH',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ esgPoint: pt })
+    })
+    .then(r => { if (!r.ok) throw new Error(); })
+    .then(() => {
+        m.esgPoint = pt;
+        renderMembers(filteredMembers);
+        closeModal('esgModal');
+        showToast(`${memberDisplayName(m)}様のESGポイントを ${pt}pt に変更しました`, 'success');
+    })
+    .catch(() => showToast('ESGポイント変更に失敗しました', 'error'));
 }
 
 function openOrderModal(id) {
     currentOrderId = id;
     const o = ORDERS.find(x=>x.id===id);
+    if (!o) return;
     document.getElementById('orderModalId').textContent = '#'+id;
-    document.getElementById('orderModalSelect').value = o.status;
-    updateOrderModalSql();
+    document.getElementById('orderModalSelect').value = o.orderStatus || o.status || '';
     openModal('orderModal');
 }
-function updateOrderModalSql() {
-    const s = document.getElementById('orderModalSelect').value;
-    document.getElementById('orderModalSql').innerHTML =
-        `<span class="sql-kw">UPDATE</span> <span class="sql-col">orders</span>\n`+
-        `<span class="sql-kw">SET</span>    <span class="sql-col">order_status</span> = <span class="sql-str">'${s}'</span>, <span class="sql-col">updated_at</span> = <span class="sql-fn">NOW()</span>\n`+
-        `<span class="sql-kw">WHERE</span>  <span class="sql-col">id</span> = <span class="sql-str">${currentOrderId}</span>`;
-}
+
 function confirmOrderChange() {
-    const s = document.getElementById('orderModalSelect').value;
+    const status = document.getElementById('orderModalSelect').value;
     const o = ORDERS.find(x=>x.id===currentOrderId);
-    o.status = s;
-    renderOrders(filteredOrders);
-    closeModal('orderModal');
-    showToast(`注文 #${currentOrderId} のステータスを「${statusLabel[s]}」に変更しました`, 'success');
+    if (!o) return;
+    fetch(`/api/admin/orders/${currentOrderId}/status`, {
+        method: 'PATCH',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ status })
+    })
+    .then(r => { if (!r.ok) throw new Error(); })
+    .then(() => {
+        o.orderStatus = status; o.status = status;
+        renderOrders(filteredOrders);
+        closeModal('orderModal');
+        showToast(`注文 #${currentOrderId} のステータスを「${statusLabel[status]||status}」に変更しました`, 'success');
+    })
+    .catch(() => showToast('ステータス変更に失敗しました', 'error'));
 }
 
 function deactivateStore(id) {
     if (!confirm('この店舗を停止（閉店処理）しますか？')) return;
-    const s = STORES.find(x=>x.id===id);
-    s.deletedAt = new Date().toISOString().split('T')[0];
-    renderStores(filteredStores);
-    showToast(`「${s.name}」を停止しました`, 'info');
+    fetch(`/api/admin/stores/${id}`, { method: 'DELETE' })
+        .then(r => { if (!r.ok) throw new Error(); })
+        .then(() => {
+            const s = STORES.find(x=>x.id===id);
+            if (s) s.deletedAt = new Date().toISOString().split('T')[0];
+            renderStores(filteredStores);
+            showToast(`「${STORES.find(x=>x.id===id)?.name}」を停止しました`, 'info');
+        })
+        .catch(() => showToast('停止処理に失敗しました', 'error'));
 }
+
 function restoreStore(id) {
-    const s = STORES.find(x=>x.id===id);
-    s.deletedAt = null;
-    renderStores(filteredStores);
-    showToast(`「${s.name}」を復旧しました`, 'success');
+    fetch(`/api/admin/stores/${id}/restore`, { method: 'PATCH' })
+        .then(r => { if (!r.ok) throw new Error(); })
+        .then(() => {
+            const s = STORES.find(x=>x.id===id);
+            if (s) s.deletedAt = null;
+            renderStores(filteredStores);
+            showToast(`「${s?.name}」を復旧しました`, 'success');
+        })
+        .catch(() => showToast('復旧処理に失敗しました', 'error'));
 }
 
 function deleteReview(id) {
     if (!confirm('このレビューを削除しますか？')) return;
-    const idx = REVIEWS.findIndex(r=>r.id===id);
-    if (idx !== -1) REVIEWS.splice(idx, 1);
-    filteredReviews = filteredReviews.filter(r=>r.id!==id);
-    renderReviews(filteredReviews);
-    showToast('レビューを削除しました', 'success');
+    fetch(`/api/admin/reviews/${id}`, { method: 'DELETE' })
+        .then(r => { if (!r.ok) throw new Error(); })
+        .then(() => {
+            REVIEWS = REVIEWS.filter(r=>r.id!==id);
+            filteredReviews = filteredReviews.filter(r=>r.id!==id);
+            renderReviews(filteredReviews);
+            showToast('レビューを削除しました', 'success');
+        })
+        .catch(() => showToast('削除に失敗しました', 'error'));
 }
 
 function evictCache() {
     showToast('キャッシュ初期化リクエスト中...', 'info');
-    setTimeout(() => showToast('キャッシュを初期化しました (POST /api/stores/admin/cache/evict)', 'success'), 1200);
+    fetch('/api/stores/admin/cache/evict', { method: 'POST' })
+        .then(() => showToast('キャッシュを初期化しました', 'success'))
+        .catch(() => showToast('キャッシュ初期化に失敗しました', 'error'));
 }
 
-// ── 토스트 — 기존 style.css의 .toast 구조에 맞춤 ──
+// ── 토스트 ──
 function showToast(msg, type='success') {
     const wrap = document.getElementById('toastWrap');
     const iconMap = { success:'bi-check-circle-fill', error:'bi-x-circle-fill', info:'bi-info-circle-fill' };

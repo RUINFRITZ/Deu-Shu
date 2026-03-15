@@ -12,14 +12,24 @@
         SELECT
             (SELECT COUNT(*) FROM orders
              WHERE DATE(created_at) = CURDATE()
-               AND order_status != 'CANCELED') AS orderCount,
+               AND order_status NOT IN ('CANCELED','CANCELLED')) AS orderCount,
             (SELECT COALESCE(SUM(total_price), 0) FROM orders
              WHERE DATE(created_at) = CURDATE()
-               AND order_status != 'CANCELED') AS totalSales,
+               AND order_status NOT IN ('CANCELED','CANCELLED')) AS totalSales,
             (SELECT COUNT(*) FROM members
              WHERE deleted_at IS NULL) AS memberCount,
             (SELECT COUNT(*) FROM stores
-             WHERE deleted_at IS NULL) AS activeStoreCount
+             WHERE deleted_at IS NULL) AS activeStoreCount,
+            (SELECT COUNT(*) FROM stores) AS totalStoreCount,
+            (SELECT COUNT(*) FROM orders
+             WHERE DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+               AND order_status NOT IN ('CANCELED','CANCELLED')) AS yesterdayOrderCount,
+            (SELECT COALESCE(SUM(total_price), 0) FROM orders
+             WHERE DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+               AND order_status NOT IN ('CANCELED','CANCELLED')) AS yesterdaySales,
+            (SELECT COUNT(*) FROM members
+             WHERE deleted_at IS NULL
+               AND created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)) AS newMemberThisWeek
     </select>
 
     <select id="findWeeklySales" resultType="com.deushu.admin.dto.AdminDto$DailySales">
