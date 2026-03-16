@@ -39,8 +39,7 @@ public interface AdminMapper {
             @Param("pageSize") int pageSize,
             @Param("offset")   int offset);
 
-    void deactivateStore(@Param("id") Long id);
-    void restoreStore(   @Param("id") Long id);
+    void deactivateStore(@Param("id") Long id, @Param("stopReason") String stopReason);    void restoreStore(   @Param("id") Long id);
 
     // ── 주문 ──
     List<AdminDto.OrderRow> findAllOrders(

@@ -37,8 +37,7 @@ public class AdminService {
     }
 
     @Transactional
-    public void deactivateStore(Long id) { adminMapper.deactivateStore(id); }
-    @Transactional
+    public void deactivateStore(Long id, String stopReason) { adminMapper.deactivateStore(id, stopReason); }    @Transactional
     public void restoreStore(Long id)    { adminMapper.restoreStore(id); }
 
     // ── 주문 ──

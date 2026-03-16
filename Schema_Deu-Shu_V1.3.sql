@@ -232,3 +232,5 @@ INSERT INTO members (
 SELECT id, email, role, created_at
 FROM members
 WHERE role = 'ROLE_ADMIN';
+
+ALTER TABLE stores ADD COLUMN stop_reason VARCHAR(255) DEFAULT NULL COMMENT '정지 사유';

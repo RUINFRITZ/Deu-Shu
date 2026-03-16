@@ -59,6 +59,7 @@ public class AdminDto {
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
         private LocalDateTime deletedAt;
+        private String stopReason;
     }
 
     /** 가게 목록 — AdminMapper.findAllStores (오너 JOIN) */
@@ -74,12 +75,18 @@ public class AdminDto {
         private String thumbnailUrl;
         private LocalDateTime createdAt;
         private LocalDateTime deletedAt;
+        private String stopReason;
+
         // 오너 정보 (JOIN)
         private Long ownerId;
         private String ownerEmail;
         private String ownerName;      // CONCAT(last_name,' ',first_name)
     }
-
+    @Data
+    public static class StoreStopRequest {
+        private String stopReason;
+    }
+    
     /** 주문 목록 — AdminMapper.findAllOrders (회원 + 가게 JOIN) */
     @Data
     public static class OrderRow {
