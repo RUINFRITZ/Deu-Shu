@@ -91,6 +91,12 @@ public class AdminController {
 		adminService.deleteMember(id);
 		return ApiResponse.onSuccess(null);
 	}
+	@PatchMapping("/api/admin/members/{id}/suspend")
+	@ResponseBody
+	public ApiResponse<Void> suspendMember(@PathVariable Long id) {
+	    adminService.suspendMember(id);
+	    return ApiResponse.onSuccess(null);
+	}
 
 	// ── 가게 ──
 	@GetMapping("/api/admin/stores")

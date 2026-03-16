@@ -116,6 +116,10 @@
 	<update id="deleteMember">
 UPDATE stores SET deleted_at = NOW(), stop_reason = #{stopReason} WHERE id = #{id}	</update>
 
+<update id="suspendMember">
+    UPDATE members SET deleted_at = NOW(), updated_at = NOW() WHERE id = #{id}
+</update>
+
 	<!-- ══════════════════════════════════════════════ 가게 ══════════════════════════════════════════════ -->
 
 	<select id="findAllStores"

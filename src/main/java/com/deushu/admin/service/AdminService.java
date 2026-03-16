@@ -30,6 +30,9 @@ public class AdminService {
     public void updateEsgPoint(Long id, int esgPoint)     { adminMapper.updateEsgPoint(id, esgPoint); }
     @Transactional
     public void deleteMember(Long id)                     { adminMapper.deleteMember(id); }
+    @Transactional
+    public void suspendMember(Long id) { adminMapper.suspendMember(id); }
+    
 
     // ── 가게 ──
     public List<AdminDto.StoreRow> getStores(String keyword, String category, String status, int page, int size) {

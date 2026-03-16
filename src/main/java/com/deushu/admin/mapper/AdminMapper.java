@@ -30,6 +30,7 @@ public interface AdminMapper {
     void updateMemberRole(@Param("id") Long id, @Param("role") String role);
     void updateEsgPoint(  @Param("id") Long id, @Param("esgPoint") int esgPoint);
     void deleteMember(    @Param("id") Long id);
+    void suspendMember(@Param("id") Long id);
 
     // ── 가게 ──
     List<AdminDto.StoreRow> findAllStores(

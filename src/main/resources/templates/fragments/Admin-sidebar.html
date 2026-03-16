@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<aside class="admin-sidebar" th:fragment="sidebar(activePage)">
+    <div class="sidebar-profile">
+        <div class="profile-icon"><i class="bi bi-shield-fill-check"></i></div>
+        <div class="profile-name">管理者</div>
+        <span class="profile-role">ADMIN</span>
+    </div>
+
+    <nav class="sidebar-nav">
+        <div class="sidebar-section-label">メイン</div>
+        <a th:href="@{/admin/dashboard}" class="sidebar-nav-item" th:classappend="${activePage=='dashboard'?'active':''}">
+            <i class="bi bi-grid-1x2"></i> ダッシュボード
+        </a>
+
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-section-label">管理</div>
+
+        <a th:href="@{/admin/members}" class="sidebar-nav-item" th:classappend="${activePage=='members'?'active':''}">
+            <i class="bi bi-people"></i> 会員管理
+        </a>
+        <a th:href="@{/admin/stores}" class="sidebar-nav-item" th:classappend="${activePage=='stores'?'active':''}">
+            <i class="bi bi-shop"></i> 店舗管理
+        </a>
+        <a th:href="@{/admin/orders}" class="sidebar-nav-item" th:classappend="${activePage=='orders'?'active':''}">
+            <i class="bi bi-bag-check"></i> 注文管理
+        </a>
+        <a th:href="@{/admin/reviews}" class="sidebar-nav-item" th:classappend="${activePage=='reviews'?'active':''}">
+            <i class="bi bi-star"></i> レビュー管理
+        </a>
+
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-section-label">システム</div>
+        <button class="sidebar-cache-btn" onclick="evictCache()">
+            <i class="bi bi-arrow-repeat"></i> キャッシュ初期化
+        </button>
+
+        <div class="sidebar-divider"></div>
+        <a href="/" class="sidebar-nav-item" style="color:var(--mid-gray);">
+            <i class="bi bi-box-arrow-left"></i> サイトへ戻る
+        </a>
+    </nav>
+</aside>
+
+</body>
+</html>
