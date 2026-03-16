@@ -86,6 +86,7 @@
         <result property="openTime"     column="open_time"/>
         <result property="closeTime"    column="close_time"/>
         <result property="thumbnailUrl" column="thumbnail_url"/>
+         <result property="info"         column="info"/> 
         <result property="favorited"    column="favorited"/>
         <result property="avgRating"    column="avg_rating"/>
         <result property="reviewCount"  column="review_count"/>
@@ -265,6 +266,7 @@
             s.address,
             s.lat,
             s.lng,
+            s.info,
             TIME_FORMAT(s.open_time,  '%H:%i') AS open_time,
             TIME_FORMAT(s.close_time, '%H:%i') AS close_time,
             s.thumbnail_url,
@@ -287,7 +289,8 @@
         WHERE
             s.id         = #{storeId}
             AND s.deleted_at IS NULL
-        GROUP BY s.id
+        GROUP BY s.id, s.name, s.category, s.address, s.lat, s.lng,
+         s.info, s.open_time, s.close_time, s.thumbnail_url
     </select>
 
     <!-- FR-M03 보조: 가게 이미지 목록 -->

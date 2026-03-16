@@ -153,6 +153,7 @@ public class AuthController {
         }
 
         session.setAttribute("memberId", 회원.getId());
+        session.setAttribute("memberName", 회원.getLastName() + 회원.getFirstName());
         
         // =====================================================================
         // Spring Security コンテキストとの強制同期ブリッジコード
@@ -385,6 +386,7 @@ public class AuthController {
 
         // 세션에 memberId 저장
         session.setAttribute("memberId", member.getId());
+        session.setAttribute("memberName", member.getLastName() + member.getFirstName());
 
         // Spring Security 컨텍스트 동기화 (기존 login() 과 동일 패턴)
         List<GrantedAuthority> authorities =

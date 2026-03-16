@@ -19,26 +19,29 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/")
 @RequiredArgsConstructor
 public class IndexController {
-	
-	private final RegionService regionService;
-	private final StoreService storeService;
-	
+
+    private final RegionService regionService;
+    private final StoreService storeService;
+
+    // 메인 페이지
     @GetMapping
-	public String index(){
-	return	"index";
-	}
-    
+    public String index() {
+        return "index";
+    }
+
+    // 오너 페이지
     @GetMapping("/owner")
     public String ownerPage() {
-        return "member/ownerPage";  // templates/member/ownerPage.html 을 렌더링
+        return "member/ownerPage";
     }
-    
+
     // 마이페이지
     @GetMapping("/mypage")
     public String mypage() {
         return "member/mypage";
     }
-    
+
+    // 가게 목록 페이지
     @GetMapping("/list")
     public String storeList(@RequestParam(name = "region") String region,
                             @RequestParam(name = "radius") double radius,
@@ -46,6 +49,7 @@ public class IndexController {
 
         RegionLocation location = regionService.findLocationByRegionCode(region);
 
+        // 데이터를 낱개로 보내지 않고 filter라는 '가방'에 담아서 전달
         StoreFilterRequest filter = new StoreFilterRequest();
         filter.setCenterLat(location.getLat());
         filter.setCenterLng(location.getLng());
@@ -65,5 +69,20 @@ public class IndexController {
                 storeService.getStoresByPage(0, 10, filter).getContent());
 
         return "store/storeList";
+        
     }
+    @GetMapping("/terms")
+    public String terms() { return "policy/terms"; }
+
+    @GetMapping("/privacy")
+    public String privacy() { return "policy/privacy"; }
+
+    @GetMapping("/info")
+    public String info() { return "policy/info"; }
+
+    @GetMapping("/faq")
+    public String faq() { return "policy/faq"; }
+
+    @GetMapping("/contact")
+    public String contact() { return "policy/contact"; }
 }

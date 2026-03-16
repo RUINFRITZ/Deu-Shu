@@ -28,7 +28,8 @@ public class StoreDetailDto {
     private String openTime;         // stores.open_time
     private String closeTime;        // stores.close_time
     private String thumbnailUrl;     // stores.thumbnail_url
-
+    private String info;          
+    
     /* ── 활성 마감 할인 상품 목록 ── */
     private List<ItemSummaryDto> items;
 

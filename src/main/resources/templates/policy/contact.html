@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>お問い合わせ — ドゥーシュー</title>
+<link
+	href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+	rel="stylesheet" />
+<link rel="stylesheet"
+	href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link
+	href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap"
+	rel="stylesheet">
+<link
+	href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css"
+	rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+<style>
+.page-hero {
+	background: linear-gradient(135deg, rgba(193, 75, 0, 0.2) 0%,
+		rgba(224, 94, 16, 0.8) 100%),
+		url('https://images.unsplash.com/photo-1547592166-23ac45744acd?w=1600&q=80')
+		center/cover no-repeat; padding : 3rem 0;
+	padding: 3rem 0;
+	margin-bottom: 3rem;
+}
+
+.page-hero-inner {
+	max-width: 1100px;
+	margin: 0 auto;
+	padding: 0 1.5rem;
+}
+
+.page-hero-tag {
+	display: inline-block;
+	background: rgba(224, 94, 16, 0.8);
+	color: rgba(255, 255, 255, 0.9);
+	font-size: 0.85rem;
+	font-weight: 700;
+	letter-spacing: 0.12em;
+	padding: 0.25rem 0.75rem;
+	border-radius: 20px;
+	margin-bottom: 0.8rem;
+}
+
+.page-hero h1 {
+	font-family: 'Noto Serif JP', serif;
+	font-size: 2rem;
+	font-weight: 900;
+	color: #fff;
+	margin: 0 0 0.4rem;
+}
+
+.page-hero p {
+	font-size: 1.05rem;
+	color: rgba(255, 255, 255, 0.7);
+	margin: 0;
+}
+
+.page-wrap {
+	max-width: 1100px;
+	margin: 2.5rem auto;
+	padding: 0 2rem;
+}
+
+.contact-layout {
+	display: grid;
+	grid-template-columns: 260px 1fr;
+	gap: 1.5rem;
+	align-items: start;
+}
+
+@media ( max-width : 640px) {
+	.contact-layout {
+		grid-template-columns: 1fr;
+	}
+}
+
+.contact-info {
+	background: var(--primary-pale);
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	padding: 1.4rem;
+}
+
+.contact-info h3 {
+	font-size: 0.98rem;
+	font-weight: 700;
+	color: var(--primary);
+	margin-bottom: 1.2rem;
+	padding-bottom: 0.6rem;
+	border-bottom: 1px solid var(--border);
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+}
+
+.info-row {
+	display: flex;
+	gap: 0.6rem;
+	margin-bottom: 0.9rem;
+	align-items: flex-start;
+}
+
+.info-row i {
+	color: var(--primary);
+	margin-top: 2px;
+	flex-shrink: 0;
+	font-size: 1rem;
+}
+
+.info-row div strong {
+	display: block;
+	font-size: 0.98rem;
+	color: var(--light-gray);
+	margin-bottom: 0.1rem;
+}
+
+.info-row div span {
+	font-size: 0.98rem;
+	color: var(--mid-gray);
+	line-height: 1.6;
+}
+
+.contact-form {
+	background: #fff;
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	padding: 1.8rem;
+}
+
+.form-group {
+	margin-bottom: 1.1rem;
+}
+
+.form-group label {
+	display: block;
+	font-size: 0.97rem;
+	font-weight: 700;
+	color: var(--charcoal);
+	margin-bottom: 0.4rem;
+}
+
+.form-group label .req {
+	color: var(--primary);
+	font-size: 1.05rem;
+	margin-left: 3px;
+}
+
+.form-group input, .form-group select, .form-group textarea {
+	width: 100%;
+	border: 1.5px solid #E5E7EB;
+	border-radius: 8px;
+	padding: 0.65rem 0.9rem;
+	font-size: 1.02rem;
+	font-family: 'Noto Sans JP', sans-serif;
+	color: var(--charcoal);
+	outline: none;
+	transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus
+	{
+	border-color: var(--primary);
+	box-shadow: 0 0 0 3px rgba(193, 75, 0, 0.08);
+}
+
+.form-group textarea {
+	resize: vertical;
+	min-height: 120px;
+}
+
+.form-note {
+	font-size: 1rem;
+	color: var(--light-gray);
+	line-height: 1.8;
+	margin-bottom: 1.1rem;
+}
+
+.btn-submit {
+	width: 100%;
+	background: var(--primary);
+	color: #fff;
+	border: none;
+	border-radius: 8px;
+	padding: 0.85rem;
+	font-size: 1.05rem;
+	font-weight: 700;
+	font-family: 'Noto Sans JP', sans-serif;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	transition: background 0.2s;
+}
+
+.btn-submit:hover {
+	background: var(--primary-mid);
+}
+
+.contact-sent {
+	display: none;
+	text-align: center;
+	padding: 4rem 1rem;
+}
+
+.sent-icon {
+	width: 56px;
+	height: 56px;
+	background: #F0FDF4;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0 auto 1rem;
+	font-size: 1.5rem;
+	color: var(--success);
+}
+
+.contact-sent h2 {
+	font-family: 'Noto Serif JP', serif;
+	font-size: 1.2rem;
+	font-weight: 700;
+	color: var(--charcoal);
+	margin-bottom: 0.5rem;
+}
+
+.contact-sent p {
+	font-size: 1rem;
+	color: var(--mid-gray);
+	line-height: 1.9;
+}
+</style>
+</head>
+<body>
+	<div th:replace="~{fragments/header :: header}"></div>
+
+	<div class="page-hero">
+		<div class="page-hero-inner">
+			<span class="page-hero-tag">SUPPORT</span>
+			<h1>お問い合わせ</h1>
+			<p>通常2〜3営業日以内にご返信いたします</p>
+		</div>
+	</div>
+
+	<div class="page-wrap">
+		<div class="contact-sent" id="contactSent">
+			<div class="sent-icon">
+				<i class="bi bi-check-lg"></i>
+			</div>
+			<h2>送信が完了しました</h2>
+			<p>
+				お問い合わせありがとうございます。<br>担当者よりご連絡いたしますので、しばらくお待ちください。
+			</p>
+		</div>
+
+		<div class="contact-layout" id="contactForm">
+			<div class="contact-info">
+				<h3>
+					<i class="bi bi-headset"></i> サポート情報
+				</h3>
+				<div class="info-row">
+					<i class="bi bi-clock"></i>
+					<div>
+						<strong>対応時間</strong><span>平日 10:00〜18:00</span>
+					</div>
+				</div>
+				<div class="info-row">
+					<i class="bi bi-calendar-x"></i>
+					<div>
+						<strong>休業日</strong><span>土日・祝日・年末年始</span>
+					</div>
+				</div>
+				<div class="info-row">
+					<i class="bi bi-reply"></i>
+					<div>
+						<strong>返信目安</strong><span>2〜3営業日以内</span>
+					</div>
+				</div>
+				<div class="info-row">
+					<i class="bi bi-envelope"></i>
+					<div>
+						<strong>メール</strong><span>contact@deushu.com</span>
+					</div>
+				</div>
+			</div>
+
+			<div class="contact-form">
+				<div class="form-group">
+					<label>お名前 <span class="req">必須</span></label> <input type="text"
+						id="contactName" placeholder="山田 太郎">
+				</div>
+				<div class="form-group">
+					<label>メールアドレス <span class="req">必須</span></label> <input
+						type="email" id="contactEmail" placeholder="example@email.com">
+				</div>
+				<div class="form-group">
+					<label>お問い合わせ種別 <span class="req">必須</span></label> <select
+						id="contactType">
+						<option value="">選択してください</option>
+						<option value="order">注文・ピックアップについて</option>
+						<option value="payment">決済・支払いについて</option>
+						<option value="account">アカウントについて</option>
+						<option value="store">店舗について</option>
+						<option value="other">その他</option>
+					</select>
+				</div>
+				<div class="form-group">
+					<label>お問い合わせ内容 <span class="req">必須</span></label>
+					<textarea id="contactMessage" placeholder="お問い合わせ内容をご記入ください"></textarea>
+				</div>
+				<p class="form-note">※ 送信いただいた個人情報は、お問い合わせへの回答のみに使用します。</p>
+				<button class="btn-submit" onclick="submitContact()">
+					<i class="bi bi-send"></i> 送信する
+				</button>
+			</div>
+		</div>
+	</div>
+
+	<div th:replace="~{fragments/footer :: footer}"></div>
+	<script th:src="@{/js/script.js}"></script>
+	<script>
+		function submitContact() {
+			var name = document.getElementById('contactName').value.trim();
+			var email = document.getElementById('contactEmail').value.trim();
+			var type = document.getElementById('contactType').value;
+			var message = document.getElementById('contactMessage').value
+					.trim();
+
+			if (!name) {
+				alert('お名前をご入力ください');
+				return;
+			}
+			if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+				alert('正しいメールアドレスをご入力ください');
+				return;
+			}
+			if (!type) {
+				alert('お問い合わせ種別を選択してください');
+				return;
+			}
+			if (!message) {
+				alert('お問い合わせ内容をご入力ください');
+				return;
+			}
+
+			document.getElementById('contactForm').style.display = 'none';
+			document.getElementById('contactSent').style.display = 'block';
+		}
+	</script>
+</body>
+</html>
