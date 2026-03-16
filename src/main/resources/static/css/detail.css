@@ -65,31 +65,36 @@ body {
 .store-slider {
     position: relative;
     width: 100%;
-    aspect-ratio: 4/3;
+    height: 600px;
     background: var(--gray-100);
     overflow: clip;
 }
-@media (min-width: 992px) {
+@media (max-width: 991px) {
     .store-slider {
-        aspect-ratio: unset;
-        height: 100%;
-        min-height: 440px;
+        height: 400px;
+    }
+}
+@media (max-width: 575px) {
+    .store-slider {
+        height: 280px;
     }
 }
 
 .slider-track {
     display: flex;
-    height: 100%;
+    height: 600px;
     transition: transform .4s cubic-bezier(.4,0,.2,1);
 }
+
 .slider-track img {
     flex-shrink: 0;
     width: 100%;
-    height: 100%;
-    object-fit: cover;
+    height: auto;
+    object-fit: contain;  /* ← cover → contain */
     user-select: none;
     pointer-events: none;
 }
+
 .slider-empty {
     width: 100%;
     height: 100%;
@@ -855,4 +860,111 @@ body {
     max-height: 90vh;
     border-radius: 10px;
     object-fit: contain;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   AI 리뷰 요약 섹션
+══════════════════════════════════════════════════════════════ */
+
+/* 로딩 스피너 영역 */
+.ai-summary-loading {
+    display: flex;
+    align-items: center;
+    font-size: .875rem;
+    color: var(--gray-500);
+    padding: .5rem 0;
+}
+
+/* 총합 요약 텍스트 */
+.ai-summary-text {
+    font-size: .9375rem;
+    color: var(--gray-700);
+    line-height: 1.65;
+    margin-bottom: 0;
+}
+
+/* 좋은 점 / 나쁜 점 2열 그리드 */
+.ai-summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .75rem;
+    margin-top: .75rem;
+}
+
+/* 각 컬럼 카드 */
+.ai-summary-col {
+    border-radius: 10px;
+    padding: .75rem 1rem;
+    font-size: .875rem;
+}
+
+/* 좋은 점 컬럼 - 연초록 배경 */
+.ai-summary-col.good {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+}
+
+/* 나쁜 점 컬럼 - 연주황 배경 */
+.ai-summary-col.bad {
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+}
+
+/* 컬럼 레이블 */
+.ai-col-label {
+    font-weight: 700;
+    font-size: .8125rem;
+    margin-bottom: .5rem;
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+}
+
+.ai-summary-col.good .ai-col-label { color: #16a34a; }
+.ai-summary-col.bad  .ai-col-label { color: #ea580c; }
+
+/* 포인트 목록 */
+.ai-point-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+}
+
+.ai-point-list li {
+    color: var(--gray-700);
+    line-height: 1.5;
+}
+
+.ai-point-list li::before {
+    content: "・";
+    color: var(--gray-400);
+    margin-right: .15rem;
+}
+
+/* 리스트 항목 없음 표시 */
+.ai-empty-item {
+    color: var(--gray-400) !important;
+    font-style: italic;
+}
+.ai-empty-item::before { content: "" !important; }
+
+/* 분위기 블록 */
+.ai-atmosphere {
+    font-size: .875rem;
+    color: var(--gray-600);
+    background: var(--gray-50, #f9fafb);
+    border-left: 3px solid var(--primary);
+    padding: .5rem .875rem;
+    border-radius: 0 6px 6px 0;
+    line-height: 1.6;
+}
+
+/* 모바일 반응형: 1열로 변경 */
+@media (max-width: 480px) {
+    .ai-summary-grid {
+        grid-template-columns: 1fr;
+    }
 }

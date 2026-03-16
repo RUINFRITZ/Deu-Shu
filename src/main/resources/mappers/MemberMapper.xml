@@ -92,16 +92,16 @@
         WHERE id = #{id}
     </update>
 
-	<!-- 사업자 회원가입 (ROLE_OWNER 고정) -->
-	<insert id="insertOwner" parameterType="com.deushu.member.domain.MemberEntity">
-	    INSERT INTO members (email, password, last_name, first_name,
-	                         last_name_kana, first_name_kana, phone, role)
-	    VALUES (#{email}, #{password}, #{lastName}, #{firstName},
-	            #{lastNameKana}, #{firstNameKana}, #{phone}, 'ROLE_OWNER')
-	</insert>
+    <!-- 사업자 회원가입 (ROLE_OWNER 고정) -->
+    <insert id="insertOwner" parameterType="com.deushu.member.domain.MemberEntity">
+        INSERT INTO members (email, password, last_name, first_name,
+                             last_name_kana, first_name_kana, phone, role)
+        VALUES (#{email}, #{password}, #{lastName}, #{firstName},
+                #{lastNameKana}, #{firstNameKana}, #{phone}, 'ROLE_OWNER')
+    </insert>
 
-	<select id="findTodayPickupOrders" parameterType="Long" resultType="com.deushu.order.dto.MyPageOrderResponseDto">
-        SELECT 
+    <select id="findTodayPickupOrders" parameterType="Long" resultType="com.deushu.order.dto.MyPageOrderResponseDto">
+        SELECT
             o.id            AS orderId,
             s.name          AS storeName,
             o.total_price   AS totalPrice,
@@ -109,16 +109,16 @@
             o.order_status  AS orderStatus,
             DATE_FORMAT(o.created_at, '%H:%i') AS orderTime,
             (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) AS itemCount,
-            (SELECT i.name 
-             FROM order_items oi 
-             JOIN items i ON oi.item_id = i.id 
-             WHERE oi.order_id = o.id 
+            (SELECT i.name
+             FROM order_items oi
+             JOIN items i ON oi.item_id = i.id
+             WHERE oi.order_id = o.id
              ORDER BY oi.id ASC LIMIT 1) AS mainItemName,
-             (SELECT ii.image_url 
-             FROM order_items oi 
-             JOIN item_images ii ON oi.item_id = ii.item_id 
-             WHERE oi.order_id = o.id 
-             ORDER BY oi.id ASC, ii.sort_order ASC LIMIT 1) AS imageUrl
+            (SELECT i.thumbnail_url
+             FROM order_items oi
+             JOIN items i ON oi.item_id = i.id
+             WHERE oi.order_id = o.id
+             ORDER BY oi.id ASC LIMIT 1) AS imageUrl
         FROM orders o
         JOIN stores s ON o.store_id = s.id
         WHERE o.member_id = #{memberId}
@@ -126,9 +126,9 @@
           AND o.order_status IN ('PAYMENT_COMPLETED', 'PAYMENT_PENDING')
         ORDER BY o.created_at DESC
     </select>
-	
-	<select id="findAllOrderHistory" parameterType="Long" resultType="com.deushu.order.dto.MyPageOrderResponseDto">
-        SELECT 
+
+    <select id="findAllOrderHistory" parameterType="Long" resultType="com.deushu.order.dto.MyPageOrderResponseDto">
+        SELECT
             o.id            AS orderId,
             s.name          AS storeName,
             o.total_price   AS totalPrice,
@@ -136,20 +136,20 @@
             o.order_status  AS orderStatus,
             DATE_FORMAT(o.created_at, '%Y-%m-%d %H:%i') AS orderTime,
             (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) AS itemCount,
-            (SELECT i.name 
-             FROM order_items oi 
-             JOIN items i ON oi.item_id = i.id 
-             WHERE oi.order_id = o.id 
+            (SELECT i.name
+             FROM order_items oi
+             JOIN items i ON oi.item_id = i.id
+             WHERE oi.order_id = o.id
              ORDER BY oi.id ASC LIMIT 1) AS mainItemName,
-            (SELECT ii.image_url 
-             FROM order_items oi 
-             JOIN item_images ii ON oi.item_id = ii.item_id 
-             WHERE oi.order_id = o.id 
-             ORDER BY oi.id ASC, ii.sort_order ASC LIMIT 1) AS imageUrl
+            (SELECT i.thumbnail_url
+             FROM order_items oi
+             JOIN items i ON oi.item_id = i.id
+             WHERE oi.order_id = o.id
+             ORDER BY oi.id ASC LIMIT 1) AS imageUrl
         FROM orders o
         JOIN stores s ON o.store_id = s.id
         WHERE o.member_id = #{memberId}
         ORDER BY o.created_at DESC
-    </select>	
-	
+    </select>
+
 </mapper>
