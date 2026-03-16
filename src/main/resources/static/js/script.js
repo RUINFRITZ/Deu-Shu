@@ -663,3 +663,16 @@ function handleBizRegister() {
     });
 	
 }
+document.addEventListener('DOMContentLoaded', function() {
+    if (!window.location.pathname.startsWith('/mypage')) return;
+    
+    var hash = window.location.hash;
+    if (hash === '#orders') {
+        // ✅ data-tab 대신 switchSection 함수 직접 호출
+        var btn = document.querySelector('[onclick*="switchSection(\'orders\'"]');
+        if (btn) btn.click();
+    } else if (hash === '#favorites') {
+        var btn = document.querySelector('[onclick*="switchSection(\'favorites\'"]');
+        if (btn) btn.click();
+    }
+});
