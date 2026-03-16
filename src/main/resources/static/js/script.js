@@ -661,4 +661,5 @@ function handleBizRegister() {
     .catch(function() {
         showFieldMsg('bizRegEmailMsg', 'サーバーエラーが発生しました');
     });
+	
 }
