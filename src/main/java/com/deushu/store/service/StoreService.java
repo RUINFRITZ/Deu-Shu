@@ -69,28 +69,29 @@ public class StoreService {
      * Caffeine 캐시(todayStorePins)에 1시간 TTL로 저장.
      *
      * 캐시 Key = "날짜:위도:경도:반경"
-     * → 같은 날, 같은 지역/반경 조회는 캐시 HIT
-     *
-     * [요구사항 1] nav 버튼에서 radius=2로 진입 시 캐시 키에 반경이 포함되므로
-     *             2km 기준 결과가 별도로 캐싱됨. 혼용 시 충돌 없음.
+     * → 같은 날, 같은 지역/반경 조회는 캐시 HIT (메서드 body 자체가 실행되지 않음)
+     * → 메서드 body가 실행되면 MISS, 실행 안 되면 HIT
      */
     @Cacheable(
         value = "todayStorePins",
         key =
-            "(#targetDate != null ? #targetDate.toString() : 'NONE')"
+            "(#p0 != null ? #p0.toString() : 'NONE')"
             + " + ':' + "
-            + "(#centerLat  != null ? #centerLat  : 'NONE')"
+            + "(#p1 != null ? #p1 : 'NONE')"
             + " + ':' + "
-            + "(#centerLng  != null ? #centerLng  : 'NONE')"
+            + "(#p2 != null ? #p2 : 'NONE')"
             + " + ':' + "
-            + "(#radius     != null ? #radius : 1000)"
+            + "(#p3 != null ? #p3 : 1000)"
     )
     public List<StoreMapDto> getStorePins(LocalDate targetDate,
                                           Double centerLat,
                                           Double centerLng,
                                           Double radius) {
-        log.debug("[FR-M01] Cache MISS → DB 조회 | date={} lat={} lng={} radius={}",
+        // 이 log.info가 찍히면 → Cache MISS (DB 조회 발생)
+        // 찍히지 않으면 → Cache HIT (@Cacheable이 메서드 진입 자체를 막음)
+        log.info("[FR-M01] Cache MISS → DB 조회 | date={} lat={} lng={} radius={}",
                   targetDate, centerLat, centerLng, radius);
+
         return storeMapper.findStorePins(centerLat, centerLng, radius);
     }
 

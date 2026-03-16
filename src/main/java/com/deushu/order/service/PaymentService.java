@@ -2,6 +2,7 @@ package com.deushu.order.service;
 
 import com.deushu.order.domain.OrderEntity;
 import com.deushu.order.mapper.OrderMapper;
+import com.deushu.store.service.StoreService;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +26,7 @@ public class PaymentService {
 
     private final OrderMapper orderMapper;
     private final WebClient webClient = WebClient.create("https://api.iamport.kr");
-
+    private final StoreService storeService;
     // application.properties に設定した PortOne V1 API キーを注入
     @Value("${portone.api-key}")
     private String apiKey;
@@ -70,7 +71,10 @@ public class PaymentService {
 
         // [TODO] 6. (パクさん担当領域) ESGエコポイント付与スケジューラー/ロジックの呼び出し
         // memberMapper.addEsgPoint(memberId, calculatedCarbonReduction);
+        // 결제 완료 후 서버 caffeine 캐쉬 초기화
+        storeService.evictStorePinsCache();
 
+        
         log.info("決済検証完了およびステータス更新成功: 注文ID={}", orderId);
     }
 

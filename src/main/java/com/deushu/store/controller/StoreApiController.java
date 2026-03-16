@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.deushu.common.util.Bbox;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import com.deushu.store.dto.NearbyStoreResponse;
 import com.deushu.store.dto.StoreDetailDto;
 import com.deushu.store.dto.StoreDetailResponse;
@@ -39,6 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 public class StoreApiController {
 
     private final StoreService storeService;
+    private final CacheManager cacheManager;
     
     @GetMapping("/detail/{storeId}")
     public StoreDetailResponse getStoreDetail(@PathVariable("storeId") Long storeId) {
@@ -65,16 +68,36 @@ public class StoreApiController {
             @RequestParam(name="centerLng", required = false) Double centerLng,
             @RequestParam(name="radius",    required = false) Double radius) {
 
-        // 좌표 유효성 기본 검사
         if ((centerLat != null && centerLng == null) ||
             (centerLat == null && centerLng != null)) {
             return ResponseEntity.badRequest().build();
         }
 
+        // ── 캐시 사전 체크 ─────────────────────────────────────
+        // @Cacheable 호출 전 캐시에 해당 키가 있는지 미리 확인
+        // SpEL key 표현식과 동일한 규칙으로 키 생성
+        String today = LocalDate.now().toString();
+        String cacheKey = today
+                + ":" + (centerLat != null ? centerLat : "NONE")
+                + ":" + (centerLng != null ? centerLng : "NONE")
+                + ":" + (radius    != null ? radius    : 1000);
+
+        Cache cache = cacheManager.getCache("todayStorePins");
+        boolean wasHit = cache != null && cache.get(cacheKey) != null;
+        // ──────────────────────────────────────────────────────
+
         List<StoreMapDto> pins =
             storeService.getStorePins(LocalDate.now(), centerLat, centerLng, radius);
 
-        return ResponseEntity.ok(pins);
+        if (wasHit) {
+            System.out.println(">>> [Cache] HIT  | key=" + cacheKey);
+        } else {
+            System.out.println(">>> [Cache] MISS | key=" + cacheKey + " → DB 조회");
+        }
+
+        return ResponseEntity.ok()
+                .header("X-Cache", wasHit ? "HIT" : "MISS")
+                .body(pins);
     }
 
     // ──────────────────────────────────────────────────────────────

@@ -882,25 +882,34 @@ async function applyFilter() {
 }
 
 /* =========================================================
-   초기 핀 — 지도 준비 후 bbox + INIT_RADIUS 기준으로 로딩
-   serverPins(서버 렌더링)는 radius 없이 전체를 반환하므로 사용하지 않음
+   초기 핀 — /api/stores/pins (Caffeine 캐시 적용)으로 로딩
+   - 지도 이동(moveend) / 필터 변경은 /pins/bbox (캐시 없음)로 실시간 갱신
+   - initialPinsLoaded 플래그로 whenReady 중복 호출 방지
+     (GPS setView 시 whenReady 재발동으로 2회 호출되는 문제 해결)
 ========================================================= */
-map.whenReady(function () {
-    const bounds = map.getBounds();
-    const sw = bounds.getSouthWest();
-    const ne = bounds.getNorthEast();
+let initialPinsLoaded = false; // whenReady 중복 방지 플래그
 
-    let url = `/api/stores/pins/bbox?minLat=${sw.lat}&maxLat=${ne.lat}&minLng=${sw.lng}&maxLng=${ne.lng}`;
-    url += `&centerLat=${REGION_LAT}&centerLng=${REGION_LNG}`;
+map.whenReady(function () {
+    if (initialPinsLoaded) return; // 이미 로드됐으면 건너뜀
+    initialPinsLoaded = true;
+
+    let url = `/api/stores/pins?centerLat=${REGION_LAT}&centerLng=${REGION_LNG}`;
     if (INIT_RADIUS) url += `&radius=${INIT_RADIUS}`;
 
     fetch(url)
-        .then(r => r.ok ? r.json() : [])
-        .then(pins => renderPins(pins))
-        .catch(err => console.error('初期ピン取得エラー:', err));
+    .then(r => {
+        // 서버 X-Cache 헤더로 HIT/MISS 판별
+        const cacheStatus = r.headers.get('X-Cache');
+        if (cacheStatus === 'HIT') {
+            console.log('%c[Cache] HIT ✅ 서버 캐시 사용 (DB 조회 없음)', 'color:#22c55e; font-weight:bold;');
+        } else {
+            console.log('%c[Cache] MISS 🔄 DB 조회 후 캐시 저장', 'color:#f97316; font-weight:bold;');
+        }
+        return r.ok ? r.json() : [];
+    })
+    .then(pins => renderPins(pins))
+    .catch(err => console.error('初期ピン取得エラー:', err));
 });
-
-/* whenReady 제거 — 초기 핀은 /api/stores/pins 캐시로 로딩, 이후 moveend/applyFilter가 갱신 */
 
 /* =========================================================
    GPS
