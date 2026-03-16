@@ -17,6 +17,7 @@ import com.deushu.order.domain.OrderItemEntity;
 import com.deushu.order.dto.MyOrderResponse;
 import com.deushu.order.dto.OrderCreateRequestDto;
 import com.deushu.order.mapper.OrderMapper;
+import com.deushu.store.service.StoreService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 public class OrderService {
 
     private final OrderMapper orderMapper;
+    private final StoreService storeService;
 
     /*
      * FR-P01: 注文生成および在庫仮確保（悲観的ロック適用）
@@ -93,6 +95,10 @@ public class OrderService {
 
         log.info("注文生成完了(待機状態): 注文ID={}, ユーザーID={}, 金額={}, ピックアップコード={}", 
                 newOrder.getId(), memberId, calculatedTotalPrice, shortPickupCode);
+        
+        // 주문 생성 시 이미 재고가 차감되므로 서버 캐시 무효화
+        // (결제 미완료로 취소되면 OrderCleanupScheduler가 재고 복원 + 재차 evict 필요)
+        storeService.evictStorePinsCache();
         
         return newOrder.getId();
     }
@@ -195,6 +201,10 @@ public class OrderService {
         Map<String, Object> result = new HashMap<>();
         result.put("orderId", newOrder.getId());
         result.put("totalPrice", calculatedTotalPrice);
+        
+        // 재주문 시에도 재고 재차감 → 캐시 무효화
+        storeService.evictStorePinsCache();
+        
         return result;
     }
 }

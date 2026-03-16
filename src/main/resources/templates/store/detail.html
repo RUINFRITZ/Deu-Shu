@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title th:text="${pageTitle} ?: '가게 상세'">가게 상세</title>
+<title th:text="${pageTitle} ?: '店舗詳細'">店舗詳細</title>
 
 <!-- Google Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -78,31 +78,55 @@
                         <li>
                             <i class="bi bi-geo-alt-fill"></i>
                             <div>
-                                <span class="sip-label">주소</span>
+                                <span class="sip-label">住所</span>
                                 <span class="sip-value" id="storeAddress">-</span>
                             </div>
                         </li>
                         <li>
                             <i class="bi bi-clock-fill"></i>
                             <div>
-                                <span class="sip-label">영업시간</span>
+                                <span class="sip-label">営業時間</span>
                                 <span class="sip-value" id="storeHours">-</span>
                             </div>
                         </li>
                         <li>
                             <i class="bi bi-telephone-fill"></i>
                             <div>
-                                <span class="sip-label">전화번호</span>
+                                <span class="sip-label">電話番号</span>
                                 <span class="sip-value" id="storePhone">-</span>
                             </div>
                         </li>
                     </ul>
-<!-- 가게 안내 (stores.info 컬럼 추가 후 JS에서 채워짐) -->
+
+                    <!-- 가게 안내 (stores.info 컬럼 - JS에서 채워짐) -->
                     <div class="sip-info-block mt-3">
                         <div class="sip-info-title">
-                            <i class="bi bi-info-circle"></i> 가게 안내
+                            <i class="bi bi-info-circle"></i> 店舗案内
                         </div>
-                        <p class="sip-info-text" id="storeInfo">등록된 안내문이 없습니다.</p>
+                        <p class="sip-info-text" id="storeInfo">案内文は登録されていません。</p>
+                    </div>
+
+                    <!-- AI 리뷰 요약 섹션 (가게 안내 바로 아래 배치) -->
+                    <div class="sip-info-block mt-3" id="aiSummaryBlock">
+                        <div class="sip-info-title">
+                            <i class="bi bi-stars"></i> AIレビューサマリー
+                        </div>
+                        <!-- 로딩 중 스피너 -->
+                        <div id="aiSummaryLoading" class="ai-summary-loading">
+                            <span class="spinner-border spinner-border-sm text-warning" role="status"></span>
+                            <span class="ms-2">レビューを分析中...</span>
+                        </div>
+                        <!-- 리뷰 없음 메시지 (기본 숨김) -->
+                        <p id="aiSummaryEmpty" class="sip-info-text" style="display:none;">
+                            レビューはありません。
+                        </p>
+                        <!-- AI 요약 결과 영역 (기본 숨김) -->
+                        <div id="aiSummaryResult" style="display:none;">
+                            <!-- 통합 요약 문장 -->
+                            <p id="aiSummarySummary" class="ai-summary-text"></p>
+                            <!-- 주요 키워드 태그 -->
+                            <div id="aiKeywords" class="ai-keywords mt-2"></div>
+                        </div>
                     </div>
 
 
@@ -116,7 +140,7 @@
         <section class="section-block mb-4">
             <div class="section-hd">
                 <h2 class="section-title">
-                    <i class="bi bi-tag-fill"></i> 할인 상품 목록
+                    <i class="bi bi-tag-fill"></i> 割引商品一覧
                 </h2>
             </div>
             <div class="product-grid" id="itemsGrid">
@@ -130,14 +154,14 @@
         <section class="section-block mb-4">
             <div class="section-hd">
                 <h2 class="section-title">
-                    <i class="bi bi-map-fill"></i> 위치
+                    <i class="bi bi-map-fill"></i> 店舗の場所
                 </h2>
             </div>
             <!-- map-section 클래스 → detail.js initMap() 이 querySelector('.map-section') 로 찾음 -->
             <div class="map-section">
                 <div class="map-placeholder">
                     <i class="bi bi-geo-alt"></i>
-                    <p>지도를 불러오는 중...</p>
+                    <p>地図を読み込み中...</p>
                     <span id="mapAddress">-</span>
                 </div>
             </div>
@@ -150,15 +174,15 @@
             <div class="section-hd">
                 <h2 class="section-title">
                     <i class="bi bi-chat-square-text-fill"></i>
-                    <span id="reviewsTitle">리뷰 (0)</span>
+                    <span id="reviewsTitle">レビュー (0)</span>
                 </h2>
                 <button class="btn-write-review" onclick="openReviewModal()">
-                    <i class="bi bi-pencil"></i> 리뷰 작성
+                    <i class="bi bi-pencil"></i> レビューを書く
                 </button>
             </div>
             <div class="reviews-list" id="reviewsList"></div>
             <button class="btn-load-more" id="reviewsMoreBtn" style="display:none;">
-                더보기 <i class="bi bi-chevron-down"></i>
+                もっと見る <i class="bi bi-chevron-down"></i>
             </button>
         </section>
 
@@ -169,32 +193,32 @@
 <div id="reviewModal" class="review-modal-wrap" onclick="handleModalClick(event)">
     <div class="review-modal-box">
         <div class="modal-header">
-            <h3 id="reviewModalTitle">주문 선택</h3>
+            <h3 id="reviewModalTitle">注文を選択</h3>
             <button type="button" class="modal-close" onclick="closeReviewModal()">×</button>
         </div>
 
         <!-- STEP 1: 주문 목록 -->
         <div id="reviewStep1">
             <div class="modal-body">
-                <p class="review-step-desc">리뷰를 작성할 주문을 선택해주세요.</p>
+                <p class="review-step-desc">レビューを書く注文を選択してください。</p>
                 <div id="orderListBody">
-                    <p style="color:var(--gray-500);">불러오는 중...</p>
+                    <p style="color:var(--gray-500);">読み込み中...</p>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn" onclick="closeReviewModal()">닫기</button>
+                <button type="button" class="btn" onclick="closeReviewModal()">閉じる</button>
             </div>
         </div>
 
         <!-- STEP 2: 리뷰 작성 폼 -->
         <div id="reviewStep2" style="display:none;">
             <div class="modal-body">
-                <label>제목</label>
-                <input id="reviewTitle" type="text" placeholder="제목을 입력하세요"/>
-                <label style="margin-top:12px;">내용</label>
-                <textarea id="reviewContent" rows="4" placeholder="내용을 입력하세요"></textarea>
+                <label>タイトル</label>
+                <input id="reviewTitle" type="text" placeholder="タイトルを入力してください"/>
+                <label style="margin-top:12px;">内容</label>
+                <textarea id="reviewContent" rows="4" placeholder="内容を入力してください"></textarea>
                 <div class="counter"><span id="currentCount">0</span>/500</div>
-                <label style="margin-top:12px;">별점</label>
+                <label style="margin-top:12px;">評価</label>
                 <div class="stars">
                     <i class="bi bi-star star-btn"></i>
                     <i class="bi bi-star star-btn"></i>
@@ -203,16 +227,16 @@
                     <i class="bi bi-star star-btn"></i>
                     <span class="rating-value">5.0</span>
                 </div>
-                <label style="margin-top:12px;">사진(선택)</label>
+                <label style="margin-top:12px;">写真（任意）</label>
                 <input id="imageInput" type="file" accept="image/*"/>
                 <div id="imagePreview" style="display:none;margin-top:8px;">
                     <img id="previewImage" style="max-width:100%;"/>
-                    <button type="button" onclick="removeImage()">삭제</button>
+                    <button type="button" onclick="removeImage()">削除</button>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn" onclick="backToOrderList()">← 뒤로</button>
-                <button type="button" class="btn primary" onclick="submitReview()">등록</button>
+                <button type="button" class="btn" onclick="backToOrderList()">← 戻る</button>
+                <button type="button" class="btn primary" onclick="submitReview()">登録</button>
             </div>
         </div>
 

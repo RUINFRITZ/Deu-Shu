@@ -216,11 +216,11 @@ function renderStore(data) {
         store.openTime && store.closeTime ? `${store.openTime} ~ ${store.closeTime}` : '-';
     document.getElementById('storePhone').textContent     = store.phone;
     document.getElementById('ratingAvg').textContent      = Number(rating.avg).toFixed(1);
-    document.getElementById('reviewCount').textContent    = `리뷰 ${rating.count}`;
-    document.getElementById('reviewsTitle').textContent   = `리뷰 (${rating.count})`;
+    document.getElementById('reviewCount').textContent    = `レビュー ${rating.count}件`;
+    document.getElementById('reviewsTitle').textContent   = `レビュー (${rating.count})`;
 
     const infoEl = document.getElementById('storeInfo');
-    if (infoEl) infoEl.textContent = data.info || '등록된 안내문이 없습니다.';
+    if (infoEl) infoEl.textContent = data.info || '案内文は登録されていません。';
 
     initSlider(images);
 
@@ -234,6 +234,79 @@ function renderStore(data) {
     renderItems(items);
     loadReviews(storeId);
     initFavBtn(data.favorited === true);
+
+    // AI 리뷰 요약 비동기 로딩 (renderStore 마지막에 호출)
+    loadAiSummary(storeId);
+}
+
+// ============================================
+// AI 리뷰 요약 로딩 및 렌더링
+// ============================================
+
+/**
+ * Gemini Map-Reduce 요약 API 호출
+ * GET /api/stores/{storeId}/review-summary
+ * 비동기 호출 → 로딩 스피너 → 결과 렌더링
+ */
+async function loadAiSummary(storeId) {
+    const loadingEl = document.getElementById('aiSummaryLoading');
+    const emptyEl   = document.getElementById('aiSummaryEmpty');
+    const resultEl  = document.getElementById('aiSummaryResult');
+
+    // 초기 상태: 스피너 표시
+    if (loadingEl) loadingEl.style.display = '';
+    if (emptyEl)   emptyEl.style.display   = 'none';
+    if (resultEl)  resultEl.style.display  = 'none';
+
+    try {
+        const res = await fetch(`/api/stores/${storeId}/review-summary`);
+        if (!res.ok) throw new Error('AI 요약 API 오류: ' + res.status);
+
+        const data = await res.json();
+
+        // 스피너 숨김
+        if (loadingEl) loadingEl.style.display = 'none';
+
+        // 리뷰 없는 경우
+        if (!data.hasReviews) {
+            if (emptyEl) emptyEl.style.display = '';
+            return;
+        }
+
+        // AI 요약 결과 렌더링
+        renderAiSummary(data);
+        if (resultEl) resultEl.style.display = '';
+
+    } catch (err) {
+        console.error('[AI 요약] 로딩 실패:', err);
+        // 오류 시 섹션 자체를 숨김 처리 (UX 방해 방지)
+        const block = document.getElementById('aiSummaryBlock');
+        if (block) block.style.display = 'none';
+    }
+}
+
+/**
+ * AI 요약 데이터를 DOM에 렌더링
+ * ReviewSummaryResponseDto: { hasReviews, summary, keywords }
+ * @param {Object} data - ReviewSummaryResponseDto
+ */
+function renderAiSummary(data) {
+    // 통합 요약 문장
+    const summaryEl = document.getElementById('aiSummarySummary');
+    if (summaryEl) summaryEl.textContent = data.summary || '';
+
+    // 주요 키워드 태그 렌더링
+    const keywordsEl = document.getElementById('aiKeywords');
+    if (keywordsEl) {
+        keywordsEl.innerHTML = '';
+        const kws = data.keywords || [];
+        kws.forEach(kw => {
+            const span = document.createElement('span');
+            span.className   = 'ai-keyword-tag';
+            span.textContent = kw;
+            keywordsEl.appendChild(span);
+        });
+    }
 }
 
 // ============================================

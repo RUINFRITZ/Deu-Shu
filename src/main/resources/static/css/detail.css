@@ -65,7 +65,7 @@ body {
 .store-slider {
     position: relative;
     width: 100%;
-    aspect-ratio: 4/3;
+	height: 600px;
     background: var(--gray-100);
     overflow: clip;
 }
@@ -79,14 +79,14 @@ body {
 
 .slider-track {
     display: flex;
-    height: 100%;
+    height: 600px;
     transition: transform .4s cubic-bezier(.4,0,.2,1);
 }
 .slider-track img {
     flex-shrink: 0;
     width: 100%;
-    height: 100%;
-    object-fit: cover;
+    height: auto;
+    object-fit: contain;
     user-select: none;
     pointer-events: none;
 }
@@ -855,4 +855,44 @@ body {
     max-height: 90vh;
     border-radius: 10px;
     object-fit: contain;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   AI 리뷰 요약 섹션
+══════════════════════════════════════════════════════════════ */
+
+/* 로딩 스피너 영역 */
+.ai-summary-loading {
+    display: flex;
+    align-items: center;
+    font-size: .875rem;
+    color: var(--gray-500);
+    padding: .5rem 0;
+}
+
+/* 통합 요약 문장 */
+.ai-summary-text {
+    font-size: .9375rem;
+    color: var(--gray-700);
+    line-height: 1.65;
+    margin-bottom: 0;
+}
+
+/* 키워드 태그 컨테이너 */
+.ai-keywords {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+}
+
+/* 키워드 태그 개별 스타일 */
+.ai-keyword-tag {
+    display: inline-block;
+    padding: .25rem .65rem;
+    border-radius: 999px;
+    font-size: .8125rem;
+    font-weight: 600;
+    color: var(--primary);
+    background: rgba(249, 115, 22, .08);
+    border: 1px solid rgba(249, 115, 22, .25);
 }
