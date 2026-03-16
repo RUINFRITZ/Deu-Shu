@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>よくある質問 — ドゥーシュー</title>
+<link
+	href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+	rel="stylesheet" />
+<link rel="stylesheet"
+	href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link
+	href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap"
+	rel="stylesheet">
+<link
+	href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css"
+	rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+<style>
+.page-hero {
+	background: linear-gradient(135deg, rgba(193, 75, 0, 0.2) 0%,
+		rgba(224, 94, 16, 0.8) 100%),
+		url('https://images.unsplash.com/photo-1547592166-23ac45744acd?w=1600&q=80')
+		center/cover no-repeat; padding : 3rem 0;
+	padding: 3rem 0;
+	margin-bottom: 3rem;
+}
+
+.page-hero-inner {
+	max-width: 1100px;
+	margin: 0 auto;
+	padding: 0 2rem;
+}
+
+.page-hero-tag {
+	display: inline-block;
+	background: rgba(224, 94, 16, 0.8);
+	color: rgba(255, 255, 255, 0.9);
+	font-size: 0.85rem;
+	font-weight: 700;
+	letter-spacing: 0.12em;
+	padding: 0.25rem 0.75rem;
+	border-radius: 20px;
+	margin-bottom: 0.8rem;
+}
+
+.page-hero h1 {
+	font-family: 'Noto Serif JP', serif;
+	font-size: 2rem;
+	font-weight: 900;
+	color: #fff;
+	margin: 0 0 0.4rem;
+}
+
+.page-hero p {
+	font-size: 1.05rem;
+	color: rgba(255, 255, 255, 0.7);
+	margin: 0;
+}
+
+.page-wrap {
+	max-width: 1100px;
+	margin: 2.5rem auto;
+	padding: 0 2rem 5rem;
+}
+
+.faq-category {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-size: 1.02rem;
+	font-weight: 700;
+	color: var(--primary);
+	letter-spacing: 0.06em;
+	margin: 2.2rem 0 1rem;
+	padding-bottom: 0.5rem;
+	border-bottom: 2px solid var(--primary-pale);
+}
+
+.faq-item {
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	margin-bottom: 0.8rem;
+	padding: 1.3rem 1.5rem;
+	background: #fff;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.faq-item h3 {
+	font-size: 1.05rem;
+	font-weight: 700;
+	color: var(--charcoal);
+	margin-bottom: 0.6rem;
+	display: flex;
+	align-items: flex-start;
+	gap: 0.5rem;
+}
+
+.faq-item h3::before {
+	content: 'Q';
+	color: var(--primary);
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 1.05rem;
+	font-weight: 700;
+	flex-shrink: 0;
+	margin-top: 1px;
+}
+
+.faq-item p {
+	font-size: 0.91rem;
+	color: var(--mid-gray);
+	line-height: 1.9;
+	margin: 0;
+	padding-left: 1.2rem;
+}
+
+.faq-banner {
+	margin-top: 2.5rem;
+	background: var(--primary-pale);
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	padding: 1.3rem 1.5rem;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	flex-wrap: wrap;
+}
+
+.faq-banner p {
+	font-size: 1rem;
+	color: var(--mid-gray);
+	margin: 0;
+}
+
+.btn-banner {
+	background: var(--primary);
+	color: #fff;
+	border: none;
+	border-radius: 6px;
+	padding: 0.5rem 1.2rem;
+	font-size: 0.98rem;
+	font-weight: 700;
+	text-decoration: none;
+	white-space: nowrap;
+	transition: background 0.2s;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+}
+
+.btn-banner:hover {
+	background: var(--primary-mid);
+	color: #fff;
+}
+</style>
+</head>
+<body>
+	<div th:replace="~{fragments/header :: header}"></div>
+	<div class="page-hero">
+		<div class="page-hero-inner">
+			<span class="page-hero-tag">SUPPORT</span>
+			<h1>よくある質問</h1>
+			<p>お困りの際はご参照ください</p>
+		</div>
+	</div>
+	<div class="page-wrap">
+
+		<div class="faq-category">
+			<i class="bi bi-person"></i> 会員登録・ログイン
+		</div>
+		<div class="faq-item">
+			<h3>会員登録は無料ですか？</h3>
+			<p>はい、会員登録は無料です。メールアドレスとパスワードを設定するだけで簡単に登録できます。</p>
+		</div>
+		<div class="faq-item">
+			<h3>パスワードを忘れてしまいました。</h3>
+			<p>ログイン画面の「パスワード再設定」よりお手続きください。登録済みのメールアドレスと氏名・電話番号で本人確認後、新しいパスワードを設定できます。</p>
+		</div>
+		<div class="faq-item">
+			<h3>退会するにはどうすればいいですか？</h3>
+			<p>マイページ → 会員退会 よりお手続きいただけます。退会後はデータの復元ができませんのでご注意ください。</p>
+		</div>
+
+		<div class="faq-category">
+			<i class="bi bi-bag"></i> 注文・ピックアップ
+		</div>
+		<div class="faq-item">
+			<h3>注文後にキャンセルできますか？</h3>
+			<p>決済完了後のキャンセルはお受けできません。商品に問題がある場合は、お問い合わせページよりご連絡ください。</p>
+		</div>
+		<div class="faq-item">
+			<h3>ピックアップの方法を教えてください。</h3>
+			<p>決済完了後、マイページに表示されるQRコードを店舗スタッフに提示してください。スタッフがQRを読み取り、商品をお渡しします。</p>
+		</div>
+		<div class="faq-item">
+			<h3>ピックアップ時間はいつですか？</h3>
+			<p>各店舗の営業時間内にピックアップをお願いします。閉店時間は店舗詳細ページでご確認いただけます。</p>
+		</div>
+
+		<div class="faq-category">
+			<i class="bi bi-credit-card"></i> 決済
+		</div>
+		<div class="faq-item">
+			<h3>使用できる支払い方法を教えてください。</h3>
+			<p>クレジットカード（Visa / Mastercard / JCB / American
+				Express）がご利用いただけます。</p>
+		</div>
+		<div class="faq-item">
+			<h3>領収書は発行できますか？</h3>
+			<p>現在、領収書の発行には対応しておりません。今後対応予定です。</p>
+		</div>
+
+		<div class="faq-banner">
+			<p>上記で解決しない場合は、お気軽にお問い合わせください。</p>
+			<a href="/contact" class="btn-banner"><i class="bi bi-envelope"></i>
+				お問い合わせへ</a>
+		</div>
+	</div>
+	<div th:replace="~{fragments/footer :: footer}"></div>
+	<script th:src="@{/js/script.js}"></script>
+</body>
+</html>

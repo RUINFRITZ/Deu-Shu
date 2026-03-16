@@ -4,51 +4,179 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ドゥーシュー </title>
+<title>ドゥーシュー</title>
 
-<!-- Google Fonts -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rfel="preconnect" href="https://fonts.googleapis.com">
 <link
 	href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap"
 	rel="stylesheet">
 
-<!-- Bootstrap Icons -->
 <link
 	href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css"
 	rel="stylesheet">
 
-<!-- th:href="@{/css/style.css}" : static/css/style.css 연결 -->
 <link rel="stylesheet" th:href="@{/css/style.css}">
+<style>
+.esg-card-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+	gap: 1.4rem;
+	max-width: 900px;
+	margin: 0 auto;
+}
+.esg-card-item {
+	background: #fff;
+	border-radius: 16px;
+	padding: 2rem 1.8rem;
+	position: relative;
+	border: 1px solid transparent;
+	transition: transform 0.2s, box-shadow 0.2s;
+	overflow: hidden;
+}
+.esg-card-e { border-color: #bbf7d0; }
+.esg-card-s { border-color: #bfdbfe; }
+.esg-card-g { border-color: #e9d5ff; }
+.esg-card-badge {
+	position: absolute;
+	top: 1.2rem;
+	right: 1.4rem;
+	font-family: 'Noto Serif JP', serif;
+	font-size: 3.5rem;
+	font-weight: 900;
+	line-height: 1;
+	opacity: 0.08;
+}
+.esg-card-e .esg-card-badge { color: #16a34a; }
+.esg-card-s .esg-card-badge { color: #2563eb; }
+.esg-card-g .esg-card-badge { color: #9333ea; }
+.esg-card-emoji { font-size: 2rem; margin-bottom: 0.8rem; display: block; }
+.esg-card-title { font-size: 1.1rem; font-weight: 800; color: #2F2F2F; margin-bottom: 0.2rem; }
+.esg-card-sub { font-size: 0.75rem; color: #999; margin-bottom: 0.9rem; display: block; }
+.esg-card-text { font-size: 0.83rem; color: #555; line-height: 1.85; margin: 0; }
+body { display: block; }
+</style>
 </head>
 
 <body>
 
-	<!-- th:replace : fragments/header.html 의 header 블록을 이 자리에 삽입 -->
 	<div th:replace="~{fragments/header :: header}"></div>
 
 	<main>
 
-		<!-- 히어로 배너 -->
 		<div class="demo-hero">
 			<h1>
 				今日の閉店割引、<br>ドゥーシュー 「どうしよう~」
 			</h1>
 			<p>新鮮な食べ物をお得な価格で。フードロスを減らし、地球に優しく。</p>
 
-			<!-- openModal('user') : 로그인/회원가입 모달 열기 -->
-			<button class="demo-cta" id="heroCta" onclick="openModal('user')">ログイン /
-				会員登録してみる</button>
+			<button class="demo-cta" th:if="${session.memberId == null}"
+				onclick="openModal('user')">ログイン / 会員登録してみる</button>
+
+			<a class="demo-cta"
+				th:if="${session.memberId != null and hasCompletedOrder != true}"
+				th:href="@{/list(region='toshin', radius=2)}"
+				style="color: #C14B00; text-decoration: none; display: inline-block;">
+				今日のピックアップ </a>
+
+			<a class="demo-cta" th:if="${hasCompletedOrder == true}"
+				th:href="@{/order/pickup}"
+				style="color: #C14B00; text-decoration: none; display: inline-block;">
+				ピックアップ状況 </a>
+
 		</div>
 
-		<!-- 추가 컨텐츠 영역 -->
 		<section
-			style="max-width: 1200px; margin: 3rem auto; padding: 0 2rem; text-align: center; color: var(--mid-gray);">
+			style="max-width: 1000px; margin: 4rem auto; padding: 0 1.5rem; color: #333; line-height: 1.8; font-family: 'Noto Sans JP', sans-serif;">
+
+			<div style="text-align: center; margin-bottom: 4rem;">
+				<p
+					style="font-size: 0.9rem; color: #C14B00; font-weight: 700; letter-spacing: 2px; margin-bottom: 0.5rem;">PROJECT
+					DEU-SHU</p>
+				<h2
+					style="font-size: 2.2rem; font-family: 'Noto Serif JP', serif; color: #2F2F2F; margin-bottom: 1rem;">サービス名の由来とビジョン</h2>
+				<p style="font-size: 1.05rem; color: #555;">
+					私たちのサービス名<strong>「ドゥーシュー (Deu-Shu)」</strong>は、韓国・大田（テジョン）地方の温かい方言と、<br>日本語の言葉遊びを掛け合わせた、独自のESG哲学を持つネーミングです。
+				</p>
+			</div>
+
+			<div
+				style="display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: center; margin-bottom: 5rem;">
+				<div
+					style="flex: 1 1 300px; background: #fff; border: 1px solid #E0E0E0; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);">
+					<div style="font-size: 2rem; margin-bottom: 1rem;">😢</div>
+					<h3
+						style="font-size: 1.15rem; color: #C14B00; margin-bottom: 0.5rem;">1.
+						オーナーの悩み「どうしよう…」</h3>
+					<p style="font-size: 0.95rem; color: #555; margin-bottom: 0.8rem;">閉店時間が近づき、まだ美味しく食べられるのに廃棄しなければならない食品を目の前にした、店舗オーナーの「どうしよう…（もったいない）」という切実な悩みを表しています。</p>
+				</div>
+				<div
+					style="flex: 1 1 300px; background: #fff; border: 1px solid #E0E0E0; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);">
+					<div style="font-size: 2rem; margin-bottom: 1rem;">🍲</div>
+					<h3
+						style="font-size: 1.15rem; color: #C14B00; margin-bottom: 0.5rem;">2.
+						ユーザーへの温かい提案「ドゥーシュー〜」</h3>
+					<p style="font-size: 0.95rem; color: #555; margin-bottom: 0.8rem;">「ドゥーシュー」は韓国・大田地方の方言で「召し上がってください」を意味する親しみのある表現。オーナーの悩みを消費者へのお得で温かい食事の提案へと変換する役割を意味します。</p>
+				</div>
+				<div
+					style="flex: 1 1 300px; background: #fff; border: 1px solid #E0E0E0; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);">
+					<div style="font-size: 2rem; margin-bottom: 1rem;">🌍</div>
+					<h3
+						style="font-size: 1.15rem; color: #C14B00; margin-bottom: 0.5rem;">3.
+						環境への貢献 (SDGs)</h3>
+					<p style="font-size: 0.95rem; color: #555; margin-bottom: 0.8rem;">「捨てられるはずだった食べ物を必要とする人に届ける」プロセスを通じて、世界的に深刻化する食品ロス問題をIT技術で解決し、持続可能な社会に貢献するビジョンが込められています。</p>
+				</div>
+			</div>
+
+			<div style="padding: 3rem 2rem; margin-bottom: 4rem;">
+				<div style="text-align: center; margin-bottom: 2.5rem;">
+					<h2
+						style="font-size: 2rem; font-family: 'Noto Serif JP', serif; color: #4F7F68; margin-bottom: 0.5rem;">🌱
+						独自のESG哲学</h2>
+					<p style="font-size: 1.05rem; color: #555; font-weight: 500;">
+						身近な地域社会のリアルな課題にIT技術で立ち向かう<br> <strong style="color: #2F2F2F;">『生活密着型（ライフ・インテグレーテッド）ESG』</strong>
+					</p>
+				</div>
+				<div class="esg-card-grid">
+					<div class="esg-card-item esg-card-e">
+						<div class="esg-card-badge">E</div>
+						<div class="esg-card-emoji">🌍</div>
+						<h4 class="esg-card-title">Environment</h4>
+						<p class="esg-card-sub">食品ロスの削減</p>
+						<p class="esg-card-text">「我々が作り上げたアプリで、今夜廃棄されるはずだった10個のパンを救い出せたなら、それは単なる販売実績にとどまらず、生ゴミが腐敗して生み出されるメタンガスやCO₂の排出を直接的に食い止めたことになります。つまり、我々はコードを打ち込むことで、サーバー上に仮想の木を植え育てているのと同じなのです。」</p>
+					</div>
+					<div class="esg-card-item esg-card-s">
+						<div class="esg-card-badge">S</div>
+						<div class="esg-card-emoji">🤝</div>
+						<h4 class="esg-card-title">Social</h4>
+						<p class="esg-card-sub">地域エコシステムの構築</p>
+						<p class="esg-card-text">「閉店間際に売れ残ったパンを見つめながら、近所の店主がこぼす『どうしよう…』というため息を、お財布事情の厳しい一人暮らしの若者や学生たちに『ドゥーシュー（どうぞ）』と安価で譲り渡す笑顔へと塗り替えるわけです。地域経済の損失を抑え込み、ご近所同士を温かく結びつける技術（Social）だと言えます。」</p>
+					</div>
+					<div class="esg-card-item esg-card-g">
+						<div class="esg-card-badge">G</div>
+						<div class="esg-card-emoji">⚖️</div>
+						<h4 class="esg-card-title">Governance</h4>
+						<p class="esg-card-sub">堅牢で透明性の高い運用</p>
+						<p class="esg-card-text">「店舗とユーザー間で金銭が行き交うプロセスにおいて、1円のズレも生み出さないようトランザクションを厳密に制御しきること（パクの役割）、そしてデータの改ざんを跳ね除け、透明性の高いレビューエコシステムを築き上げること（ユの役割）。これこそが、プラットフォームの健全性を担保するガバナンスなのです。」</p>
+					</div>
+				</div>
+			</div>
+
+			<div
+				style="text-align: center; border-top: 1px solid #E0E0E0; padding-top: 3rem; margin-bottom: 2rem;">
+				<p
+					style="font-size: 0.9rem; color: #888; margin-bottom: 0.5rem; letter-spacing: 1px;">DEVELOPMENT
+					TEAM</p>
+				<h3 style="font-size: 1.8rem; color: #2F2F2F; margin-bottom: 1rem;">JSLアベンジャーズ</h3>
+				<p
+					style="font-size: 1.05rem; color: #555; max-width: 700px; margin: 0 auto;">
+					各自の得意分野を持つ4人のエンジニアが集結し、<br>ITの力で社会課題を解決する最強のチームです。
+				</p>
+			</div>
 
 		</section>
 
 	</main>
 
-	<!-- th:replace : fragments/footer.html 의 footer 블록을 이 자리에 삽입 -->
 	<div th:replace="~{fragments/footer :: footer}"></div>
 
 </body>

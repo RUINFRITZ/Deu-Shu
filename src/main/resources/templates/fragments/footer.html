@@ -2,23 +2,98 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
 
-<!-- th:fragment="footer" : 다른 페이지에서 이 블록을 호출할 때 사용하는 이름 -->
-<footer class="site-footer" th:fragment="footer">
+<th:block th:fragment="footer">
 
-    <!-- 사이트 하단 링크 -->
+<!-- 사이트 하단 링크 -->
+<footer class="site-footer">
+
     <div class="footer-links">
         <a th:href="@{/terms}">利用規約</a>
         <a th:href="@{/privacy}">プライバシーポリシー</a>
-        <a th:href="@{/law}">特定商取引法</a>
+		<a th:href="@{/info}">企業情報</a>
         <a th:href="@{/faq}">よくある質問</a>
         <a th:href="@{/contact}">お問い合わせ</a>
     </div>
 
     <p class="footer-copy">
-        © 2025 ドゥーシュー (드슈) All rights reserved.
+        © 2026 ドゥーシュー All rights reserved.
     </p>
 
 </footer>
 
-</body>
-</html>
+<!-- 맨위로 버튼 -->
+<button id="scrollTopBtn" onclick="scrollToTop()" title="맨 위로">
+    <i class="bi bi-chevron-up"></i>
+</button>
+
+<style>
+    #scrollTopBtn {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        background: var(--primary, #c0562a);
+        color: #fff;
+        border: none;
+        font-size: 1.1rem;
+        cursor: pointer;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.22);
+        z-index: 900;
+        transition: background 0.2s, transform 0.2s;
+    }
+    #scrollTopBtn:hover {
+        background: #a04020;
+        transform: translateY(-3px);
+    }
+    @keyframes scrollBtnIn {
+        from { opacity: 0; transform: translateY(16px) scale(0.8); }
+        to   { opacity: 1; transform: translateY(0)   scale(1);   }
+    }
+    @keyframes scrollBtnOut {
+        from { opacity: 1; transform: translateY(0)   scale(1);   }
+        to   { opacity: 0; transform: translateY(16px) scale(0.8); }
+    }
+    #scrollTopBtn.visible {
+        animation: scrollBtnIn 0.25s ease forwards;
+    }
+    #scrollTopBtn.hiding {
+        animation: scrollBtnOut 0.25s ease forwards;
+    }
+</style>
+
+<script>
+    // 스크롤 위치가 300px 초과 시 버튼 표시, 이하 시 숨김
+    window.addEventListener('scroll', function () {
+        var btn = document.getElementById('scrollTopBtn');
+        if (!btn) return;
+        if (window.scrollY > 50) {
+            if (btn.style.display !== 'flex') {
+                btn.style.display = 'flex';
+                btn.classList.remove('hiding');
+                void btn.offsetWidth;
+                btn.classList.add('visible');
+            }
+        } else {
+            if (btn.style.display === 'flex' && !btn.classList.contains('hiding')) {
+                btn.classList.remove('visible');
+                btn.classList.add('hiding');
+                setTimeout(function() {
+                    btn.style.display = 'none';
+                    btn.classList.remove('hiding');
+                }, 250);
+            }
+        }
+    });
+
+    // 페이지 최상단으로 부드럽게 스크롤
+    function scrollToTop() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+</script>
+
+</th:block>
