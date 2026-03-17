@@ -1,18 +1,20 @@
 package com.deushu.member.controller;
 
+import java.io.IOException;
 import java.util.Collections;
-import java.util.List;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,6 +30,8 @@ import com.deushu.member.mapper.MemberRepository;
 import com.deushu.store.domain.StoreEntity;
 import com.deushu.store.mapper.StoreMapper;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -179,15 +183,42 @@ public class AuthController {
         return ResponseEntity.ok(result);
     }
 
-    // 로그아웃 — POST /api/auth/logout
+    // 既存のAjax用 POST ログアウトAPI
     @PostMapping("/logout")
-    public ResponseEntity<Map<String, Object>> logout(HttpSession session) {
-        session.invalidate();
+    public ResponseEntity<Map<String, Object>> logout(HttpServletRequest request, HttpServletResponse response) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null) {
+            new SecurityContextLogoutHandler().logout(request, response, auth);
+        }
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
+        }
+        SecurityContextHolder.clearContext();
 
         Map<String, Object> result = new HashMap<>();
         result.put("success", true);
-        result.put("message", "ログアウト成功");
+        result.put("message", "ログアウトに成功しました");
         return ResponseEntity.ok(result);
+    }
+
+    // ブラウザから直接 '/api/auth/logout' が GET 要求された場合の処理
+    @GetMapping("/logout")
+    public void logoutGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null) {
+            new SecurityContextLogoutHandler().logout(request, response, auth);
+        }
+        
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
+        }
+        
+        SecurityContextHolder.clearContext();
+        
+        // 処理完了後、メインページ('/')へ強制リダイレクト (302 Found)
+        response.sendRedirect("/");
     }
 
     // 로그인 상태 확인 — GET /api/auth/me

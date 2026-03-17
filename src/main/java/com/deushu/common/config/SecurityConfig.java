@@ -39,6 +39,9 @@ public class SecurityConfig {
             // これにより、非ログイン時に自動でログインページに飛ばされる現象を防ぐ
             .formLogin(AbstractHttpConfigurer::disable)
             
+            // Spring Securityのデフォルトログアウト機能を無効化し、独自実装のAPIとの競合を防止
+            .logout(AbstractHttpConfigurer::disable)
+            
             // REST APIおよび独自セッション管理用の設定
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
@@ -51,8 +54,8 @@ public class SecurityConfig {
                 // [1] 静的リソース (CSS, JS, Images, Bootstrap 等) の完全開放
                 // -----------------------------------------------------------------
                 // ユさんのBootstrapデザインや、AWS S3のリンク等がブロックされないようにする
-                .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**", "/favicon.ico").permitAll()
-
+                .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**", "/favicon.ico", "/error").permitAll()
+                
                 // -----------------------------------------------------------------
                 // [2] フロントエンドのHTML画面遷移 (誰でもアクセス可能)
                 // -----------------------------------------------------------------
@@ -91,11 +94,11 @@ public class SecurityConfig {
                 // マイページ画面 (IndexControllerの @GetMapping("/mypage") と対応)
                 .requestMatchers("/mypage").authenticated()
 	            // -----------------------------------------------------------------
-	            // [7] Owner(사업자) 도메인
+	            // [7] Owner Domain
 	            // -----------------------------------------------------------------
-	            // 오너 페이지 화면 (IndexController 의 @GetMapping("/owner") 와 대응)
+	            // IndexController @GetMapping("/owner")
 	            .requestMatchers("/owner").hasAnyRole("OWNER", "ADMIN")
-	            // 오너 API — 가게·상품·매출 관련 CRUD
+	            // Owner API — Store·Item·Sales CRUD
 	            .requestMatchers("/api/owner/**").hasAnyRole("OWNER", "ADMIN")
 	            
                 // [ パクさん領域 ] 今後実装する注文・決済API
