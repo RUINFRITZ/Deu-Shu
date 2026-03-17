@@ -14,17 +14,23 @@
         <result property="expired"          column="expired"/>
     </resultMap>
 
-    <!-- 일별 집계 결과 매핑 -->
+    <!-- 일별 집계 결과 매핑 (결제완료건수 추가) -->
     <resultMap id="dailyResultMap" type="com.deushu.order.dto.SalesSummaryDto">
-        <result property="orderDate"    column="order_date"/>
-        <result property="dailyRevenue" column="daily_revenue"/>
-        <result property="dailyCount"   column="daily_count"/>
+        <result property="orderDate"         column="order_date"/>
+        <result property="dailyRevenue"      column="daily_revenue"/>
+        <result property="dailyCount"        column="daily_count"/>
+        <result property="paymentCompleted"  column="payment_completed"/>
+    </resultMap>
+
+    <!-- 품목별 집계 결과 매핑 -->
+    <resultMap id="itemResultMap" type="com.deushu.order.dto.ItemSalesSummaryDto">
+        <result property="itemName"       column="item_name"/>
+        <result property="totalQuantity"  column="total_quantity"/>
+        <result property="totalRevenue"   column="total_revenue"/>
     </resultMap>
 
     <!--
-        가게 전체 매출 집계 쿼리
-        - totalRevenue: PAYMENT_COMPLETED 주문의 합산 금액
-        - 각 상태별 건수는 조건부 SUM(CASE WHEN ...) 패턴으로 집계
+        가게 전체 매출 집계 쿼리 (기존 유지)
     -->
     <select id="findTotalSummary" parameterType="Long" resultMap="summaryResultMap">
         SELECT
@@ -40,21 +46,96 @@
     </select>
 
     <!--
-        최근 N일 일별 매출 집계 쿼리
-        - GROUP BY DATE(created_at) 로 날짜별 분류
-        - 스케줄러 캐시 새로고침 및 차트 데이터 제공용
+        최근 N일 일별 매출 집계 쿼리 (기존 유지)
     -->
     <select id="findDailySummary" resultMap="dailyResultMap">
         SELECT
             DATE(created_at)                                    AS order_date,
             COALESCE(SUM(CASE WHEN order_status = 'PAYMENT_COMPLETED'
                                THEN total_price ELSE 0 END), 0) AS daily_revenue,
-            COUNT(*)                                             AS daily_count
+            COUNT(*)                                             AS daily_count,
+            SUM(CASE WHEN order_status = 'PAYMENT_COMPLETED'   THEN 1 ELSE 0 END) AS payment_completed
         FROM orders
         WHERE store_id   = #{storeId}
           AND created_at >= DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
         GROUP BY DATE(created_at)
         ORDER BY order_date ASC
+    </select>
+
+    <!--
+        날짜 범위 기준 전체 매출 집계
+        달력 선택 범위의 요약 카드 데이터 제공용
+    -->
+    <select id="findSummaryByRange" resultMap="summaryResultMap">
+        SELECT
+            COALESCE(SUM(CASE WHEN order_status = 'PAYMENT_COMPLETED'
+                              THEN total_price ELSE 0 END), 0) AS total_revenue,
+            COUNT(*)                                             AS total_orders,
+            SUM(CASE WHEN order_status = 'PICKUP_COMPLETED'  THEN 1 ELSE 0 END) AS pickup_completed,
+            SUM(CASE WHEN order_status = 'PAYMENT_PENDING'   THEN 1 ELSE 0 END) AS payment_pending,
+            SUM(CASE WHEN order_status = 'CANCELED'          THEN 1 ELSE 0 END) AS canceled,
+            SUM(CASE WHEN order_status = 'EXPIRED'           THEN 1 ELSE 0 END) AS expired
+        FROM orders
+        WHERE store_id = #{storeId}
+          AND DATE(created_at) BETWEEN #{startDate} AND #{endDate}
+    </select>
+
+    <!--
+        날짜 범위 기준 일별 매출 집계 (결제완료건수 포함)
+        테이블 컬럼: 일시 / 주문건수 / 결제완료건수 / 매상액
+    -->
+    <select id="findDailySummaryByRange" resultMap="dailyResultMap">
+        SELECT
+            DATE(created_at)                                     AS order_date,
+            COUNT(*)                                             AS daily_count,
+            SUM(CASE WHEN order_status = 'PAYMENT_COMPLETED'
+                     THEN 1 ELSE 0 END)                          AS payment_completed,
+            COALESCE(SUM(CASE WHEN order_status = 'PAYMENT_COMPLETED'
+                               THEN total_price ELSE 0 END), 0)  AS daily_revenue
+        FROM orders
+        WHERE store_id = #{storeId}
+          AND DATE(created_at) BETWEEN #{startDate} AND #{endDate}
+        GROUP BY DATE(created_at)
+        ORDER BY order_date DESC
+    </select>
+
+    <!--
+        특정 날짜의 품목별 매출 집계 (아코디언 표시용)
+        결제완료(PAYMENT_COMPLETED) 주문 기준
+    -->
+    <select id="findDailyItems" resultMap="itemResultMap">
+        SELECT
+            i.name                            AS item_name,
+            SUM(oi.quantity)                  AS total_quantity,
+            SUM(oi.order_price * oi.quantity) AS total_revenue
+        FROM orders o
+        JOIN order_items oi ON oi.order_id = o.id
+        JOIN items       i  ON i.id        = oi.item_id
+        WHERE o.store_id       = #{storeId}
+          AND DATE(o.created_at) = #{date}
+          AND o.order_status    = 'PAYMENT_COMPLETED'
+        GROUP BY i.id, i.name
+        ORDER BY total_revenue DESC
+    </select>
+
+    <!--
+        날짜 범위 기준 품목별 매출 집계
+        TOP3 품목 및 원형 그래프 데이터 제공용
+        결제완료(PAYMENT_COMPLETED) 주문 기준
+    -->
+    <select id="findItemSummaryByRange" resultMap="itemResultMap">
+        SELECT
+            i.name                            AS item_name,
+            SUM(oi.quantity)                  AS total_quantity,
+            SUM(oi.order_price * oi.quantity) AS total_revenue
+        FROM orders o
+        JOIN order_items oi ON oi.order_id = o.id
+        JOIN items       i  ON i.id        = oi.item_id
+        WHERE o.store_id = #{storeId}
+          AND DATE(o.created_at) BETWEEN #{startDate} AND #{endDate}
+          AND o.order_status = 'PAYMENT_COMPLETED'
+        GROUP BY i.id, i.name
+        ORDER BY total_revenue DESC
     </select>
 
 </mapper>
