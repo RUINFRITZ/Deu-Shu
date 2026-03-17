@@ -76,7 +76,7 @@ body { display: block; }
 				th:if="${session.memberId != null and hasCompletedOrder != true}"
 				th:href="@{/list(region='toshin', radius=2)}"
 				style="color: #C14B00; text-decoration: none; display: inline-block;">
-				今日のピックアップ </a>
+				今日のおすすめ </a>
 
 			<a class="demo-cta" th:if="${hasCompletedOrder == true}"
 				th:href="@{/order/pickup}"
@@ -90,12 +90,12 @@ body { display: block; }
 
 			<div style="text-align: center; margin-bottom: 4rem;">
 				<p
-					style="font-size: 0.9rem; color: #C14B00; font-weight: 700; letter-spacing: 2px; margin-bottom: 0.5rem;">PROJECT
+					style="font-size: 0.9rem; color: #C14B00; font-weight: 700; letter-spacing: 2px; margin-bottom: 0.5rem;">
 					DEU-SHU</p>
 				<h2
-					style="font-size: 2.2rem; font-family: 'Noto Serif JP', serif; color: #2F2F2F; margin-bottom: 1rem;">サービス名の由来とビジョン</h2>
+					style="font-size: 2.2rem; font-family: 'Noto Serif JP', serif; color: #2F2F2F; margin-bottom: 1rem;">「食品ロス」削減のためのフードシェアリングサービス</h2>
 				<p style="font-size: 1.05rem; color: #555;">
-					私たちのサービス名<strong>「ドゥーシュー (Deu-Shu)」</strong>は、韓国・大田（テジョン）地方の温かい方言と、<br>日本語の言葉遊びを掛け合わせた、独自のESG哲学を持つネーミングです。
+				サービスを利用して炭素排出を減らし、木を植えてみましょう！
 				</p>
 			</div>
 
@@ -103,15 +103,13 @@ body { display: block; }
 				style="display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: center; margin-bottom: 5rem;">
 				<div
 					style="flex: 1 1 300px; background: #fff; border: 1px solid #E0E0E0; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);">
-					<div style="font-size: 2rem; margin-bottom: 1rem;">😢</div>
 					<h3
 						style="font-size: 1.15rem; color: #C14B00; margin-bottom: 0.5rem;">1.
-						オーナーの悩み「どうしよう…」</h3>
+						オーナーの悩み<br>「どうしよう…」</h3>
 					<p style="font-size: 0.95rem; color: #555; margin-bottom: 0.8rem;">閉店時間が近づき、まだ美味しく食べられるのに廃棄しなければならない食品を目の前にした、店舗オーナーの「どうしよう…（もったいない）」という切実な悩みを表しています。</p>
 				</div>
 				<div
 					style="flex: 1 1 300px; background: #fff; border: 1px solid #E0E0E0; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);">
-					<div style="font-size: 2rem; margin-bottom: 1rem;">🍲</div>
 					<h3
 						style="font-size: 1.15rem; color: #C14B00; margin-bottom: 0.5rem;">2.
 						ユーザーへの温かい提案「ドゥーシュー〜」</h3>
@@ -119,7 +117,6 @@ body { display: block; }
 				</div>
 				<div
 					style="flex: 1 1 300px; background: #fff; border: 1px solid #E0E0E0; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);">
-					<div style="font-size: 2rem; margin-bottom: 1rem;">🌍</div>
 					<h3
 						style="font-size: 1.15rem; color: #C14B00; margin-bottom: 0.5rem;">3.
 						環境への貢献 (SDGs)</h3>
