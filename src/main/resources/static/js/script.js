@@ -3,9 +3,8 @@
                비밀번호 강도, 사업자번호 조회
 ============================================================= */
 
-
 /* =============================================================
-   토스트 알림
+   Toast
 ============================================================= */
 
 function showToast(message, type) {
@@ -15,6 +14,8 @@ function showToast(message, type) {
 
     var toast = document.createElement('div');
     toast.className = 'toast ' + type;
+	toast.style.pointerEvents = 'auto';
+	
     toast.innerHTML =
         '<div class="toast-icon"><i class="bi bi-' + (type === 'success' ? 'check-lg' : 'exclamation-lg') + '"></i></div>' +
         '<span class="toast-msg">' + message + '</span>' +
@@ -25,7 +26,7 @@ function showToast(message, type) {
     setTimeout(function() {
         toast.classList.add('hide');
         setTimeout(function() { toast.remove(); }, 350);
-    }, 3000);
+    }, 2222);
 }
 
 /* =============================================================
@@ -36,94 +37,112 @@ function updateHeaderAuth() {
     fetch('/api/auth/me')
     .then(function(res) { return res.json(); })
     .then(function(data) {
+		var btnGuest       = document.getElementById('btnAuthGuest');
+        var menuWrap       = document.getElementById('userMenuWrap');
+        var headerUserName = document.getElementById('headerUserName');
         var heroCta        = document.getElementById('heroCta');
         var mypageLink     = document.getElementById('dropdownMypageLink');
         var ownerLink      = document.getElementById('dropdownOwnerLink');
 
         if (data.success) {
-            document.getElementById('btnAuthGuest').style.display = 'none';
-            document.getElementById('userMenuWrap').style.display = 'block';
+            if (btnGuest) btnGuest.style.display = 'none';
+            if (menuWrap) menuWrap.style.display = 'inline-block';
+			
             var name = (data.lastName || '') + (data.firstName || '');
             if (!name) name = data.email;
-            document.getElementById('headerUserName').textContent = name;
+			if (headerUserName) headerUserName.textContent = name;
+			
             if (heroCta) heroCta.style.display = 'none';
 
-            // role 에 따라 드롭다운 메뉴 표시 전환
             var isOwner = (data.role === 'ROLE_OWNER' || data.role === 'ROLE_ADMIN');
             // マイページ: 일반 회원(ROLE_USER)만 표시
             if (mypageLink) mypageLink.style.display = isOwner ? 'none' : 'flex';
             // オーナーページ: ROLE_OWNER / ROLE_ADMIN 만 표시
             if (ownerLink)  ownerLink.style.display  = isOwner ? 'flex' : 'none';
         } else {
-            document.getElementById('btnAuthGuest').style.display = '';
-            document.getElementById('userMenuWrap').style.display = 'none';
-            if (heroCta)    heroCta.style.display    = '';
-            if (mypageLink) mypageLink.style.display = 'flex'; // 로그아웃 시 기본값 복원
+			if (btnGuest) btnGuest.style.display = '';
+            if (menuWrap) menuWrap.style.display = 'none';
+            if (heroCta)  heroCta.style.display    = '';
+            if (mypageLink) mypageLink.style.display = 'flex';
             if (ownerLink)  ownerLink.style.display  = 'none';
         }
     })
-    .catch(function() {
-        document.getElementById('btnAuthGuest').style.display = '';
-        document.getElementById('userMenuWrap').style.display = 'none';
+	.catch(function() {
+			var btnGuest = document.getElementById('btnAuthGuest');
+	        var menuWrap = document.getElementById('userMenuWrap');
+			if (btnGuest) btnGuest.style.display = '';
+		    if (menuWrap) menuWrap.style.display = 'none';
     });
 }
+
 function handleLogout() {
     fetch('/api/auth/logout', { method: 'POST' })
     .then(function() {
         showToast('ログアウトしました', 'success');
-        setTimeout(function() { window.location.href = '/'; }, 1000);
+        setTimeout(function() { window.location.href = '/'; }, 1010);
     })
     .catch(function() { location.reload(); });
 }
 
-// 페이지 로드 시 로그인 상태 확인
+// =========================================================================
+// [ ドゥーシュー ] 統合された DOMContentLoaded イベントリスナー
+// =========================================================================
 document.addEventListener('DOMContentLoaded', function() {
-    updateHeaderAuth();
-	bindBusinessNumberFormatter('bizRegBizNum', clearBizVerify);
-	
-	// 비즈니스 로그인 Enter 키 처리
-	var bizEmailInput = document.getElementById('bizLoginEmail');
-	var bizPwInput    = document.getElementById('bizLoginPw');
-
-	function handleBizLoginEnter(e) {
-	    if (e.key === 'Enter') {
-	        e.preventDefault();
-	        handleBizLogin();
-	    }
-	}
-
-	if (bizEmailInput) bizEmailInput.addEventListener('keydown', handleBizLoginEnter);
-	if (bizPwInput)    bizPwInput.addEventListener('keydown', handleBizLoginEnter);
     
-	// 유저 메뉴 드롭다운 JS 제어 (CSS hover 대신 사용 — 토스트 겹침 문제 방지)
-    var menu = document.getElementById('userMenuWrap');
-    if (!menu) return;
-    var dropdown = document.getElementById('userDropdown');
-    var timer;
+    // 1. ヘッダーのログイン状態確認
+    updateHeaderAuth();
+    
+    // 2. 事業者登録番号フォーム
+    bindBusinessNumberFormatter('bizRegBizNum', clearBizVerify);
+    
+    // 3. ビジネスログイン Enter キー処理
+    var bizEmailInput = document.getElementById('bizLoginEmail');
+    var bizPwInput    = document.getElementById('bizLoginPw');
 
-    function openDropdown() {
-        clearTimeout(timer);
-        dropdown.style.display = 'block';
+    function handleBizLoginEnter(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleBizLogin();
+        }
     }
-    function closeDropdown() {
-        timer = setTimeout(function() {
-            dropdown.style.display = 'none';
-        }, 150);
-    }
+    if (bizEmailInput) bizEmailInput.addEventListener('keydown', handleBizLoginEnter);
+    if (bizPwInput)    bizPwInput.addEventListener('keydown', handleBizLoginEnter);
 
-    menu.addEventListener('mouseenter', openDropdown);
-    menu.addEventListener('mouseleave', closeDropdown);
-    dropdown.addEventListener('mouseenter', openDropdown);
-    dropdown.addEventListener('mouseleave', closeDropdown);
+    // 4. マイページハッシュルーティング (#orders, #favorites)
+    if (window.location.pathname.startsWith('/mypage')) {
+        var hash = window.location.hash;
+        if (hash === '#orders') {
+            // data-tab 대신 switchSection 함수 직접 호출
+            var btn = document.querySelector('[onclick*="switchSection(\'orders\'"]');
+            if (btn) btn.click();
+        } else if (hash === '#favorites') {
+            var btn = document.querySelector('[onclick*="switchSection(\'favorites\'"]');
+            if (btn) btn.click();
+        }
+    }
+	
+	var dropdown = document.getElementById('userDropdown');
+    if (dropdown) {
+        var dropdownItems = dropdown.querySelectorAll('.user-dropdown-item');
+        dropdownItems.forEach(function(item) {
+            item.addEventListener('click', function(e) {
+                // <a>タグの遷移を邪魔しないよう、メニューを非表示にする
+                dropdown.style.display = 'none';
+                
+                // 少し経ったらCSSの :hover に制御を返す
+                setTimeout(function() {
+                    dropdown.style.display = '';
+                }, 300);
+            });
+        });
+    }
 });
 
-
-/* 사업자번호 인증 완료 여부 */
+/* 事業者番号認証の完了フラグ */
 var bizVerified = false;
 
-/* 현재 모달 모드 ('user' | 'biz') */
+/* 現在のモーダルモード ('user' | 'biz') */
 var currentMode = 'user';
-
 
 /* =============================================================
    모달 제어
@@ -383,6 +402,7 @@ function verifyBusinessNumber() {
         }
     });
 }
+
 // 하이픈 자동삽입
 function formatBusinessNumber(value) {
     var digits = String(value || '').replace(/\D/g, '').slice(0, 10);
@@ -452,7 +472,7 @@ function handleUserLogin() {
         if (data.success) {
             closeModal();
             showToast('ログインしました', 'success');
-            updateHeaderAuth();
+            window.location.reload();
         } else {
             setInputState('loginPw', 'is-error');
             showFieldMsg('loginPwMsg', data.message || 'ログインに失敗しました');
@@ -572,7 +592,6 @@ function handleBizLogin() {
     });
 }
 
-
 /* 사업자 회원가입 — POST /api/auth/owner-signup */
 function handleBizRegister() {
     // 사업자번호 인증 완료 여부 확인
@@ -644,7 +663,6 @@ function handleBizRegister() {
     .then(function(res) { return res.json(); })
     .then(function(data) {
         if (data.success) {
-            // alert() 대신 showToast() 로 교체
             showToast('ビジネス登録が完了しました。ログインしてください', 'success');
             // 사업자 로그인 패널로 이동
             setTimeout(function() {
@@ -661,18 +679,5 @@ function handleBizRegister() {
     .catch(function() {
         showFieldMsg('bizRegEmailMsg', 'サーバーエラーが発生しました');
     });
-	
 }
-document.addEventListener('DOMContentLoaded', function() {
-    if (!window.location.pathname.startsWith('/mypage')) return;
-    
-    var hash = window.location.hash;
-    if (hash === '#orders') {
-        // ✅ data-tab 대신 switchSection 함수 직접 호출
-        var btn = document.querySelector('[onclick*="switchSection(\'orders\'"]');
-        if (btn) btn.click();
-    } else if (hash === '#favorites') {
-        var btn = document.querySelector('[onclick*="switchSection(\'favorites\'"]');
-        if (btn) btn.click();
-    }
-});
+
