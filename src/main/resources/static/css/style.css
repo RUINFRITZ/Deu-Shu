@@ -1024,10 +1024,10 @@ text-decoration: none !important;
    히어로 배너
 ============================================= */
 .demo-hero {
-	min-height: 480px;
+	min-height: 600px;
 	background: linear-gradient(135deg, rgba(193, 75, 0, 0.01) 0%,
 		rgba(224, 94, 16, 0.8) 100%),
-		url('https://images.unsplash.com/photo-1547592166-23ac45744acd?w=1600&q=80')
+		url('https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=1600&q=80')
 		center/cover no-repeat;
 	display: flex;
 	align-items: center;
@@ -1044,12 +1044,14 @@ text-decoration: none !important;
 	font-weight: 900;
 	letter-spacing: -0.03em;
 	margin-bottom: 0.75rem;
+	text-shadow: 0 4px 12px rgba(0,0,0,0.4);
 }
 
 .demo-hero p {
 	font-size: 1.05rem;
 	color: rgba(255, 255, 255, 0.75);
 	margin-bottom: 2rem;
+	text-shadow: 0 2px 8px rgba(0,0,0,0.35);
 }
 
 /* 히어로 CTA 버튼 */
