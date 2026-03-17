@@ -1,5 +1,5 @@
 // ============================================
-// XSS 방지 (최상단 - 모든 함수보다 먼저)
+// XSS防止 (最上部 - すべての関数より先に)
 // ============================================
 function escapeHtml(str) {
     return String(str).replace(/[&<>"']/g, m => ({
@@ -12,7 +12,7 @@ function escapeHtml(str) {
 }
 
 // ============================================
-// 리뷰 모달 — 2단계: 주문 선택 → 리뷰 작성
+// レビューモーダル — 2段階: 注文選択 → レビュー作成
 // ============================================
 let _selectedOrderId = null;
 
@@ -24,7 +24,7 @@ async function openReviewModal() {
     try {
         const res = await fetch(`/api/v1/orders/my?storeId=${storeId}`);
         if (res.status === 401) {
-            alert('로그인이 필요합니다.');
+            alert('ログインが必要です。');
             document.getElementById('reviewModal').classList.remove('active');
             return;
         }
@@ -32,9 +32,9 @@ async function openReviewModal() {
         const orders = data.result ?? data.data ?? data ?? [];
         renderOrderList(Array.isArray(orders) ? orders : []);
     } catch (err) {
-        console.error('[주문 목록 오류]', err);
+        console.error('[注文リスト エラー]', err);
         document.getElementById('orderListBody').innerHTML =
-            '<p style="color:var(--gray-500);padding:1rem;">주문 목록을 불러오지 못했습니다.</p>';
+            '<p style="color:var(--gray-500);padding:1rem;">注文リストの読み込みに失敗しました。</p>';
     }
 }
 
@@ -53,25 +53,25 @@ function showReviewStep(step) {
 function renderOrderList(orders) {
     const body = document.getElementById('orderListBody');
     if (!orders.length) {
-        body.innerHTML = '<p style="color:var(--gray-500);padding:1rem 0;">이 가게에서 결제 완료된 주문이 없습니다.</p>';
+        body.innerHTML = '<p style="color:var(--gray-500);padding:1rem 0;">この店舗での決済完了済み注文がありません。</p>';
         return;
     }
     body.innerHTML = '';
     orders.forEach(order => {
         const itemNames = (order.items || []).map(i => i.itemName).join(', ');
         const date      = order.createdAt
-            ? new Date(order.createdAt).toLocaleDateString('ko-KR') : '';
+            ? new Date(order.createdAt).toLocaleDateString('ja-JP') : '';
         const div = document.createElement('div');
         div.className = 'review-order-item' + (order.reviewed ? ' reviewed' : '');
         div.innerHTML = `
             <div class="roi-info">
                 <span class="roi-date">${date}</span>
                 <span class="roi-items">${escapeHtml(itemNames)}</span>
-                <span class="roi-price">${(order.totalPrice || 0).toLocaleString()}원</span>
+                <span class="roi-price">${(order.totalPrice || 0).toLocaleString()}円</span>
             </div>
             ${order.reviewed
-                ? '<span class="roi-badge done">리뷰 완료</span>'
-                : `<button class="roi-btn" onclick="selectOrderForReview(${order.orderId})">선택</button>`
+                ? '<span class="roi-badge done">レビュー済み</span>'
+                : `<button class="roi-btn" onclick="selectOrderForReview(${order.orderId})">選択</button>`
             }
         `;
         body.appendChild(div);
@@ -90,7 +90,7 @@ function backToOrderList() {
 }
 
 // ============================================
-// 별점 선택
+// 評価選択
 // ============================================
 const starButtons = document.querySelectorAll('.star-btn');
 let currentRating = 5.0;
@@ -123,7 +123,7 @@ function updateStars() {
 }
 
 // ============================================
-// 글자 수 카운터
+// 文字数カウンター
 // ============================================
 const textarea     = document.getElementById('reviewContent');
 const currentCount = document.getElementById('currentCount');
@@ -132,7 +132,7 @@ textarea?.addEventListener('input', () => {
 });
 
 // ============================================
-// 이미지 업로드 (리뷰 모달)
+// 画像アップロード (レビューモーダル)
 // ============================================
 const imageInput   = document.getElementById('imageInput');
 const imagePreview = document.getElementById('imagePreview');
@@ -157,36 +157,36 @@ function removeImage() {
 }
 
 // ============================================
-// 리뷰 더보기/접기
+// レビュー もっと見る/折りたたむ
 // ============================================
 function toggleReviewText(button) {
     const reviewItem = button.closest('.review-item');
     const reviewText = reviewItem.querySelector('.review-text');
     if (button.classList.contains('expanded')) {
         reviewText.textContent = reviewText.dataset.short;
-        button.innerHTML = '더보기 <i class="bi bi-chevron-down"></i>';
+        button.innerHTML = 'もっと見る <i class="bi bi-chevron-down"></i>';
         button.classList.remove('expanded');
     } else {
         reviewText.dataset.short = reviewText.textContent;
         reviewText.textContent   = reviewText.dataset.full || reviewText.textContent;
-        button.innerHTML = '접기 <i class="bi bi-chevron-up"></i>';
+        button.innerHTML = '折りたたむ <i class="bi bi-chevron-up"></i>';
         button.classList.add('expanded');
     }
 }
 
 // ============================================
-// 상세 데이터 로딩
+// 詳細データ ロード
 // ============================================
 document.addEventListener("DOMContentLoaded", () => {
     if (!storeId) return;
 
     fetch(`/api/stores/${storeId}`)
         .then(res => {
-            if (!res.ok) throw new Error("상세 조회 실패: " + res.status);
+            if (!res.ok) throw new Error("詳細取得失敗: " + res.status);
             return res.json();
         })
         .then(data => renderStore(data))
-        .catch(err => console.error("상세 데이터 오류:", err));
+        .catch(err => console.error("詳細データエラー:", err));
 
     if (starButtons.length) updateStars();
 });
@@ -214,7 +214,6 @@ function renderStore(data) {
     document.getElementById('storeAddress').textContent   = store.address;
     document.getElementById('storeHours').textContent     =
         store.openTime && store.closeTime ? `${store.openTime} ~ ${store.closeTime}` : '-';
-    document.getElementById('storePhone').textContent     = store.phone;
     document.getElementById('ratingAvg').textContent      = Number(rating.avg).toFixed(1);
     document.getElementById('reviewCount').textContent    = `レビュー ${rating.count}件`;
     document.getElementById('reviewsTitle').textContent   = `レビュー (${rating.count})`;
@@ -235,67 +234,67 @@ function renderStore(data) {
     loadReviews(storeId);
     initFavBtn(data.favorited === true);
 
-    // AI 리뷰 요약 비동기 로딩 (renderStore 마지막에 호출)
+    // AI レビュー要約 非同期ロード (renderStore 最後に呼び出し)
     loadAiSummary(storeId);
 }
 
 // ============================================
-// AI 리뷰 요약 로딩 및 렌더링
+// AI レビュー要約 ロード及びレンダリング
 // ============================================
 
 /**
- * Gemini Map-Reduce 요약 API 호출
+ * Gemini Map-Reduce 要約 API 呼び出し
  * GET /api/stores/{storeId}/review-summary
- * 비동기 호출 → 로딩 스피너 → 결과 렌더링
+ * 非同期呼び出し → ローディングスピナー → 結果レンダリング
  */
 async function loadAiSummary(storeId) {
     const loadingEl = document.getElementById('aiSummaryLoading');
     const emptyEl   = document.getElementById('aiSummaryEmpty');
     const resultEl  = document.getElementById('aiSummaryResult');
 
-    // 초기 상태: 스피너 표시
+    // 初期状態: スピナー表示
     if (loadingEl) loadingEl.style.display = '';
     if (emptyEl)   emptyEl.style.display   = 'none';
     if (resultEl)  resultEl.style.display  = 'none';
 
     try {
         const res = await fetch(`/api/stores/${storeId}/review-summary`);
-        if (!res.ok) throw new Error('AI 요약 API 오류: ' + res.status);
+        if (!res.ok) throw new Error('AI要約 API エラー: ' + res.status);
 
         const data = await res.json();
 
-        // 스피너 숨김
+        // スピナー非表示
         if (loadingEl) loadingEl.style.display = 'none';
 
-        // 리뷰 없는 경우
+        // レビューがない場合
         if (!data.hasReviews) {
             if (emptyEl) emptyEl.style.display = '';
             return;
         }
 
-        // AI 요약 결과 렌더링
+        // AI要約結果 レンダリング
         renderAiSummary(data);
         if (resultEl) resultEl.style.display = '';
 
     } catch (err) {
-        console.error('[AI 요약] 로딩 실패:', err);
-        // 오류 시 섹션 자체를 숨김 처리 (UX 방해 방지)
+        console.error('[AI要約] ロード失敗:', err);
+        // エラー時はセクション自体を非表示 (UX妨害防止)
         const block = document.getElementById('aiSummaryBlock');
         if (block) block.style.display = 'none';
     }
 }
 
 /**
- * AI 요약 데이터를 DOM에 렌더링
+ * AI要約データをDOMにレンダリング
  * ReviewSummaryResponseDto: { hasReviews, summary, keywords }
  * @param {Object} data - ReviewSummaryResponseDto
  */
 function renderAiSummary(data) {
-    // 통합 요약 문장
+    // 統合要約文
     const summaryEl = document.getElementById('aiSummarySummary');
     if (summaryEl) summaryEl.textContent = data.summary || '';
 
-    // 주요 키워드 태그 렌더링
+    // 主要キーワードタグ レンダリング
     const keywordsEl = document.getElementById('aiKeywords');
     if (keywordsEl) {
         keywordsEl.innerHTML = '';
@@ -310,57 +309,57 @@ function renderAiSummary(data) {
 }
 
 // ============================================
-// 리뷰 API 호출
+// レビュー API 呼び出し
 // ============================================
 function loadReviews(storeId) {
     fetch(`/api/reviews?storeId=${storeId}`)
         .then(res => {
-            if (!res.ok) throw new Error("리뷰 조회 실패");
+            if (!res.ok) throw new Error("レビュー取得失敗");
             return res.json();
         })
         .then(data => {
             const list = data.items || data || [];
             renderReviews(Array.isArray(list) ? list : []);
         })
-        .catch(err => console.error("리뷰 데이터 오류:", err));
+        .catch(err => console.error("レビューデータエラー:", err));
 }
 
 // ============================================
-// 리뷰 렌더링
+// レビュー レンダリング
 // ============================================
 function renderReviews(reviews) {
     const reviewsList = document.getElementById("reviewsList");
     reviewsList.innerHTML = "";
     if (!reviews.length) {
-        reviewsList.innerHTML = `<div class="empty">리뷰가 없습니다.</div>`;
+        reviewsList.innerHTML = `<div class="empty">レビューがありません。</div>`;
         return;
     }
 
-    // 현재 로그인 세션 memberId (헤더에서 추출)
+    // 現在のログインセッション memberId (ヘッダーから取得)
     const sessionMemberId = window._sessionMemberId ?? null;
 
     reviews.forEach(r => {
         const stars    = renderStars(r.rating ?? 0);
         const date     = r.createdAt
-            ? new Date(r.createdAt).toLocaleDateString('ko-KR') : '';
+            ? new Date(r.createdAt).toLocaleDateString('ja-JP') : '';
         const orderDate = r.orderDate
-            ? new Date(r.orderDate).toLocaleDateString('ko-KR') : null;
+            ? new Date(r.orderDate).toLocaleDateString('ja-JP') : null;
         const isOwner  = sessionMemberId && sessionMemberId === r.memberId;
 
         const div = document.createElement("div");
         div.className = "review-item";
         div.dataset.reviewId = r.id;
         div.innerHTML = `
-            <!-- 왼쪽: 작성자 정보 -->
+            <!-- 左: 作成者情報 -->
             <div class="ri-author">
                 <div class="ri-avatar">${escapeHtml((r.firstName || '?')[0])}</div>
                 <div class="ri-author-info">
-                    <span class="ri-firstname">${escapeHtml(r.firstName || '익명')}</span>
-                    ${orderDate ? `<span class="ri-orderdate">주문일 ${orderDate}</span>` : ''}
+                    <span class="ri-firstname">${escapeHtml(r.firstName || '匿名')}</span>
+                    ${orderDate ? `<span class="ri-orderdate">注文日 ${orderDate}</span>` : ''}
                 </div>
             </div>
 
-            <!-- 오른쪽: 리뷰 내용 -->
+            <!-- 右: レビュー内容 -->
             <div class="ri-body">
                 <div class="ri-body-top">
                     <div class="ri-stars">${stars}</div>
@@ -374,7 +373,7 @@ function renderReviews(reviews) {
                 </div>` : ''}
                 <div class="ri-title">${escapeHtml(r.title || '')}</div>
                 <div class="ri-content">${escapeHtml(r.content || '')}</div>
-                ${r.photoUrl ? `<img class="ri-photo" src="${escapeHtml(r.photoUrl)}" alt="리뷰 사진"
+                ${r.photoUrl ? `<img class="ri-photo" src="${escapeHtml(r.photoUrl)}" alt="レビュー写真"
                     onclick="openPhotoOverlay('${escapeHtml(r.photoUrl)}')">` : ''}
             </div>
         `;
@@ -397,41 +396,41 @@ function renderStars(rating) {
 }
 
 async function deleteReview(reviewId) {
-    if (!confirm('리뷰를 삭제하시겠습니까?')) return;
+    if (!confirm('レビューを削除しますか？')) return;
     try {
         const res  = await fetch(`/api/reviews/${reviewId}`, { method: 'DELETE' });
         const json = await res.json();
         if (json.success) {
             const el = document.querySelector(`.review-item[data-review-id="${reviewId}"]`);
             if (el) el.remove();
-            // 리뷰 카운트 갱신
+            // レビュー件数 更新
             const countEl = document.getElementById('reviewCount');
             if (countEl) {
                 const cur = parseInt(countEl.textContent.replace(/[^0-9]/g, '')) || 0;
-                countEl.textContent = `리뷰 ${Math.max(0, cur - 1)}건`;
+                countEl.textContent = `レビュー ${Math.max(0, cur - 1)}件`;
             }
         } else {
-            alert(json.message || '삭제에 실패했습니다.');
+            alert(json.message || '削除に失敗しました。');
         }
     } catch (err) {
-        console.error('[리뷰 삭제] 오류:', err);
-        alert('오류가 발생했습니다.');
+        console.error('[レビュー削除] エラー:', err);
+        alert('エラーが発生しました。');
     }
 }
 
 // ============================================
-// 리뷰 작성 제출
+// レビュー作成 送信
 // ============================================
 async function submitReview() {
     const title   = document.getElementById('reviewTitle')?.value.trim();
     const content = document.getElementById('reviewContent')?.value.trim();
     const fileInput = document.getElementById('imageInput');
 
-    if (!title)   { alert('제목을 입력해주세요.'); return; }
-    if (!content) { alert('내용을 입력해주세요.'); return; }
-    if (currentRating < 1) { alert('별점을 선택해주세요.'); return; }
+    if (!title)   { alert('タイトルを入力してください。'); return; }
+    if (!content) { alert('内容を入力してください。'); return; }
+    if (currentRating < 1) { alert('評価を選択してください。'); return; }
 
-    // 이미지가 있으면 S3에 먼저 업로드
+    // 画像がある場合、先にS3へアップロード
     let photoUrl = null;
     if (fileInput && fileInput.files.length > 0) {
         const formData = new FormData();
@@ -440,13 +439,13 @@ async function submitReview() {
             const uploadRes  = await fetch('/api/reviews/image', { method: 'POST', body: formData });
             const uploadJson = await uploadRes.json();
             if (!uploadJson.success) {
-                alert(uploadJson.message || '이미지 업로드에 실패했습니다.');
+                alert(uploadJson.message || '画像のアップロードに失敗しました。');
                 return;
             }
             photoUrl = uploadJson.url;
         } catch (err) {
-            console.error('[이미지 업로드] 오류:', err);
-            alert('이미지 업로드 중 오류가 발생했습니다.');
+            console.error('[画像アップロード] エラー:', err);
+            alert('画像アップロード中にエラーが発生しました。');
             return;
         }
     }
@@ -469,16 +468,16 @@ async function submitReview() {
         const json = await res.json();
 
         if (res.status === 401) {
-            alert('리뷰 작성은 로그인 후 이용할 수 있습니다.');
+            alert('レビュー作成はログイン後にご利用いただけます。');
             window.location.href = '/';
             return;
         }
         if (!json.success) {
-            alert(json.message || '리뷰 등록에 실패했습니다.');
+            alert(json.message || 'レビューの登録に失敗しました。');
             return;
         }
 
-        alert('리뷰가 등록되었습니다.');
+        alert('レビューが登録されました。');
         closeReviewModal();
         document.getElementById('reviewTitle').value   = '';
         document.getElementById('reviewContent').value = '';
@@ -488,13 +487,13 @@ async function submitReview() {
         loadReviews(storeId);
 
     } catch (err) {
-        console.error('[리뷰 등록] 오류:', err);
-        alert('오류가 발생했습니다. 다시 시도해주세요.');
+        console.error('[レビュー登録] エラー:', err);
+        alert('エラーが発生しました。もう一度お試しください。');
     }
 }
 
 // ============================================
-// 지도 (Leaflet)
+// 地図 (Leaflet)
 // ============================================
 let _map    = null;
 let _marker = null;
@@ -548,7 +547,7 @@ function _buildDetailPopup(name, category, closeTime, address, minDiscountPrice,
 
 function initMap(lat, lng, name, category, closeTime, address, minDiscountPrice, totalStock) {
     if (!lat || !lng) {
-        console.warn("[initMap] lat/lng 없음 - 지도 스킵");
+        console.warn("[initMap] lat/lng なし - 地図スキップ");
         return;
     }
     const section     = document.querySelector('.map-section');
@@ -590,11 +589,11 @@ function initMap(lat, lng, name, category, closeTime, address, minDiscountPrice,
 }
 
 // ============================================
-// 장바구니
+// カート
 // ============================================
 const CART_KEY   = `deushu_cart_${window._sessionMemberId ?? 'guest'}_${storeId}`;
 let _cart        = [];
-let _lastOrderId = null;  // 결제 완료 후 orderId 보관 → 리뷰 작성에 연결
+let _lastOrderId = null;  // 決済完了後 orderId 保管 → レビュー作成に連携
 
 function cartLoad() {
     try { _cart = JSON.parse(localStorage.getItem(CART_KEY)) || []; }
@@ -629,7 +628,7 @@ function cartChangeQty(itemId, delta) {
     renderCartPanel();
 }
 
-// ── 패널 DOM 삽입 (IIFE) ──
+// ── パネル DOM 挿入 (IIFE) ──
 (function injectPanel() {
     cartLoad();
 
@@ -647,7 +646,7 @@ function cartChangeQty(itemId, delta) {
             <i class="bi bi-bag"></i>
             <span class="cft-badge" id="cftBadge">0</span>
         </div>
-        <span class="cft-label">장바구니</span>
+        <span class="cft-label">カート</span>
     `;
 
     const panel = document.createElement('div');
@@ -655,29 +654,29 @@ function cartChangeQty(itemId, delta) {
     panel.id = 'reservationPanel';
     panel.innerHTML = `
         <div class="rp-header">
-            <h3>장바구니 <span class="rp-cart-badge" id="cartBadge" style="display:none;">0</span></h3>
+            <h3>カート <span class="rp-cart-badge" id="cartBadge" style="display:none;">0</span></h3>
             <button class="rp-close" onclick="closeCart()"><i class="bi bi-x-lg"></i></button>
         </div>
         <div class="rp-body" id="cartBody"></div>
         <div class="rp-footer" id="cartFooter" style="display:none;">
             <div class="rp-price-section">
                 <div class="rp-price-row">
-                    <span class="label">정가</span>
-                    <span class="value strike" id="summaryOriginal">0원</span>
+                    <span class="label">定価</span>
+                    <span class="value strike" id="summaryOriginal">0円</span>
                 </div>
                 <div class="rp-price-row">
-                    <span class="label">할인 금액</span>
-                    <span class="value save" id="summarySave">-0원</span>
+                    <span class="label">割引金額</span>
+                    <span class="value save" id="summarySave">-0円</span>
                 </div>
                 <div class="rp-price-total">
-                    <span class="label">선택 금액</span>
-                    <span class="total-value" id="summaryFinal">0원</span>
+                    <span class="label">お支払い金額</span>
+                    <span class="total-value" id="summaryFinal">0円</span>
                 </div>
             </div>
             <button class="btn-pay" onclick="onClickPay()">
-                <i class="bi bi-credit-card"></i> 결제하기
+                <i class="bi bi-credit-card"></i> 決済する
             </button>
-            <p class="rp-footer-note"><i class="bi bi-shield-check"></i> 안전하게 결제됩니다</p>
+            <p class="rp-footer-note"><i class="bi bi-shield-check"></i> 安全に決済されます</p>
         </div>
     `;
 
@@ -710,7 +709,7 @@ function renderCartPanel() {
         body.innerHTML = `
             <div class="rp-cart-empty">
                 <i class="bi bi-bag-x"></i>
-                <p>장바구니가 비어있어요</p>
+                <p>カートが空です</p>
             </div>`;
         return;
     }
@@ -727,7 +726,7 @@ function renderCartPanel() {
             <img src="${c.thumbnailUrl || ''}" alt="${c.name}" class="rp-cart-item-img">
             <div class="rp-cart-item-info">
                 <p class="rp-cart-item-name">${c.name}</p>
-                <p class="rp-cart-item-price">${c.discountPrice.toLocaleString()}원</p>
+                <p class="rp-cart-item-price">${c.discountPrice.toLocaleString()}円</p>
                 <div class="rp-qty-control rp-qty-sm">
                     <div class="rp-qty-btn ${c.quantity <= 1 ? 'disabled' : ''}" onclick="cartChangeQty(${c.id}, -1)">
                         <i class="bi bi-dash"></i>
@@ -740,15 +739,15 @@ function renderCartPanel() {
             </div>
             <div class="rp-cart-item-right">
                 <button class="rp-cart-remove" onclick="cartRemove(${c.id})"><i class="bi bi-trash3"></i></button>
-                <span class="rp-cart-line-total">${lineFinal.toLocaleString()}원</span>
+                <span class="rp-cart-line-total">${lineFinal.toLocaleString()}円</span>
             </div>
         `;
         body.appendChild(div);
     });
     const saved = totalOrig - totalFinal;
-    document.getElementById('summaryOriginal').textContent = `${totalOrig.toLocaleString()}원`;
-    document.getElementById('summarySave').textContent     = `-${saved.toLocaleString()}원`;
-    document.getElementById('summaryFinal').textContent    = `${totalFinal.toLocaleString()}원`;
+    document.getElementById('summaryOriginal').textContent = `${totalOrig.toLocaleString()}円`;
+    document.getElementById('summarySave').textContent     = `-${saved.toLocaleString()}円`;
+    document.getElementById('summaryFinal').textContent    = `${totalFinal.toLocaleString()}円`;
 }
 
 function updateCartBadge() {
@@ -759,7 +758,7 @@ function updateCartBadge() {
     const cftBadge = document.getElementById('cftBadge');
     if (cftBadge) { cftBadge.textContent = count; cftBadge.classList.toggle('show', count > 0); }
     const cftPrice = document.getElementById('cftPrice');
-    if (cftPrice) { cftPrice.textContent = `${totalPrice.toLocaleString()}원`; cftPrice.classList.toggle('show', count > 0); }
+    if (cftPrice) { cftPrice.textContent = `${totalPrice.toLocaleString()}円`; cftPrice.classList.toggle('show', count > 0); }
 }
 
 function onClickPay() {
@@ -771,13 +770,13 @@ function onClickPay() {
 }
 
 // ============================================
-// 상품 카드 렌더
+// 商品カード レンダリング
 // ============================================
 function renderItems(items) {
     const itemsGrid = document.getElementById('itemsGrid');
     itemsGrid.innerHTML = '';
     if (!items.length) {
-        itemsGrid.innerHTML = `<p style="color:var(--gray-500);padding:1rem;">등록된 상품이 없습니다.</p>`;
+        itemsGrid.innerHTML = `<p style="color:var(--gray-500);padding:1rem;">商品が登録されていません。</p>`;
         return;
     }
     items.forEach(item => {
@@ -794,11 +793,11 @@ function renderItems(items) {
             <div class="product-info">
                 <h3>${item.name}</h3>
                 <div class="product-price">
-                    <span class="discount-price">${item.discountPrice.toLocaleString()}원</span>
-                    <span class="original-price">${item.originalPrice.toLocaleString()}원</span>
+                    <span class="discount-price">${item.discountPrice.toLocaleString()}円</span>
+                    <span class="original-price">${item.originalPrice.toLocaleString()}円</span>
                 </div>
                 <div class="product-meta">
-                    <div class="meta-item"><i class="bi bi-box"></i><span>재고 ${item.stock}개</span></div>
+                    <div class="meta-item"><i class="bi bi-box"></i><span>在庫 ${item.stock}個</span></div>
                 </div>
                 <div class="card-add-row">
                     <div class="rp-qty-control rp-qty-sm">
@@ -813,8 +812,8 @@ function renderItems(items) {
                     <button class="btn-add-cart-card ${initQty > 0 ? 'in-cart' : ''}"
                             onclick="cardAddToCart(this, ${JSON.stringify(item).replace(/"/g, '&quot;')})">
                         ${initQty > 0
-                            ? `<i class="bi bi-bag-check-fill"></i> ${initQty}개 담김`
-                            : `<i class="bi bi-bag-plus"></i> 담기`}
+                            ? `<i class="bi bi-bag-check-fill"></i> ${initQty}個 追加済み`
+                            : `<i class="bi bi-bag-plus"></i> カートに追加`}
                     </button>
                 </div>
             </div>
@@ -843,7 +842,7 @@ function cardAddToCart(btn, item) {
     const qty   = parseInt(qtyEl.textContent) || 1;
     cartSet(item, qty);
     btn.classList.add('in-cart');
-    btn.innerHTML = `<i class="bi bi-bag-check-fill"></i> ${qty}개 담김`;
+    btn.innerHTML = `<i class="bi bi-bag-check-fill"></i> ${qty}個 追加済み`;
     setTimeout(() => openCart(), 300);
 }
 
@@ -851,11 +850,11 @@ function resetCardQty(card) {
     const qtyEl = card.querySelector('.card-qty-num');
     const btn   = card.querySelector('.btn-add-cart-card');
     if (qtyEl) qtyEl.textContent = '1';
-    if (btn) { btn.classList.remove('in-cart'); btn.innerHTML = '<i class="bi bi-bag-plus"></i> 담기'; }
+    if (btn) { btn.classList.remove('in-cart'); btn.innerHTML = '<i class="bi bi-bag-plus"></i> カートに追加'; }
 }
 
 // ============================================
-// PortOne 결제
+// PortOne 決済
 // ============================================
 
 /*
@@ -864,7 +863,7 @@ function resetCardQty(card) {
  * 2. 成功時、PortOneの決済窓口を呼び出し
  */
 async function processCheckout(cartItems, totalPrice, storeId) {
-    // 0. 비로그인 방어
+    // 0. 未ログイン防御
     const userNameElement = document.getElementById('headerUserName');
     if (!userNameElement || !userNameElement.innerText) {
         showToast(' * 決済を行うにはログインが必要です。', 'error');
@@ -873,29 +872,29 @@ async function processCheckout(cartItems, totalPrice, storeId) {
     }
 
     try {
-        // STEP 1: 주문 생성 (비관적 락으로 재고 확보)
+        // STEP 1: 注文生成 (悲観的ロックで在庫確保)
         const orderResponse = await fetch('/api/v1/orders', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body:    JSON.stringify({ storeId, cartItems, totalPrice })
         });
-		
-		// HTTP 4xx, 5xx エラー (在庫不足、販売終了など) のハンドリング
+
+        // HTTP 4xx, 5xx エラー (在庫不足、販売終了など) のハンドリング
         if (!orderResponse.ok) {
             const errorData = await orderResponse.json();
             const errorMessage = errorData.message || '既に他のお客様が購入したか、在庫が不足しています。';
-            
+
             // 1. ユーザーに在庫変動を警告(Alert)
             alert('⚠️ ' + errorMessage);
-            
+
             // 2. 最新の在庫状態を画面に反映させるためにページを強制リロード
             window.location.reload();
             return;
         }
-				
+
         const orderData = await orderResponse.json();
 
-		// ApiResponse の isSuccess が false の場合 (カスタム例外処理のフォールバック)
+        // ApiResponse の isSuccess が false の場合 (カスタム例外処理のフォールバック)
         if (!orderData.isSuccess) {
             alert('⚠️ ' + (orderData.message || '注文の生成に失敗しました。'));
             window.location.reload();
@@ -904,7 +903,7 @@ async function processCheckout(cartItems, totalPrice, storeId) {
 
         const pendingOrderId = orderData.data;
 
-        // STEP 2: PortOne 결제창 호출
+        // STEP 2: PortOne 決済画面呼び出し
         IMP.init("imp41118237");
         const paymentData = {
             pg:           "tosspayments",
@@ -921,7 +920,7 @@ async function processCheckout(cartItems, totalPrice, storeId) {
             console.log(JSON.stringify(rsp, null, 2));
             console.log("==============================================");
 
-            // Toss Payments edge case 방어: success 필드 누락 시 imp_uid로 판단
+            // Toss Payments edge case対応: successフィールド欠如時はimp_uidで判断
             const isPaymentSuccessful = rsp.success || (rsp.imp_uid && !rsp.error_msg && !rsp.error_code);
 
             if (isPaymentSuccessful) {
@@ -930,10 +929,10 @@ async function processCheckout(cartItems, totalPrice, storeId) {
             } else {
                 console.error(`❌ 決済失敗: ${rsp.error_msg || '理由不明'}`);
                 showToast(`決済がキャンセルされました: ${rsp.error_msg || 'ユーザーキャンセル'}`, 'error');
-				
-				// 決済がキャンセルされた場合、すでにサーバー側で確保(減少)された
-				// 在庫状態を画面に正しく反映させるため、1.5秒後にページをリロードします。
-				setTimeout(() => {
+
+                // 決済がキャンセルされた場合、すでにサーバー側で確保(減少)された
+                // 在庫状態を画面に正しく反映させるため、0.5秒後にページをリロードします。
+                setTimeout(() => {
                     window.location.reload();
                 }, 500);
             }
@@ -946,7 +945,7 @@ async function processCheckout(cartItems, totalPrice, storeId) {
 }
 
 /*
- * PortOne 결제 완료 후 백엔드 검증
+ * PortOne 決済完了後 バックエンド検証
  */
 async function verifyPayment(impUid, orderId) {
     try {
@@ -958,9 +957,9 @@ async function verifyPayment(impUid, orderId) {
         const verifyData = await verifyRes.json();
 
         if (verifyData.isSuccess) {
-            // _lastOrderId 보관 (리뷰 작성 시 연결용)
+            // _lastOrderId 保管 (レビュー作成時の連携用)
             _lastOrderId = orderId;
-            // 장바구니 초기화
+            // カート 初期化
             localStorage.removeItem(CART_KEY);
             _cart = [];
             updateCartBadge();
@@ -977,7 +976,7 @@ async function verifyPayment(impUid, orderId) {
 }
 
 // ============================================
-// 즐겨찾기
+// お気に入り
 // ============================================
 function initFavBtn(favorited) {
     const btn = document.getElementById('favBtn');
@@ -998,13 +997,13 @@ async function handleFavClick() {
         });
         const json = await res.json();
         if (res.status === 401 || json.success === false) {
-            alert('즐겨찾기는 로그인 후 이용할 수 있습니다.');
+            alert('お気に入りはログイン後にご利用いただけます。');
             window.location.href = '/';
             return;
         }
         _setFavState(btn, json.favorited);
     } catch (err) {
-        console.error('[즐겨찾기] 오류:', err);
+        console.error('[お気に入り] エラー:', err);
     } finally {
         btn.dataset.loading = 'false';
     }
@@ -1016,16 +1015,16 @@ function _setFavState(btn, favorited) {
     if (favorited) {
         icon.className = 'bi bi-heart-fill';
         btn.classList.add('active');
-        btn.setAttribute('aria-label', '즐겨찾기 해제');
+        btn.setAttribute('aria-label', 'お気に入り解除');
     } else {
         icon.className = 'bi bi-heart';
         btn.classList.remove('active');
-        btn.setAttribute('aria-label', '즐겨찾기 추가');
+        btn.setAttribute('aria-label', 'お気に入り追加');
     }
 }
 
 // ============================================
-// 이미지 슬라이더
+// 画像スライダー
 // ============================================
 let _sliderImages = [];
 let _sliderIdx    = 0;
@@ -1043,7 +1042,7 @@ function initSlider(images) {
     images.forEach(src => {
         const img = document.createElement('img');
         img.src = src;
-        img.alt = '가게 이미지';
+        img.alt = '店舗画像';
         img.onerror = () => { img.style.background = 'var(--gray-200)'; img.removeAttribute('src'); };
         track.appendChild(img);
     });
@@ -1086,7 +1085,7 @@ function _sliderGo(idx) {
     });
 }
 
-// 터치 스와이프
+// タッチスワイプ
 (function initSwipe() {
     let startX = 0;
     document.addEventListener('DOMContentLoaded', () => {
@@ -1101,13 +1100,13 @@ function _sliderGo(idx) {
 })();
 
 // ============================================
-// 리뷰 사진 원본 팝업
+// レビュー写真 原本ポップアップ
 // ============================================
 (function injectPhotoOverlay() {
     const overlay = document.createElement('div');
     overlay.className = 'ri-photo-overlay';
     overlay.id = 'riPhotoOverlay';
-    overlay.innerHTML = '<img id="riPhotoOverlayImg" src="" alt="리뷰 사진 원본">';
+    overlay.innerHTML = '<img id="riPhotoOverlayImg" src="" alt="レビュー写真 原本">';
     overlay.addEventListener('click', () => overlay.classList.remove('active'));
     document.body.appendChild(overlay);
 })();
