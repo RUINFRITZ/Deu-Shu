@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ダッシュボード — ドゥーシュー 管理者</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+<link rel="stylesheet" th:href="@{/css/admin.css}">
+
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+<main>
+<div class="admin-wrap">
+    <div th:replace="~{fragments/admin_sidebar :: sidebar}"></div>
+    <div class="admin-content">
+                <div class="admin-section active" id="sec-dashboard">
+            <div class="section-header">
+                <div>
+                    <div class="section-title"><i class="bi bi-grid-1x2"></i> ダッシュボード</div>
+                    <div class="section-subtitle" id="dashDate"></div>
+                </div>
+            </div>
+
+            <!-- 통계 카드 -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon orange"><i class="bi bi-bag-check"></i></div>
+                    <div class="stat-body">
+                        <div class="stat-label">本日の注文数</div>
+                        <div class="stat-value" id="dashOrderCount">-</div>
+                        <div class="stat-delta" id="dashOrderDelta">読み込み中...</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon dark"><i class="bi bi-currency-yen"></i></div>
+                    <div class="stat-body">
+                        <div class="stat-label">本日の売上</div>
+                        <div class="stat-value" id="dashTotalSales">-</div>
+                        <div class="stat-delta" id="dashSalesDelta">読み込み中...</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green"><i class="bi bi-people"></i></div>
+                    <div class="stat-body">
+                        <div class="stat-label">全会員数</div>
+                        <div class="stat-value" id="dashMemberCount">-</div>
+                        <div class="stat-delta" id="dashMemberDelta">読み込み中...</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon blue"><i class="bi bi-shop"></i></div>
+                    <div class="stat-body">
+                        <div class="stat-label">営業中の店舗</div>
+                        <div class="stat-value" id="dashStoreCount">-</div>
+                        <div class="stat-delta" id="dashStoreDelta">読み込み中...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 차트 -->
+            <div class="dashboard-row">
+                <div class="admin-card">
+                    <div class="admin-card-header">
+                        <span class="admin-card-title"><i class="bi bi-bar-chart"></i> 週間売上推移</span>
+                        <span class="text-muted text-sm">直近7日間</span>
+                    </div>
+                    <div class="admin-card-body">
+                        <div class="chart-bar-wrap" id="barChart"></div>
+                    </div>
+                </div>
+
+                <div class="admin-card">
+                    <div class="admin-card-header">
+                        <span class="admin-card-title"><i class="bi bi-pie-chart"></i> カテゴリ別</span>
+                    </div>
+                    <div class="admin-card-body">
+                        <div class="donut-chart-wrap" id="donutChartWrap">
+                            <svg class="donut-svg" viewBox="0 0 100 100" id="donutSvg">
+                                <circle cx="50" cy="50" r="38" fill="none" stroke="#F0DDD0" stroke-width="16"/>
+                                <text x="50" y="54" text-anchor="middle" font-size="10" font-weight="700" fill="#1C1C1C" font-family="JetBrains Mono" id="donutTotal">-</text>
+                            </svg>
+                            <div style="width:100%;" id="donutLegend">
+                                <p style="color:var(--light-gray);font-size:0.78rem;text-align:center;">読み込み中...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 최근 주문 / 신규 회원 -->
+            <div class="dashboard-bottom-row">
+                <div class="admin-card">
+                    <div class="admin-card-header">
+                        <span class="admin-card-title"><i class="bi bi-clock-history"></i> 最近の注文</span>
+                        <button class="btn-admin btn-admin-ghost" onclick="location.href='/admin/orders'">全て見る</button>
+                    </div>
+                    <div class="admin-card-body" id="recentOrdersList">
+                        <!-- JS로 렌더 -->
+                    </div>
+                </div>
+                <div class="admin-card">
+                    <div class="admin-card-header">
+                        <span class="admin-card-title"><i class="bi bi-person-plus"></i> 新規会員</span>
+                        <button class="btn-admin btn-admin-ghost" onclick="location.href='/admin/members'">全て見る</button>
+                    </div>
+                    <div class="admin-card-body" id="recentMembersList">
+                        <!-- JS로 렌더 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+    </div>
+</div>
+</main>
+<div th:replace="~{fragments/footer :: footer}"></div>
+<div class="toast-wrap" id="toastWrap"></div>
+<script>
+
+// ── 날짜 ──
+(function(){
+    const d = new Date();
+    const opts = { year:'numeric', month:'2-digit', day:'2-digit', weekday:'long' };
+    document.getElementById('dashDate').textContent = d.toLocaleDateString('ja-JP', opts);
+})();
+
+function loadBarChart() {
+    fetch('/api/admin/dashboard/weekly-sales')
+        .then(r => r.json())
+        .then(res => {
+            const wrap = document.getElementById('barChart');
+            wrap.innerHTML = '';
+            const list = res.data || [];
+            const dayNames = ['日','月','火','水','木','金','土'];
+            const salesMap = {};
+            list.forEach(d => { salesMap[d.saleDate] = d; });
+            const days = [];
+            for (let i = 6; i >= 0; i--) {
+                const dt = new Date();
+                dt.setDate(dt.getDate() - i);
+                const key = dt.toISOString().split('T')[0];
+                days.push({
+                    label: dayNames[dt.getDay()],
+                    totalSales: salesMap[key] ? salesMap[key].totalSales : 0,
+                    orderCount: salesMap[key] ? salesMap[key].orderCount : 0
+                });
+            }
+            const maxSales = Math.max(...days.map(d => d.totalSales), 1);
+            const maxBarPx = 110;
+            days.forEach(d => {
+                const barH = Math.max(4, Math.round((d.totalSales / maxSales) * maxBarPx));
+                const col = document.createElement('div');
+                col.className = 'bar-col';
+                col.innerHTML = `
+                    <div class="bar-fill" style="height:${barH}px;" title="${d.label}: ¥${d.totalSales.toLocaleString()} (${d.orderCount}件)"></div>
+                    <span class="bar-day">${d.label}</span>`;
+                wrap.appendChild(col);
+            });
+        })
+        .catch(() => {
+            document.getElementById('barChart').innerHTML =
+                '<p style="color:var(--light-gray);text-align:center;width:100%;font-size:0.8rem;">読み込み失敗</p>';
+        });
+}
+function loadDonutChart() {
+    fetch('/api/admin/dashboard/category-stats')
+        .then(r => r.json())
+        .then(res => {
+            const list = res.data || [];
+            if (!list.length) return;
+            const categoryMap = {
+                BAKERY:   { label:'ベーカリー', color:'#C14B00' },
+                LUNCHBOX: { label:'お弁当',     color:'#F28940' },
+                SUSHI:    { label:'お寿司',     color:'#16A34A' },
+                CAFE:     { label:'カフェ',     color:'#2563EB' },
+                SIDEDISH: { label:'惣菜',       color:'#9333EA' }
+            };
+            const total = list.reduce((s, d) => s + d.orderCount, 0);
+            const circumference = 2 * Math.PI * 38;
+            const svg = document.getElementById('donutSvg');
+            document.getElementById('donutTotal').textContent = total + '件';
+            svg.querySelectorAll('circle:not(:first-child)').forEach(c => c.remove());
+            let offset = 0;
+            list.forEach(d => {
+                const cat = categoryMap[d.category] || { label: d.category, color: '#999' };
+                const arc = (d.orderCount / total) * circumference;
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', '50'); circle.setAttribute('cy', '50'); circle.setAttribute('r', '38');
+                circle.setAttribute('fill', 'none'); circle.setAttribute('stroke', cat.color);
+                circle.setAttribute('stroke-width', '16');
+                circle.setAttribute('stroke-dasharray', `${arc} ${circumference - arc}`);
+                circle.setAttribute('stroke-dashoffset', -offset);
+                circle.setAttribute('transform', 'rotate(-90 50 50)');
+                svg.insertBefore(circle, document.getElementById('donutTotal'));
+                offset += arc;
+            });
+            const legend = document.getElementById('donutLegend');
+            legend.innerHTML = '';
+            list.forEach(d => {
+                const cat = categoryMap[d.category] || { label: d.category, color: '#999' };
+                const pct = Math.round((d.orderCount / total) * 100);
+                legend.innerHTML += `
+                    <div class="legend-row">
+                        <div class="legend-dot" style="background:${cat.color};"></div>
+                        <span>${cat.label}</span>
+                        <span class="legend-pct">${pct}%</span>
+                    </div>`;
+            });
+        })
+        .catch(() => {});
+}
+function loadDashboardStats() {
+    fetch('/api/admin/dashboard/stats')
+        .then(r => r.json())
+        .then(res => {
+            if (!res.data) return;
+            const d = res.data;
+            document.getElementById('dashOrderCount').textContent = d.orderCount.toLocaleString();
+            const orderDeltaEl = document.getElementById('dashOrderDelta');
+            if (d.yesterdayOrderCount > 0) {
+                const diff = d.orderCount - d.yesterdayOrderCount;
+                const pct = Math.round((diff / d.yesterdayOrderCount) * 100);
+                orderDeltaEl.style.color = diff >= 0 ? '#16a34a' : '#dc2626';
+                orderDeltaEl.textContent = `${diff >= 0 ? '↑' : '↓'} 昨日比 ${diff >= 0 ? '+' : ''}${pct}%`;
+            } else {
+                orderDeltaEl.style.color = '#9ca3af';
+                orderDeltaEl.textContent = '昨日データなし';
+            }
+            const sales = d.totalSales >= 10000
+                ? '¥' + (d.totalSales / 10000).toFixed(1) + '万'
+                : '¥' + d.totalSales.toLocaleString();
+            document.getElementById('dashTotalSales').textContent = sales;
+            const salesDeltaEl = document.getElementById('dashSalesDelta');
+            if (d.yesterdaySales > 0) {
+                const diff = d.totalSales - d.yesterdaySales;
+                const pct = Math.round((diff / d.yesterdaySales) * 100);
+                salesDeltaEl.style.color = diff >= 0 ? '#16a34a' : '#dc2626';
+                salesDeltaEl.textContent = `${diff >= 0 ? '↑' : '↓'} 昨日比 ${diff >= 0 ? '+' : ''}${pct}%`;
+            } else {
+                salesDeltaEl.style.color = '#9ca3af';
+                salesDeltaEl.textContent = '昨日データなし';
+            }
+            document.getElementById('dashMemberCount').textContent = d.memberCount.toLocaleString();
+            const memberDeltaEl = document.getElementById('dashMemberDelta');
+            if (d.newMemberThisWeek > 0) {
+                memberDeltaEl.style.color = '#16a34a';
+                memberDeltaEl.textContent = `↑ 今週 +${d.newMemberThisWeek}名`;
+            } else {
+                memberDeltaEl.style.color = '#9ca3af';
+                memberDeltaEl.textContent = '今週 新規なし';
+            }
+            document.getElementById('dashStoreCount').textContent = d.activeStoreCount.toLocaleString();
+            const storeDeltaEl = document.getElementById('dashStoreDelta');
+            storeDeltaEl.style.color = '#9ca3af';
+            storeDeltaEl.textContent = d.totalStoreCount ? `全${d.totalStoreCount}店舗中` : '営業中店舗数';
+        })
+        .catch(() => {
+            ['dashOrderCount','dashTotalSales','dashMemberCount','dashStoreCount']
+                .forEach(id => document.getElementById(id).textContent = '-');
+        });
+}
+function loadDashboardRecent() {
+    const ol = document.getElementById('recentOrdersList');
+    const statusMap = {
+        PAYMENT_COMPLETED:'完了', PAYMENT_PENDING:'保留中',
+        CANCELLED:'キャンセル', CANCELED:'キャンセル',
+        PICKUP_COMPLETED:'受取済', EXPIRED:'期限切れ'
+    };
+    if (ORDERS.length) {
+        ol.innerHTML = '';
+        ORDERS.slice(0,4).forEach(o => {
+            const st = o.orderStatus || o.status || '';
+            const ca = o.createdAt ? String(o.createdAt).replace('T',' ').substring(0,16) : '-';
+            ol.innerHTML += `
+            <div class="recent-list-item">
+                <div class="recent-icon"><i class="bi bi-bag"></i></div>
+                <div class="recent-info">
+                    <div class="recent-name">${o.memberName} — ${o.storeName}</div>
+                    <div class="recent-meta">${ca} · ${statusMap[st]||st}</div>
+                </div>
+                <div class="recent-price">¥${(o.totalPrice||0).toLocaleString()}</div>
+            </div>`;
+        });
+    }
+    const ml = document.getElementById('recentMembersList');
+    if (MEMBERS.length) {
+        ml.innerHTML = '';
+        MEMBERS.slice(0,4).forEach(m => {
+            const roleLabel = m.role.replace('ROLE_','');
+            const roleClass = m.role === 'ROLE_OWNER' ? 'badge-owner' : m.role === 'ROLE_ADMIN' ? 'badge-admin' : 'badge-user';
+            const iconStyle = m.role === 'ROLE_OWNER' ? 'background:var(--primary-pale);color:var(--primary);' : 'background:#eff6ff;color:#2563eb;';
+            ml.innerHTML += `
+            <div class="recent-list-item">
+                <div class="recent-icon" style="${iconStyle}"><i class="bi bi-person"></i></div>
+                <div class="recent-info">
+                    <div class="recent-name">${m.lastName} ${m.firstName}</div>
+                    <div class="recent-meta">${m.email}</div>
+                </div>
+                <span class="badge ${roleClass}">${roleLabel}</span>
+            </div>`;
+        });
+    }
+}
+document.addEventListener('DOMContentLoaded', function() {
+    loadDashboardStats();
+    loadBarChart();
+    loadDonutChart();
+    // 최근 주문/회원 - 별도 API 직접 호출
+    fetch('/api/admin/orders?page=0&size=4')
+        .then(r => r.json())
+        .then(res => {
+            const ol = document.getElementById('recentOrdersList');
+            ol.innerHTML = '';
+            const list = res.data || [];
+            if (!list.length) { ol.innerHTML = '<p style="color:var(--light-gray);text-align:center;font-size:0.8rem;">データなし</p>'; return; }
+            const statusMap = {PAYMENT_COMPLETED:'完了',PAYMENT_PENDING:'保留中',CANCELLED:'キャンセル',CANCELED:'キャンセル',PICKUP_COMPLETED:'受取済',EXPIRED:'期限切れ'};
+            list.forEach(o => {
+                const st = o.orderStatus || o.status || '';
+                const ca = o.createdAt ? String(o.createdAt).replace('T',' ').substring(0,16) : '-';
+                ol.innerHTML += `<div class="recent-list-item">
+                    <div class="recent-icon"><i class="bi bi-bag"></i></div>
+                    <div class="recent-info">
+                        <div class="recent-name">${o.memberName} — ${o.storeName}</div>
+                        <div class="recent-meta">${ca} · ${statusMap[st]||st}</div>
+                    </div>
+                    <div class="recent-price">¥${(o.totalPrice||0).toLocaleString()}</div>
+                </div>`;
+            });
+        });
+    fetch('/api/admin/members?page=0&size=4')
+        .then(r => r.json())
+        .then(res => {
+            const ml = document.getElementById('recentMembersList');
+            ml.innerHTML = '';
+            const list = res.data || [];
+            if (!list.length) { ml.innerHTML = '<p style="color:var(--light-gray);text-align:center;font-size:0.8rem;">データなし</p>'; return; }
+            list.forEach(m => {
+                const roleLabel = m.role.replace('ROLE_','');
+                const roleClass = m.role==='ROLE_OWNER'?'badge-owner':m.role==='ROLE_ADMIN'?'badge-admin':'badge-user';
+                const iconStyle = m.role==='ROLE_OWNER'?'background:var(--primary-pale);color:var(--primary);':'background:#eff6ff;color:#2563eb;';
+                ml.innerHTML += `<div class="recent-list-item">
+                    <div class="recent-icon" style="${iconStyle}"><i class="bi bi-person"></i></div>
+                    <div class="recent-info">
+                        <div class="recent-name">${m.lastName} ${m.firstName}</div>
+                        <div class="recent-meta">${m.email}</div>
+                    </div>
+                    <span class="badge ${roleClass}">${roleLabel}</span>
+                </div>`;
+            });
+        });
+});
+
+</script>
+<script th:src="@{/js/admin.js}"></script>
+</body>
+</html>

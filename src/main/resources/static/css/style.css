@@ -37,13 +37,10 @@ html {
 
 /* 💡 페이지 전체 기본 폰트 및 배경색 (+ 헤더 고정에 따른 여백 추가) */
 body {
-    font-family: 'Noto Sans JP', sans-serif;
-    background: var(--cream);
-    color: var(--charcoal);
-    padding-top: 64px !important;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
+	font-family: 'Noto Sans JP', sans-serif;
+	background: var(--cream);
+	color: var(--charcoal);
+	padding-top: 64px !important; /* 헤더가 붕 떠서 본문을 가리지 않도록 보정 */
 }
 
 /* =============================================
@@ -990,15 +987,15 @@ to {
 	background: var(--charcoal);
 	color: #aaa;
 	text-align: center;
-	padding: 1rem 1rem;
+	padding: 2rem 1rem;
 	font-size: 0.9rem;
-	margin-top: auto;
+	margin-top: 4rem;
 	border-top: 3px solid var(--primary);
 }
 
 .site-footer a {
-color: #F28940 !important;
-text-decoration: none !important;
+	color: var(--primary-light);
+	text-decoration: none;
 	margin: 0 0.5rem;
 }
 
@@ -1025,7 +1022,7 @@ text-decoration: none !important;
 ============================================= */
 .demo-hero {
 	min-height: 480px;
-	background: linear-gradient(135deg, rgba(193, 75, 0, 0.01) 0%,
+	background: linear-gradient(135deg, rgba(193, 75, 0, 0.93) 0%,
 		rgba(224, 94, 16, 0.8) 100%),
 		url('https://images.unsplash.com/photo-1547592166-23ac45744acd?w=1600&q=80')
 		center/cover no-repeat;

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>レビュー管理 — ドゥーシュー 管理者</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+<link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+<main>
+<div class="admin-wrap">
+    <div th:replace="~{fragments/admin_sidebar :: sidebar}"></div>
+    <div class="admin-content">
+<div class="admin-section" id="sec-reviews">
+            <div class="section-header">
+                <div>
+                    <div class="section-title"><i class="bi bi-star"></i> レビュー管理</div>
+                    <div class="section-subtitle">不適切なレビューの削除・低評価モニタリングができます</div>
+                </div>
+            </div>
+
+     
+
+            <div class="filter-bar">
+                <div class="filter-search-wrap">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="reviewSearch" placeholder="店舗名・内容検索..." oninput="filterReviews()">
+                </div>
+                <select class="filter-select" id="reviewRatingFilter" onchange="filterReviews()">
+                    <option value="">全ての評価</option>
+                    <option value="1">★ 1点以下</option>
+                    <option value="2">★★ 2点以下</option>
+                    <option value="3">★★★ 3点以下</option>
+                </select>
+                <span class="filter-count" id="reviewCount"></span>
+            </div>
+
+            <div class="admin-card">
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th><th>店舗</th><th>作成者</th><th>タイトル</th>
+                                <th>内容</th><th>評価</th><th>作成日</th><th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reviewTbody"></tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="reviewPagination"></div>
+            </div>
+        </div>
+    </div><!-- /admin-content -->
+</div><!-- /admin-wrap -->
+</main>
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+<script th:src="@{/js/admin.js}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 현재 페이지 사이드바 활성화
+    var nav = document.getElementById('nav-reviews');
+    if (nav) nav.classList.add('active');
+    loadReviews();
+});
+</script>
+</body>
+</html>

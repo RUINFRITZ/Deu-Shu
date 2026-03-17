@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>会員管理 — ドゥーシュー 管理者</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link
+	href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap"
+	rel="stylesheet">
+<link
+	href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css"
+	rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+<link rel="stylesheet" th:href="@{/css/admin.css}">
+
+</head>
+<body>
+	<div th:replace="~{fragments/header :: header}"></div>
+	<main>
+		<div class="admin-wrap">
+			<div th:replace="~{fragments/admin_sidebar :: sidebar}"></div>
+			<div class="admin-content">
+				<div class="admin-section" id="sec-members">
+					<div class="section-header">
+						<div>
+							<div class="section-title">
+								<i class="bi bi-people"></i> 会員管理
+							</div>
+						</div>
+					</div>
+
+
+					<div class="filter-bar">
+						<div class="filter-search-wrap">
+							<i class="bi bi-search"></i> <input type="text" id="memberSearch"
+								placeholder="名前・メール検索..." oninput="filterMembers()">
+						</div>
+						<select class="filter-select" id="memberRoleFilter"
+							onchange="filterMembers()">
+							<option value="">全ての役割</option>
+							<option value="ROLE_USER">USER</option>
+							<option value="ROLE_OWNER">OWNER</option>
+							<option value="ROLE_ADMIN">ADMIN</option>
+						</select> <select class="filter-select" id="memberStatusFilter"
+							onchange="filterMembers()">
+							<option value="">全てのステータス</option>
+							<option value="active">有効</option>
+							<option value="deleted">退会済</option>
+						</select> <span class="filter-count" id="memberCount"></span>
+					</div>
+
+					<div class="admin-card">
+						<div class="table-scroll">
+							<table>
+								<thead>
+									<tr>
+										<th>ID</th>
+										<th>名前</th>
+										<th>メール</th>
+										<th>電話番号</th>
+										<th>役割</th>
+										<th style="width: 80px;">ESGポイント</th>
+										<th>登録日</th>
+										<th>状態</th>
+										<th>操作</th>
+									</tr>
+								</thead>
+								<tbody id="memberTbody"></tbody>
+							</table>
+						</div>
+						<div class="pagination" id="memberPagination"></div>
+					</div>
+				</div>
+
+
+
+			</div>
+		</div>
+	</main>
+	<div th:replace="~{fragments/footer :: footer}"></div>
+
+	<!-- 역할 변경 모달 -->
+	<div class="admin-overlay" id="roleModal">
+		<div class="admin-modal">
+			<div class="admin-modal-header">
+				<span class="admin-modal-title"><i class="bi bi-gear"></i>
+					役割変更</span>
+				<button class="admin-modal-close" onclick="closeModal('roleModal')">
+					<i class="bi bi-x-lg"></i>
+				</button>
+			</div>
+			<div class="admin-modal-body">
+				<p
+					style="font-size: 0.83rem; color: var(--mid-gray); margin-bottom: 1.2rem;">
+					<strong id="roleModalName"></strong>様の役割を変更します。
+				</p>
+				<div class="modal-fg">
+					<label class="modal-label">変更する役割</label> <select
+						class="modal-input" id="roleModalSelect">
+						<option value="ROLE_USER">一般会員</option>
+						<option value="ROLE_OWNER">店舗オーナー</option>
+						<option value="ROLE_ADMIN">管理者</option>
+					</select>
+				</div>
+			</div>
+			<div class="admin-modal-footer">
+				<button class="btn-admin btn-admin-ghost"
+					onclick="closeModal('roleModal')">キャンセル</button>
+				<button class="btn-admin btn-admin-primary"
+					onclick="confirmRoleChange()">
+					<i class="bi bi-check2"></i> 変更する
+				</button>
+			</div>
+		</div>
+	</div>
+
+	<div class="toast-wrap" id="toastWrap"></div>
+	<script th:src="@{/js/admin.js}"></script>
+<script>
+
+let MEMBERS = [];
+let currentMemberId = null;
+let filteredMembers = [];
+
+function loadMembers() {
+    document.getElementById('memberTbody').innerHTML =
+        '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--light-gray);">読み込み中...</td></tr>';
+    fetch('/api/admin/members?page=0&size=200')
+        .then(r => r.json())
+        .then(res => {
+            MEMBERS = res.data || [];
+            filteredMembers = [...MEMBERS];
+            renderMembers(filteredMembers);
+        })
+        .catch(() => {
+            document.getElementById('memberTbody').innerHTML =
+                '<tr><td colspan="9" style="text-align:center;padding:2rem;color:#dc2626;">読み込み失敗</td></tr>';
+        });
+}
+function renderMembers(data) {
+    const t = document.getElementById('memberTbody');
+    t.innerHTML = '';
+    if (!data.length) {
+        t.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--light-gray);">データがありません</td></tr>';
+        return;
+    }
+    data.forEach(m => {
+        const del = !!m.deletedAt;
+        const rbc = m.role==='ROLE_ADMIN'?'badge-admin':m.role==='ROLE_OWNER'?'badge-owner':'badge-user';
+        const createdDate = m.createdAt ? String(m.createdAt).substring(0,10) : '-';
+        t.innerHTML += `<tr style="${del?'opacity:0.5;':''}">
+            <td class="text-mono text-sm">#${m.id}</td>
+            <td><span class="fw-700">${m.lastName} ${m.firstName}</span><br><span class="text-sm text-muted">${m.lastNameKana} ${m.firstNameKana}</span></td>
+            <td class="text-sm">${m.email}</td>
+            <td class="text-sm text-mono">${m.phone||'-'}</td>
+            <td><span class="badge ${rbc}">${m.role.replace('ROLE_','')}</span></td>
+            <td class="text-mono text-sm">${(m.esgPoint||0).toLocaleString()} pt</td>
+            <td class="text-sm text-muted">${createdDate}</td>
+            <td><span class="badge ${del?'badge-deleted':'badge-active'}">${del?'退会済':'有効'}</span></td>
+            <td><div class="action-btns">
+            ${!del?`<button class="btn-admin btn-admin-danger" onclick="suspendMember(${m.id})" title="停止"><i class="bi bi-slash-circle"></i> 停止</button>`:''}
+            ${!del?`<button class="btn-admin btn-admin-danger" onclick="deleteMember(${m.id})" title="退会処理"><i class="bi bi-person-x"></i> 退会</button>`:''}
+            </div></td>
+        </tr>`;
+    });
+    document.getElementById('memberCount').textContent = `${data.length}名`;
+}
+function filterMembers() {
+    const kw = document.getElementById('memberSearch').value.toLowerCase();
+    const role = document.getElementById('memberRoleFilter').value;
+    const st = document.getElementById('memberStatusFilter').value;
+    filteredMembers = MEMBERS.filter(m => {
+        const mk = !kw || m.email.toLowerCase().includes(kw) || (m.lastName+m.firstName).includes(kw);
+        const mr = !role || m.role === role;
+        const ms = !st || (st==='active'?!m.deletedAt:!!m.deletedAt);
+        return mk && mr && ms;
+    });
+    renderMembers(filteredMembers);
+}
+
+function memberDisplayName(m) {
+    const name = ((m.lastName||'') + ' ' + (m.firstName||'')).trim();
+    return name || m.email || 'ID:'+m.id;
+}
+function openRoleModal(id) {
+    currentMemberId = id;
+    const m = MEMBERS.find(x=>x.id===id);
+    if (!m) return;
+    document.getElementById('roleModalName').textContent = memberDisplayName(m);
+    document.getElementById('roleModalSelect').value = m.role;
+    openModal('roleModal');
+}
+function confirmRoleChange() {
+    const role = document.getElementById('roleModalSelect').value;
+    const m = MEMBERS.find(x=>x.id===currentMemberId);
+    if (!m) return;
+    fetch(`/api/admin/members/${currentMemberId}/role`, {
+        method: 'PATCH',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ role })
+    })
+    .then(r => { if (!r.ok) throw new Error(); })
+    .then(() => {
+        m.role = role;
+        renderMembers(filteredMembers);
+        closeModal('roleModal');
+        showToast(`${memberDisplayName(m)}様の役割を ${role.replace('ROLE_','')} に変更しました`, 'success');
+    })
+    .catch(() => showToast('役割変更に失敗しました', 'error'));
+}
+
+function suspendMember(id) {
+    const m = MEMBERS.find(x=>x.id===id);
+    if (!m) return;
+    if (!confirm(`${memberDisplayName(m)}様のアカウントを停止しますか？`)) return;
+    fetch(`/api/admin/members/${id}/suspend`, { method: 'PATCH' })
+        .then(r => { if (!r.ok) throw new Error(); })
+        .then(() => {
+            m.deletedAt = new Date().toISOString();
+            renderMembers(filteredMembers);
+            showToast(`${memberDisplayName(m)}様を停止しました`, 'info');
+        })
+        .catch(() => showToast('停止処理に失敗しました', 'error'));
+}
+
+function deleteMember(id) {
+    const m = MEMBERS.find(x=>x.id===id);
+    if (!m) return;
+    if (!confirm(`${memberDisplayName(m)}様を退会処理しますか？\nこの操作は取り消せません。`)) return;
+    fetch(`/api/admin/members/${id}`, { method: 'DELETE' })
+        .then(r => { if (!r.ok) throw new Error(); })
+        .then(() => {
+            m.deletedAt = new Date().toISOString();
+            renderMembers(filteredMembers);
+            showToast(`${memberDisplayName(m)}様を退会処理しました`, 'info');
+        })
+        .catch(() => showToast('退会処理に失敗しました', 'error'));
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const nav = document.getElementById('nav-members');
+    if (nav) nav.classList.add('active');
+    loadMembers();
+});
+
+
+</script>
+	</body>
+</html>

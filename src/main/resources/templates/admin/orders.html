@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>注文管理 — ドゥーシュー 管理者</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+<link rel="stylesheet" th:href="@{/css/admin.css}">
+
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+<main>
+<div class="admin-wrap">
+    <div th:replace="~{fragments/admin_sidebar :: sidebar}"></div>
+    <div class="admin-content">
+                <div class="admin-section" id="sec-orders">
+            <div class="section-header">
+                <div>
+                    <div class="section-title"><i class="bi bi-bag-check"></i> 注文管理</div>
+                    <div class="section-subtitle">全注文の照会・ステータス変更・キャンセル処理ができます</div>
+                </div>
+            </div>
+
+
+            <div class="filter-bar">
+                <div class="filter-search-wrap">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="orderSearch" placeholder="メール・店舗名検索..." oninput="filterOrders()">
+                </div>
+                <select class="filter-select" id="orderStatusFilter" onchange="filterOrders()">
+                    <option value="">全てのステータス</option>
+                    <option value="PAYMENT_PENDING">決済待ち</option>
+                    <option value="PAYMENT_COMPLETED">決済完了</option>
+                    <option value="CANCELLED">キャンセル</option>
+                </select>
+                <span class="filter-count" id="orderCount"></span>
+            </div>
+
+            <div class="admin-card">
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>注文ID</th><th>会員</th><th>店舗名</th><th>金額</th>
+                                <th>商品数</th><th>ピックアップコード</th><th>ステータス</th><th>注文日時</th><th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orderTbody"></tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="orderPagination"></div>
+            </div>
+        </div>
+
+
+
+    </div>
+</div>
+</main>
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<!-- 주문 상태 모달 -->
+<div class="admin-overlay" id="orderModal">
+    <div class="admin-modal">
+        <div class="admin-modal-header">
+            <span class="admin-modal-title"><i class="bi bi-bag-check"></i> 注文ステータス変更</span>
+            <button class="admin-modal-close" onclick="closeModal('orderModal')"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="admin-modal-body">
+            <p style="font-size:0.83rem;color:var(--mid-gray);margin-bottom:1.2rem;">
+                注文 <strong id="orderModalId"></strong> のステータスを変更します。
+            </p>
+            <div class="modal-fg">
+                <label class="modal-label">変更するステータス</label>
+                <select class="modal-input" id="orderModalSelect">
+                    <option value="PAYMENT_PENDING">決済待ち</option>
+                    <option value="PAYMENT_COMPLETED">決済完了</option>
+                    <option value="CANCELLED">キャンセル</option>
+                </select>
+            </div>
+        </div>
+        <div class="admin-modal-footer">
+            <button class="btn-admin btn-admin-ghost" onclick="closeModal('orderModal')">キャンセル</button>
+            <button class="btn-admin btn-admin-primary" onclick="confirmOrderChange()"><i class="bi bi-check2"></i> 変更する</button>
+        </div>
+    </div>
+</div>
+
+
+<div class="toast-wrap" id="toastWrap"></div>
+<script th:src="@{/js/admin.js}"></script>
+<script>
+
+let ORDERS = [];
+let currentOrderId = null;
+let filteredOrders = [];
+
+const statusBadge = {
+    PAYMENT_PENDING:'badge-pending', PAYMENT_COMPLETED:'badge-completed',
+    CANCELLED:'badge-cancelled', CANCELED:'badge-cancelled',
+    PICKUP_COMPLETED:'badge-completed', EXPIRED:'badge-deleted'
+};
+const statusLabel = {
+    PAYMENT_PENDING:'決済待ち', PAYMENT_COMPLETED:'決済完了',
+    CANCELLED:'キャンセル', CANCELED:'キャンセル',
+    PICKUP_COMPLETED:'受取済', EXPIRED:'期限切れ'
+};
+
+
+function loadOrders() {
+    document.getElementById('orderTbody').innerHTML =
+        '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--light-gray);">読み込み中...</td></tr>';
+    fetch('/api/admin/orders?page=0&size=200')
+        .then(r => r.json())
+        .then(res => {
+            ORDERS = res.data || [];
+            filteredOrders = [...ORDERS];
+            renderOrders(filteredOrders);
+            loadDashboardRecent();
+        })
+        .catch(() => {
+            document.getElementById('orderTbody').innerHTML =
+                '<tr><td colspan="9" style="text-align:center;padding:2rem;color:#dc2626;">読み込み失敗</td></tr>';
+        });
+}
+function renderOrders(data) {
+    const t = document.getElementById('orderTbody');
+    t.innerHTML = '';
+    if (!data.length) {
+        t.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--light-gray);">データがありません</td></tr>';
+        return;
+    }
+    data.forEach(o => {
+        const st = o.orderStatus || o.status || '';
+        const createdAt = o.createdAt ? String(o.createdAt).replace('T',' ').substring(0,16) : '-';
+        t.innerHTML += `<tr>
+            <td class="text-mono text-sm fw-700">#${o.id}</td>
+            <td class="text-sm">${o.memberName||'-'}<br><span class="text-muted">${o.email||''}</span></td>
+            <td class="fw-700 text-sm">${o.storeName||'-'}</td>
+            <td class="text-mono fw-700 text-primary">¥${(o.totalPrice||0).toLocaleString()}</td>
+            <td class="text-sm text-muted">${o.itemCount||0}個</td>
+            <td class="text-mono text-sm">${o.pickupCode||'-'}</td>
+            <td><span class="badge ${statusBadge[st]||''}">${statusLabel[st]||st}</span></td>
+            <td class="text-sm text-muted">${createdAt}</td>
+            <td><button class="btn-admin btn-admin-outline" onclick="openOrderModal(${o.id})"><i class="bi bi-pencil"></i> 変更</button></td>
+        </tr>`;
+    });
+    document.getElementById('orderCount').textContent = `${data.length}件`;
+}
+function filterOrders() {
+    const kw = document.getElementById('orderSearch').value.toLowerCase();
+    const st = document.getElementById('orderStatusFilter').value;
+    filteredOrders = ORDERS.filter(o => {
+        const mk = !kw || (o.email||'').toLowerCase().includes(kw) || (o.storeName||'').toLowerCase().includes(kw);
+        const os = o.orderStatus || o.status || '';
+        return mk && (!st || os === st);
+    });
+    renderOrders(filteredOrders);
+}
+
+function openOrderModal(id) {
+    currentOrderId = id;
+    const o = ORDERS.find(x=>x.id===id);
+    if (!o) return;
+    document.getElementById('orderModalId').textContent = '#'+id;
+    document.getElementById('orderModalSelect').value = o.orderStatus || o.status || '';
+    openModal('orderModal');
+}
+function confirmOrderChange() {
+    const status = document.getElementById('orderModalSelect').value;
+    const o = ORDERS.find(x=>x.id===currentOrderId);
+    if (!o) return;
+    fetch(`/api/admin/orders/${currentOrderId}/status`, {
+        method: 'PATCH',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ status })
+    })
+    .then(r => { if (!r.ok) throw new Error(); })
+    .then(() => {
+        o.orderStatus = status; o.status = status;
+        renderOrders(filteredOrders);
+        closeModal('orderModal');
+        showToast(`注文 #${currentOrderId} のステータスを「${statusLabel[status]||status}」に変更しました`, 'success');
+    })
+    .catch(() => showToast('ステータス変更に失敗しました', 'error'));
+}
+document.addEventListener('DOMContentLoaded', function() {
+    const nav = document.getElementById('nav-orders');
+    if (nav) nav.classList.add('active');
+    loadOrders();
+});
+
+</script>
+</body>
+</html>

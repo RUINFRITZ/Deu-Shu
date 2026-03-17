@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>レビュー管理 — ドゥーシュー 管理者</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+<link rel="stylesheet" th:href="@{/css/admin.css}">
+
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+<main>
+<div class="admin-wrap">
+    <div th:replace="~{fragments/admin_sidebar :: sidebar}"></div>
+    <div class="admin-content">
+                <div class="admin-section" id="sec-reviews">
+            <div class="section-header">
+                <div>
+                    <div class="section-title"><i class="bi bi-star"></i> レビュー管理</div>
+                    <div class="section-subtitle">不適切なレビューの削除・低評価モニタリングができます</div>
+                </div>
+            </div>
+
+
+            <div class="filter-bar">
+                <div class="filter-search-wrap">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="reviewSearch" placeholder="店舗名・内容検索..." oninput="filterReviews()">
+                </div>
+                <select class="filter-select" id="reviewRatingFilter" onchange="filterReviews()">
+                    <option value="">全ての評価</option>
+                    <option value="1">★ 1点以下</option>
+                    <option value="2">★★ 2点以下</option>
+                    <option value="3">★★★ 3点以下</option>
+                </select>
+                <span class="filter-count" id="reviewCount"></span>
+            </div>
+
+            <div class="admin-card">
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th><th>店舗</th><th>作成者</th><th>タイトル</th>
+                                <th>内容</th><th>評価</th><th>作成日</th><th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reviewTbody"></tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="reviewPagination"></div>
+            </div>
+        </div>
+
+
+    </div>
+</div>
+</main>
+<div th:replace="~{fragments/footer :: footer}"></div>
+<div class="toast-wrap" id="toastWrap"></div>
+<script th:src="@{/js/admin.js}"></script>
+<script>
+
+let REVIEWS = [];
+let filteredReviews = [];
+
+function loadReviews() {
+    document.getElementById('reviewTbody').innerHTML =
+        '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--light-gray);">読み込み中...</td></tr>';
+    fetch('/api/admin/reviews?page=0&size=200')
+        .then(r => r.json())
+        .then(res => {
+            REVIEWS = res.data || [];
+            filteredReviews = [...REVIEWS];
+            renderReviews(filteredReviews);
+        })
+        .catch(() => {
+            document.getElementById('reviewTbody').innerHTML =
+                '<tr><td colspan="8" style="text-align:center;padding:2rem;color:#dc2626;">読み込み失敗</td></tr>';
+        });
+}
+function renderReviews(data) {
+    const t = document.getElementById('reviewTbody');
+    t.innerHTML = '';
+    if (!data.length) {
+        t.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--light-gray);">データがありません</td></tr>';
+        return;
+    }
+    data.forEach(r => {
+        const rating = Math.round(r.rating || 0);
+        const stars = '★'.repeat(rating) + '☆'.repeat(Math.max(0, 5-rating));
+        const sc = rating<=2?'#dc2626':rating<=3?'#d97706':'#f59e0b';
+        const createdDate = r.createdAt ? String(r.createdAt).substring(0,10) : '-';
+        t.innerHTML += `<tr>
+            <td class="text-mono text-sm">#${r.id}</td>
+            <td class="fw-700 text-sm">${r.storeName||'-'}</td>
+            <td class="text-sm">${r.memberName||'-'}<br><span class="text-muted">${r.email||''}</span></td>
+            <td class="fw-700 text-sm">${r.title||''}</td>
+            <td class="text-sm text-muted" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.content||''}</td>
+            <td style="color:${sc};">${stars}</td>
+            <td class="text-sm text-muted">${createdDate}</td>
+            <td><button class="btn-admin btn-admin-danger" onclick="deleteReview(${r.id})"><i class="bi bi-trash"></i> 削除</button></td>
+        </tr>`;
+    });
+    document.getElementById('reviewCount').textContent = `${data.length}件`;
+}
+function filterReviews() {
+    const kw = document.getElementById('reviewSearch').value.toLowerCase();
+    const mr = parseInt(document.getElementById('reviewRatingFilter').value) || 99;
+    filteredReviews = REVIEWS.filter(r => {
+        const mk = !kw || (r.storeName||'').toLowerCase().includes(kw) || (r.content||'').toLowerCase().includes(kw);
+        return mk && (r.rating||0) <= mr;
+    });
+    renderReviews(filteredReviews);
+}
+function deleteReview(id) {
+    if (!confirm('このレビューを削除しますか？')) return;
+    fetch(`/api/admin/reviews/${id}`, { method: 'DELETE' })
+        .then(r => { if (!r.ok) throw new Error(); })
+        .then(() => {
+            REVIEWS = REVIEWS.filter(r=>r.id!==id);
+            filteredReviews = filteredReviews.filter(r=>r.id!==id);
+            renderReviews(filteredReviews);
+            showToast('レビューを削除しました', 'success');
+        })
+        .catch(() => showToast('削除に失敗しました', 'error'));
+}
+document.addEventListener('DOMContentLoaded', function() {
+    const nav = document.getElementById('nav-reviews');
+    if (nav) nav.classList.add('active');
+    loadReviews();
+});
+
+</script>
+</body>
+</html>
