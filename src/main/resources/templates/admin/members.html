@@ -129,7 +129,7 @@ function loadMembers() {
     fetch('/api/admin/members?page=0&size=200')
         .then(r => r.json())
         .then(res => {
-            MEMBERS = res.data || [];
+        	MEMBERS = (res.data && res.data.data) ? res.data.data : [];
             filteredMembers = [...MEMBERS];
             renderMembers(filteredMembers);
         })
@@ -195,10 +195,10 @@ function confirmRoleChange() {
     const role = document.getElementById('roleModalSelect').value;
     const m = MEMBERS.find(x=>x.id===currentMemberId);
     if (!m) return;
-    fetch(`/api/admin/members/${currentMemberId}/role`, {
+    fetch('/api/admin/members/role', {
         method: 'PATCH',
         headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ role })
+        body: JSON.stringify({ memberId: currentMemberId, role })
     })
     .then(r => { if (!r.ok) throw new Error(); })
     .then(() => {
@@ -228,7 +228,7 @@ function deleteMember(id) {
     const m = MEMBERS.find(x=>x.id===id);
     if (!m) return;
     if (!confirm(`${memberDisplayName(m)}様を退会処理しますか？\nこの操作は取り消せません。`)) return;
-    fetch(`/api/admin/members/${id}`, { method: 'DELETE' })
+    fetch(`/api/admin/members/${id}/withdraw`, { method: 'PATCH' })
         .then(r => { if (!r.ok) throw new Error(); })
         .then(() => {
             m.deletedAt = new Date().toISOString();

@@ -7,17 +7,33 @@
     <!-- ================================================================
          대시보드
     ================================================================ -->
-    <select id="findTodayStats" resultType="com.deushu.admin.dto.AdminDto$Dashboard">
-        SELECT
-            COUNT(*)                                AS orderCount,
-            COALESCE(SUM(total_price), 0)           AS totalSales,
-            (SELECT COUNT(*) FROM members WHERE deleted_at IS NULL) AS memberCount,
-            (SELECT COUNT(*) FROM stores  WHERE deleted_at IS NULL
-                                          AND   close_time > CURTIME()) AS activeStoreCount
-        FROM orders
-        WHERE order_status = 'PAYMENT_COMPLETED'
-          AND DATE(created_at) = CURDATE()
-    </select>
+ <select id="findTodayStats" resultType="com.deushu.admin.dto.AdminDto$Dashboard">
+    SELECT
+        COUNT(*)                      AS orderCount,
+        COALESCE(SUM(total_price), 0) AS totalSales,
+        (SELECT COUNT(*) FROM members WHERE deleted_at IS NULL)
+                                      AS memberCount,
+        (SELECT COUNT(*) FROM stores  WHERE deleted_at IS NULL
+                                        AND close_time > CURTIME())
+                                      AS activeStoreCount,
+        (SELECT COUNT(*) FROM stores)
+                                      AS totalStoreCount,
+        (SELECT COUNT(*) FROM orders
+          WHERE order_status = 'PAYMENT_COMPLETED'
+            AND DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY))
+                                      AS yesterdayOrderCount,
+        (SELECT COALESCE(SUM(total_price), 0) FROM orders
+          WHERE order_status = 'PAYMENT_COMPLETED'
+            AND DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY))
+                                      AS yesterdaySales,
+        (SELECT COUNT(*) FROM members
+          WHERE deleted_at IS NULL
+            AND created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY))
+                                      AS newMemberThisWeek
+    FROM orders
+    WHERE order_status = 'PAYMENT_COMPLETED'
+      AND DATE(created_at) = CURDATE()
+</select>
 
     <select id="findWeeklySales" resultType="com.deushu.admin.dto.AdminDto$DailySales">
         SELECT
@@ -50,7 +66,7 @@
         SELECT
             id, email, last_name AS lastName, first_name AS firstName,
             last_name_kana AS lastNameKana, first_name_kana AS firstNameKana,
-            phone, role, status, created_at AS createdAt, deleted_at AS deletedAt
+			phone, role, status, esg_point AS esgPoint, created_at AS createdAt, deleted_at AS deletedAt
         FROM members
         <where>
             <if test="keyword != null and keyword != ''">

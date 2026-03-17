@@ -12,6 +12,10 @@ public class AdminDto {
         private long totalSales;
         private int memberCount;
         private int activeStoreCount;
+        private int yesterdayOrderCount;
+        private long yesterdaySales;
+        private int newMemberThisWeek;
+        private int totalStoreCount;
     }
 
     // 일별 매출 (바 차트용)

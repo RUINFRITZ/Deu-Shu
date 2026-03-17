@@ -317,7 +317,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(res => {
             const ol = document.getElementById('recentOrdersList');
             ol.innerHTML = '';
-            const list = res.data || [];
+            const list = (res.data && res.data.data) ? res.data.data : [];
             if (!list.length) { ol.innerHTML = '<p style="color:var(--light-gray);text-align:center;font-size:0.8rem;">データなし</p>'; return; }
             const statusMap = {PAYMENT_COMPLETED:'完了',PAYMENT_PENDING:'保留中',CANCELLED:'キャンセル',CANCELED:'キャンセル',PICKUP_COMPLETED:'受取済',EXPIRED:'期限切れ'};
             list.forEach(o => {
@@ -338,7 +338,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(res => {
             const ml = document.getElementById('recentMembersList');
             ml.innerHTML = '';
-            const list = res.data || [];
+            const list = (res.data && res.data.data) ? res.data.data : [];
             if (!list.length) { ml.innerHTML = '<p style="color:var(--light-gray);text-align:center;font-size:0.8rem;">データなし</p>'; return; }
             list.forEach(m => {
                 const roleLabel = m.role.replace('ROLE_','');
