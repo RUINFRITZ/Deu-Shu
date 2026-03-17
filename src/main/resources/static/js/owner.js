@@ -214,7 +214,7 @@ function switchSection(sectionId, clickedBtn) {
     document.querySelectorAll('.sidebar-nav-item').forEach(b => b.classList.remove('active'));
     if (clickedBtn) clickedBtn.classList.add('active');
 
-    if (sectionId === 'sales') loadSales();
+    if (sectionId === 'sales') { initSalesDatePicker(); loadSalesByRange(); }
 }
 
 // =====================================================================
@@ -667,17 +667,64 @@ async function deleteItem(itemId) {
 // 매출 정산
 // =====================================================================
 
-async function loadSales(isManual = false) {
-    const btn = document.getElementById('btnRefreshSales');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spin d-inline-block">⟳</span> 更新中...';
+// ============================================
+// 매출 정산 — 달력 범위 선택 + 아코디언 + 품목 분석
+// ============================================
+
+let salesPieChart = null;
+
+function initSalesDatePicker() {
+    const input = document.getElementById('salesDateRange');
+    if (!input || input._flatpickr) return;
+    flatpickr(input, {
+        mode: 'range',
+        locale: 'ja',
+        dateFormat: 'Y-m-d',
+        maxDate: 'today',
+        onReady(_, __, fp) {
+            const end = new Date();
+            const start = new Date();
+            start.setDate(start.getDate() - 29);
+            fp.setDate([start, end], false);
+        }
+    });
+}
+
+async function loadSalesByRange() {
+    // input.value 파싱 대신 flatpickr 인스턴스의 selectedDates 직접 사용
+    // → 로케일별 구분자(" to ", " から " 등) 차이로 파싱 실패하는 문제 해결
+    const input = document.getElementById('salesDateRange');
+    const fp    = input && input._flatpickr ? input._flatpickr : null;
+
+    const fmt = d => {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${dd}`;
+    };
+
+    let startDate, endDate;
+
+    if (fp && fp.selectedDates && fp.selectedDates.length === 2) {
+        // 달력에서 범위 선택된 경우 → selectedDates에서 직접 추출
+        startDate = fmt(fp.selectedDates[0]);
+        endDate   = fmt(fp.selectedDates[1]);
+    } else {
+        // 달력 미초기화 또는 날짜 미선택 → 기본값 최근 30일
+        const end   = new Date();
+        const start = new Date();
+        start.setDate(start.getDate() - 29);
+        startDate = fmt(start);
+        endDate   = fmt(end);
+        if (fp) fp.setDate([start, end], true);
+    }
+
+    const btn = document.getElementById('btnSearchSales');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spin d-inline-block">⟳</span> 検索中...'; }
 
     try {
-        const endpoint = isManual ? '/api/owner/sales/refresh' : '/api/owner/sales';
-        const method   = isManual ? 'POST' : 'GET';
-        const data     = await apiCall(endpoint, { method });
-
-        if (!data.success) return;
+        const data = await apiCall(`/api/owner/sales/range?startDate=${startDate}&endDate=${endDate}`);
+        if (!data.success) throw new Error('API error');
 
         const s = data.summary || {};
         document.getElementById('salesRevenue').textContent  = formatPrice(s.totalRevenue);
@@ -688,29 +735,168 @@ async function loadSales(isManual = false) {
         document.getElementById('salesRefreshedAt').textContent =
             data.refreshedAt ? formatDateTime(data.refreshedAt) : '—';
 
-        const tbody = document.getElementById('salesDailyBody');
-        tbody.innerHTML = '';
-        const daily = data.daily || [];
-
-        if (daily.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted py-4">
-                データがありません</td></tr>`;
-        } else {
-            [...daily].reverse().forEach(d => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${d.orderDate || '—'}</td>
-                    <td>${d.dailyCount || 0} 件</td>
-                    <td class="text-end">${formatPrice(d.dailyRevenue)}</td>`;
-                tbody.appendChild(tr);
-            });
-        }
-
-        if (isManual) showToast('売上データを更新しました');
+        renderSalesDailyTable(data.daily || []);
+        renderSalesItemAnalysis(data.itemSummary || []);
     } catch {
         showToast('データ取得に失敗しました', 'error');
     } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> 今すぐ更新';
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-search"></i> 検索'; }
     }
+}
+
+function resetSalesDateRange() {
+    const input = document.getElementById('salesDateRange');
+    if (input && input._flatpickr) {
+        const fp = input._flatpickr;
+        const end = new Date();
+        const start = new Date();
+        start.setDate(start.getDate() - 29);
+        fp.setDate([start, end], true);
+    }
+    loadSalesByRange();
+}
+
+function renderSalesDailyTable(daily) {
+    const tbody = document.getElementById('salesDailyBody');
+    tbody.innerHTML = '';
+    if (!daily.length) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-4">該当期間のデータがありません</td></tr>`;
+        return;
+    }
+    daily.forEach(d => {
+        const date = d.orderDate || '—';
+        const tr = document.createElement('tr');
+        tr.className = 'sales-row-toggle';
+        tr.dataset.date = date;
+        tr.innerHTML = `
+            <td><i class="bi bi-chevron-right text-muted"></i></td>
+            <td>${date}</td>
+            <td class="text-center">${d.dailyCount || 0}件</td>
+            <td class="text-center">${d.paymentCompleted || 0}件</td>
+            <td class="text-end fw-bold">${formatPrice(d.dailyRevenue)}</td>`;
+
+        const trAcc = document.createElement('tr');
+        trAcc.className = 'sales-accordion-row d-none';
+        trAcc.innerHTML = `
+            <td colspan="5">
+                <div class="accordion-inner">
+                    <div class="text-muted small text-center py-2 accordion-loading">
+                        <span class="spin d-inline-block">⟳</span> 読み込み中...
+                    </div>
+                </div>
+            </td>`;
+
+        tr.addEventListener('click', () => toggleAccordion(tr, trAcc, date));
+        tbody.appendChild(tr);
+        tbody.appendChild(trAcc);
+    });
+}
+
+async function toggleAccordion(tr, trAcc, date) {
+    const isOpen = tr.classList.contains('open');
+    if (isOpen) {
+        tr.classList.remove('open');
+        trAcc.classList.add('d-none');
+        return;
+    }
+    document.querySelectorAll('.sales-row-toggle.open').forEach(row => {
+        row.classList.remove('open');
+        row.nextElementSibling?.classList.add('d-none');
+    });
+    tr.classList.add('open');
+    trAcc.classList.remove('d-none');
+    if (trAcc.dataset.loaded === 'true') return;
+
+    try {
+        const data  = await apiCall(`/api/owner/sales/daily-items?date=${date}`);
+        const items = data.items || [];
+        const inner = trAcc.querySelector('.accordion-inner');
+        if (!items.length) {
+            inner.innerHTML = '<p class="text-muted small mb-0">この日の品目データがありません</p>';
+        } else {
+            inner.innerHTML = `
+                <table class="sales-item-table">
+                    <thead><tr>
+                        <th>品目名</th>
+                        <th class="text-center">数量</th>
+                        <th class="text-end">売上</th>
+                    </tr></thead>
+                    <tbody>${items.map(i => `
+                        <tr>
+                            <td>${escHtml(i.itemName)}</td>
+                            <td class="text-center">${i.totalQuantity}個</td>
+                            <td class="text-end fw-bold">${formatPrice(i.totalRevenue)}</td>
+                        </tr>`).join('')}
+                    </tbody>
+                </table>`;
+        }
+        trAcc.dataset.loaded = 'true';
+    } catch {
+        trAcc.querySelector('.accordion-inner').innerHTML =
+            '<p class="text-danger small mb-0">データ取得に失敗しました</p>';
+    }
+}
+
+function renderSalesItemAnalysis(items) {
+    const card = document.getElementById('salesItemCard');
+    if (!items.length) { if (card) card.style.display = 'none'; return; }
+    if (card) card.style.display = '';
+
+    const top3El = document.getElementById('salesTop3List');
+    top3El.innerHTML = '';
+    const rankEmojis = ['🥇','🥈','🥉'];
+    const rankCls    = ['r1','r2','r3'];
+    items.slice(0, 3).forEach((item, idx) => {
+        const div = document.createElement('div');
+        div.className = 'sales-top3-item';
+        div.innerHTML = `
+            <span class="sales-top3-rank ${rankCls[idx]}">${rankEmojis[idx]}</span>
+            <span class="sales-top3-name">${escHtml(item.itemName)}</span>
+            <span class="sales-top3-qty">${item.totalQuantity}個</span>
+            <span class="sales-top3-revenue">${formatPrice(item.totalRevenue)}</span>`;
+        top3El.appendChild(div);
+    });
+
+    const COLORS = ['#4CAF50','#FF9800','#2196F3','#E91E63',
+                    '#9C27B0','#00BCD4','#FF5722','#795548','#607D8B','#FFC107'];
+    const labels   = items.map(i => i.itemName);
+    const revenues = items.map(i => i.totalRevenue);
+    const colors   = items.map((_, i) => COLORS[i % COLORS.length]);
+    const total    = revenues.reduce((a, b) => a + b, 0);
+
+    if (salesPieChart) { salesPieChart.destroy(); salesPieChart = null; }
+    const ctx = document.getElementById('salesPieChart').getContext('2d');
+    salesPieChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels, datasets: [{ data: revenues, backgroundColor: colors, borderWidth: 2 }] },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => {
+                            const pct = total ? ((ctx.raw / total) * 100).toFixed(1) : 0;
+                            return ` ${formatPrice(ctx.raw)} (${pct}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    const legendEl = document.getElementById('salesPieLegend');
+    legendEl.innerHTML = items.map((item, idx) => {
+        const pct = total ? ((item.totalRevenue / total) * 100).toFixed(1) : 0;
+        return `<div class="pie-legend-item">
+            <span class="pie-legend-dot" style="background:${colors[idx]}"></span>
+            <span style="flex:1;font-size:0.78rem;">${escHtml(item.itemName)}</span>
+            <span style="font-size:0.78rem;color:#888;">${pct}%</span>
+        </div>`;
+    }).join('');
+}
+
+function escHtml(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }

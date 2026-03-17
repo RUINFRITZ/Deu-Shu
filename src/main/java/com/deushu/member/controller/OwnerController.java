@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -34,6 +35,7 @@ import com.deushu.member.domain.MemberEntity;
 import com.deushu.member.mapper.MemberRepository;
 import com.deushu.order.domain.ItemEntity;
 import com.deushu.order.dto.PickupVerifyResponse;
+import com.deushu.order.dto.ItemSalesSummaryDto;
 import com.deushu.order.dto.SalesSummaryDto;
 import com.deushu.order.service.OrderQrService;
 import com.deushu.store.domain.StoreEntity;
@@ -524,6 +526,7 @@ public class OwnerController {
     // 매출 정산
     // =====================================================================
 
+    /** 기존 엔드포인트 유지 (하위 호환) */
     @GetMapping("/sales")
     public ResponseEntity<Map<String, Object>> getSales(HttpSession session) {
         return buildSalesResponse(session);
@@ -532,6 +535,74 @@ public class OwnerController {
     @PostMapping("/sales/refresh")
     public ResponseEntity<Map<String, Object>> refreshSales(HttpSession session) {
         return buildSalesResponse(session);
+    }
+
+    /**
+     * 날짜 범위 기반 매출 정산
+     * GET /api/owner/sales/range?startDate=yyyy-MM-dd&endDate=yyyy-MM-dd
+     * → summary + daily(결제완료건수 포함) + itemSummary(TOP3 + 원형그래프용)
+     */
+    @GetMapping("/sales/range")
+    public ResponseEntity<Map<String, Object>> getSalesByRange(
+            @RequestParam("startDate") String startDate,
+            @RequestParam("endDate")   String endDate,
+            HttpSession session) {
+
+        Map<String, Object> result = new HashMap<>();
+        MemberEntity owner = getOwner(session);
+        if (owner == null) return unauthorized();
+
+        StoreEntity store = storeMapper.findByOwnerId(owner.getId());
+        if (store == null) {
+            result.put("success", true);
+            result.put("summary", null);
+            result.put("daily", List.of());
+            result.put("itemSummary", List.of());
+            return ResponseEntity.ok(result);
+        }
+
+        SalesSummaryDto summary  = salesRepository.findSummaryByRange(store.getId(), startDate, endDate);
+        List<SalesSummaryDto> daily =
+                salesRepository.findDailySummaryByRange(store.getId(), startDate, endDate);
+        List<ItemSalesSummaryDto> itemSummary =
+                salesRepository.findItemSummaryByRange(store.getId(), startDate, endDate);
+
+        result.put("success",     true);
+        result.put("summary",     summary);
+        result.put("daily",       daily);
+        result.put("itemSummary", itemSummary);
+        result.put("startDate",   startDate);
+        result.put("endDate",     endDate);
+        result.put("refreshedAt", LocalDateTime.now().toString());
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * 특정 날짜의 품목별 매출 (아코디언 표시용)
+     * GET /api/owner/sales/daily-items?date=yyyy-MM-dd
+     */
+    @GetMapping("/sales/daily-items")
+    public ResponseEntity<Map<String, Object>> getDailyItems(
+            @RequestParam("date") String date,
+            HttpSession session) {
+
+        Map<String, Object> result = new HashMap<>();
+        MemberEntity owner = getOwner(session);
+        if (owner == null) return unauthorized();
+
+        StoreEntity store = storeMapper.findByOwnerId(owner.getId());
+        if (store == null) {
+            result.put("success", true);
+            result.put("items", List.of());
+            return ResponseEntity.ok(result);
+        }
+
+        List<ItemSalesSummaryDto> items =
+                salesRepository.findDailyItems(store.getId(), date);
+
+        result.put("success", true);
+        result.put("items",   items);
+        return ResponseEntity.ok(result);
     }
 
     private ResponseEntity<Map<String, Object>> buildSalesResponse(HttpSession session) {

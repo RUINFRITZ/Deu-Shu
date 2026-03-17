@@ -40,4 +40,7 @@ public class SalesSummaryDto {
 
     /** 일별 주문 건수 */
     private int dailyCount;
+
+    /** 일별 결제 완료 건수 (테이블 컬럼용) */
+    private int paymentCompleted;
 }
