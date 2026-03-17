@@ -1,8 +1,6 @@
 -- =========================================================================
--- [ ドゥーシュー DB Schema V1.4 ]
+-- [ ドゥーシュー DB Schema V1.5 ]
 -- =========================================================================
-
--- 0. 
 
 -- 1. 会員テーブル (Members) - べさん担当領域
 CREATE TABLE members (
@@ -169,13 +167,59 @@ CREATE TABLE complaints (
 );
 
 -- =========================================================================
+-- [ 드슈 ESG/탄소 절감 확장 Schema ]
+-- =========================================================================
+
+-- 12. 탄소 배출 계수 마스터 (Carbon_Emission_Factors)
+-- 카테고리별로 1개 수량당 절감되는 탄소량(kg)을 정의합니다.
+CREATE TABLE carbon_emission_factors (
+    category      ENUM('BAKERY', 'SUSHI', 'LUNCHBOX', 'CAFE', 'SIDEDISH') PRIMARY KEY,
+    carbon_kg     DECIMAL(5, 2) NOT NULL COMMENT '품목 1개당 평균 탄소 절감량 (kg CO2e)',
+    tree_days     INT NOT NULL COMMENT '소나무 1그루가 며칠 동안 흡수해야 하는 양인지 계산된 값',
+    created_at    DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 13. 주문 탄소 절감 이력 (Order_Carbon_Savings)
+-- 각 주문이 완료(PICKUP_COMPLETED)될 때 계산된 탄소량을 기록합니다.
+CREATE TABLE order_carbon_savings (
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+    order_id        BIGINT NOT NULL UNIQUE COMMENT '대상 주문 ID (FK)',
+    member_id       BIGINT NOT NULL COMMENT '사용자 ID (FK)',
+    total_carbon_kg DECIMAL(10, 2) NOT NULL COMMENT '해당 주문으로 절감한 총 탄소량',
+    total_tree_days INT NOT NULL COMMENT '해당 주문으로 절감한 총 소나무 시간(일)',
+    created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE
+);
+
+-- 14. 가상의 숲 대시보드 (Virtual_Forests)
+-- 사용자의 누적 기여도를 관리하고 '가상의 숲' 상태를 결정합니다.
+CREATE TABLE virtual_forests (
+    member_id          BIGINT PRIMARY KEY COMMENT '사용자 ID (FK)',
+    cumulative_carbon  DECIMAL(15, 2) DEFAULT 0.00 COMMENT '누적 탄소 절감량 (kg)',
+    cumulative_days    BIGINT DEFAULT 0 COMMENT '누적 소나무 시간 (일)',
+    tree_count         INT DEFAULT 0 COMMENT '완성된 소나무 수 (누적 시간 / 365일)',
+    forest_level       INT DEFAULT 1 COMMENT '숲 레벨 (1: 씨앗, 2: 묘목, 3: 나무 한그루, 4: 작은 숲 등)',
+    updated_at         DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE
+);
+
+-- =========================================================================
 -- [ ドゥーシュー ] デモ用のダミーデータ挿入スクリプト (V1.3 スキーマ準拠)
 -- （韓国語：[ 드슈 ] 데모용 더미 데이터 삽입 스크립트 (V1.3 스키마 준수)）
 -- トランザクションの競合状態（Race Condition）を再現するため、在庫1個の商品を作成します。
 -- （韓国語：트랜잭션의 경합 상태(Race Condition)를 재현하기 위해, 재고 1개인 상품을 생성합니다.）
 -- =========================================================================
 
+-- 탄소절감량 계산을 위한 기본 데이터.
+INSERT INTO carbon_emission_factors (category, carbon_kg, tree_days) VALUES
+('BAKERY',   0.60, 33),  -- 소나무 1개월분
+('SUSHI',    1.20, 66),  -- 소나무 2개월분
+('LUNCHBOX', 2.00, 110), -- 소나무 4개월분
+('CAFE',     0.40, 22),  -- 소나무 3주분
+('SIDEDISH', 0.80, 44);  -- 소나무 1.5개월분
 
+-- 사업자정보 더미데이터
 INSERT INTO mock_business_registry
     (business_number, last_name, first_name, last_name_kana, first_name_kana, store_name, address, status)
 VALUES
@@ -188,4 +232,3 @@ VALUES
     ('555-44-33221', '鈴木', '一郎', 'スズキ', 'イチロウ',
      'すずきのお弁当', '東京都新宿区西新宿2-3-4', 'ACTIVE');
 COMMIT;
-

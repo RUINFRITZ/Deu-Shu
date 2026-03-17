@@ -58,4 +58,6 @@ public interface MemberRepository {
     /* 過去の履歴も含まれるため、年月日(YYYY-MM-DD)までフォーマットします */
     // =====================================================================
     List<MyPageOrderResponseDto> findAllOrderHistory(@Param("memberId") Long memberId);
+    
+
 }

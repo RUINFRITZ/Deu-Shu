@@ -54,6 +54,144 @@
 .esg-card-sub { font-size: 0.75rem; color: #999; margin-bottom: 0.9rem; display: block; }
 .esg-card-text { font-size: 0.83rem; color: #555; line-height: 1.85; margin: 0; }
 body { display: block; }
+
+/* =============================================
+   ★ 추가: 커뮤니티 숲 섹션 스타일
+============================================= */
+.community-forest-section {
+	max-width: 1000px;
+	margin: 0 auto 0 auto;
+	padding: 1.5rem 1.5rem 1.5rem;
+	text-align: center;
+	font-family: 'Noto Sans JP', sans-serif;
+}
+
+.community-forest-label {
+	font-size: 0.85rem;
+	color: #C14B00;
+	font-weight: 700;
+	letter-spacing: 2px;
+	margin-bottom: 0.5rem;
+}
+
+.community-forest-title {
+	font-size: 1.9rem;
+	font-family: 'Noto Serif JP', serif;
+	color: #2F2F2F;
+	margin-bottom: 0.5rem;
+}
+
+.community-forest-subtitle {
+	font-size: 1.05rem;
+	color: #777;
+	margin-bottom: 1.5rem;
+}
+
+/* 숲 gif + 레벨 정보 카드 */
+.community-forest-card {
+	display: inline-flex;
+	align-items: center;
+	gap: 2.5rem;
+	background: linear-gradient(135deg, #064e3b 0%, #065f46 100%);
+	border-radius: 20px;
+	padding: 2rem 3rem;
+	color: #fff;
+	box-shadow: 0 8px 32px rgba(6, 78, 59, 0.25);
+	max-width: 680px;
+	width: 100%;
+	text-align: left;
+}
+
+/* 커뮤니티 숲 SVG 컨테이너 */
+.community-gif-wrap {
+	width: 140px;
+	height: 140px;
+	flex-shrink: 0;
+	border-radius: 16px;
+	overflow: visible;
+	background: rgba(255,255,255,0.08);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.community-gif-wrap svg {
+	width: 100%;
+	height: 100%;
+	overflow: visible;
+}
+
+/* 소나무 흔들림 애니메이션 */
+@keyframes c-pine-bob {
+	0%,100% { transform: rotate(-4deg) translateY(0); }
+	50%      { transform: rotate(4deg) translateY(-4px); }
+}
+@keyframes c-pine-sway-s {
+	0%,100% { transform: rotate(-4deg); }
+	50%      { transform: rotate(4deg); }
+}
+@keyframes c-pine-sway-m {
+	0%,100% { transform: rotate(-3deg); }
+	50%      { transform: rotate(3deg); }
+}
+@keyframes c-pine-sway-l {
+	0%,100% { transform: rotate(-2deg); }
+	50%      { transform: rotate(2deg); }
+}
+@keyframes c-pine-sway-xl {
+	0%,100% { transform: rotate(-1.5deg); }
+	50%      { transform: rotate(1.5deg); }
+}
+.c-pine-lv1 { transform-box:fill-box; transform-origin:50% 100%; animation: c-pine-bob    2.5s ease-in-out infinite; }
+.c-pine-lv2 { transform-box:fill-box; transform-origin:50% 100%; animation: c-pine-sway-s 3.5s ease-in-out infinite; }
+.c-pine-lv3 { transform-box:fill-box; transform-origin:50% 100%; animation: c-pine-sway-m 5s   ease-in-out infinite; }
+.c-pine-lv4 { transform-box:fill-box; transform-origin:50% 100%; animation: c-pine-sway-l 6.5s ease-in-out infinite; }
+.c-pine-lv5-l { transform-box:fill-box; transform-origin:50% 100%; animation: c-pine-sway-s  4s ease-in-out infinite; }
+.c-pine-lv5-c { transform-box:fill-box; transform-origin:50% 100%; animation: c-pine-sway-xl 7s ease-in-out infinite; animation-delay:-1s; }
+.c-pine-lv5-r { transform-box:fill-box; transform-origin:50% 100%; animation: c-pine-sway-m  5s ease-in-out infinite; animation-delay:-2.5s; }
+
+.community-forest-info {
+	flex: 1;
+}
+
+.community-forest-level-badge {
+	display: inline-block;
+	background: rgba(255,255,255,0.15);
+	border-radius: 99px;
+	padding: 0.25rem 0.8rem;
+	font-size: 0.75rem;
+	letter-spacing: 0.05em;
+	margin-bottom: 0.6rem;
+	backdrop-filter: blur(4px);
+}
+
+.community-forest-level-name {
+	font-size: 1.5rem;
+	font-weight: 900;
+	font-family: 'Noto Serif JP', serif;
+	color: #a7f3d0;
+	margin-bottom: 0.3rem;
+}
+
+.community-forest-desc {
+	font-size: 0.85rem;
+	opacity: 0.8;
+	line-height: 1.6;
+}
+
+.community-forest-stat {
+	margin-top: 1rem;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-size: 0.8rem;
+	opacity: 0.7;
+}
+
+/* 로딩 상태 */
+.community-forest-loading {
+	color: #888;
+	font-size: 0.9rem;
+}
 </style>
 </head>
 
@@ -76,7 +214,7 @@ body { display: block; }
 				th:if="${session.memberId != null and hasCompletedOrder != true}"
 				th:href="@{/list(region='toshin', radius=2)}"
 				style="color: #C14B00; text-decoration: none; display: inline-block;">
-				今日のピックアップ </a>
+				今日のおすすめ </a>
 
 			<a class="demo-cta" th:if="${hasCompletedOrder == true}"
 				th:href="@{/order/pickup}"
@@ -85,17 +223,32 @@ body { display: block; }
 
 		</div>
 
+		<!-- ★ 추가: 커뮤니티 숲 섹션 (demo-hero와 기존 section 사이) -->
+		<div class="community-forest-section">
+			<p class="community-forest-label">COMMUNITY ESG FOREST</p>
+			<h2 class="community-forest-title">🌲 みんなで育てる ドゥーシューの森</h2>
+			<p class="community-forest-subtitle">
+				サービスを利用して炭素排出を減らし、木を植えてみましょう！				
+			</p>
+
+			<!-- 커뮤니티 숲 카드 — JS로 렌더링 -->
+			<div id="communityForestCard" class="community-forest-loading">
+				<i class="bi bi-hourglass-split"></i> 森の成長を確認しています...
+			</div>
+		</div>
+
 		<section
-			style="max-width: 1000px; margin: 4rem auto; padding: 0 1.5rem; color: #333; line-height: 1.8; font-family: 'Noto Sans JP', sans-serif;">
+			style="max-width: 1000px; margin: 0rem auto; padding: 0 1.5rem; color: #333; line-height: 1.8; font-family: 'Noto Sans JP', sans-serif;">
 
 			<div style="text-align: center; margin-bottom: 4rem;">
 				<p
-					style="font-size: 0.9rem; color: #C14B00; font-weight: 700; letter-spacing: 2px; margin-bottom: 0.5rem;">PROJECT
+					style="font-size: 0.9rem; color: #C14B00; font-weight: 700; letter-spacing: 2px; margin-bottom: 0.5rem;">
 					DEU-SHU</p>
 				<h2
-					style="font-size: 2.2rem; font-family: 'Noto Serif JP', serif; color: #2F2F2F; margin-bottom: 1rem;">サービス名の由来とビジョン</h2>
+					style="font-size: 2.2rem; font-family: 'Noto Serif JP', serif; color: #2F2F2F; margin-bottom: 1rem;">「食品ロス」削減のためのフードシェアリングサービス</h2>
 				<p style="font-size: 1.05rem; color: #555;">
-					私たちのサービス名<strong>「ドゥーシュー (Deu-Shu)」</strong>は、韓国・大田（テジョン）地方の温かい方言と、<br>日本語の言葉遊びを掛け合わせた、独自のESG哲学を持つネーミングです。
+					すべてのユーザーのフードロス削減活動が積み重なって、<br>
+					私たちの共同の森を育てています。
 				</p>
 			</div>
 
@@ -103,15 +256,13 @@ body { display: block; }
 				style="display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: center; margin-bottom: 5rem;">
 				<div
 					style="flex: 1 1 300px; background: #fff; border: 1px solid #E0E0E0; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);">
-					<div style="font-size: 2rem; margin-bottom: 1rem;">😢</div>
 					<h3
 						style="font-size: 1.15rem; color: #C14B00; margin-bottom: 0.5rem;">1.
-						オーナーの悩み「どうしよう…」</h3>
+						オーナーの悩み<br>「どうしよう…」</h3>
 					<p style="font-size: 0.95rem; color: #555; margin-bottom: 0.8rem;">閉店時間が近づき、まだ美味しく食べられるのに廃棄しなければならない食品を目の前にした、店舗オーナーの「どうしよう…（もったいない）」という切実な悩みを表しています。</p>
 				</div>
 				<div
 					style="flex: 1 1 300px; background: #fff; border: 1px solid #E0E0E0; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);">
-					<div style="font-size: 2rem; margin-bottom: 1rem;">🍲</div>
 					<h3
 						style="font-size: 1.15rem; color: #C14B00; margin-bottom: 0.5rem;">2.
 						ユーザーへの温かい提案「ドゥーシュー〜」</h3>
@@ -119,7 +270,6 @@ body { display: block; }
 				</div>
 				<div
 					style="flex: 1 1 300px; background: #fff; border: 1px solid #E0E0E0; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);">
-					<div style="font-size: 2rem; margin-bottom: 1rem;">🌍</div>
 					<h3
 						style="font-size: 1.15rem; color: #C14B00; margin-bottom: 0.5rem;">3.
 						環境への貢献 (SDGs)</h3>
@@ -178,6 +328,147 @@ body { display: block; }
 	</main>
 
 	<div th:replace="~{fragments/footer :: footer}"></div>
+
+	<!-- ★ 추가: 커뮤니티 숲 데이터 비동기 로드 JS -->
+	<script>
+	(function() {
+	    // 커뮤니티 숲 레벨별 이름 및 설명
+	    const COMMUNITY_LEVEL_INFO = {
+	        1: { name: '種（たね）の森',    desc: 'みんなの活動で小さな種が芽吹き始めています。' },
+	        2: { name: '苗木（なえぎ）の森', desc: '緑の苗木が育ち始めました。もっと多くの人の力が必要です！' },
+	        3: { name: '小さな森',           desc: '小さな森が生まれました。一人ひとりの行動が実を結んでいます。' },
+	        4: { name: '豊かな森',           desc: '豊かな森に成長しました！コミュニティの力で地球を守っています。' },
+	        5: { name: '大きな森',           desc: '壮大な大きな森が完成しました！ドゥーシューコミュニティの誇りです。' }
+	    };
+
+	    // 레벨별 인라인 SVG 소나무 (다크 그린 카드 배경용 밝은 색상)
+	    function getCommunitySvg(level) {
+	        const svgs = {
+	            1: `<svg viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg">
+	                  <ellipse cx="50" cy="105" rx="26" ry="5" fill="rgba(255,255,255,0.15)"/>
+	                  <g class="c-pine-lv1">
+	                    <rect x="47" y="68" width="6" height="37" rx="3" fill="#fcd34d"/>
+	                    <path d="M50,64 Q28,48 33,68 Q42,66 50,64Z" fill="#4ade80"/>
+	                    <path d="M50,64 Q72,48 67,68 Q58,66 50,64Z" fill="#86efac"/>
+	                    <ellipse cx="50" cy="57" rx="7" ry="10" fill="#22c55e"/>
+	                    <ellipse cx="50" cy="54" rx="4" ry="6" fill="#a7f3d0"/>
+	                  </g>
+	                </svg>`,
+	            2: `<svg viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg">
+	                  <ellipse cx="50" cy="105" rx="26" ry="5" fill="rgba(255,255,255,0.15)"/>
+	                  <g class="c-pine-lv2">
+	                    <rect x="46" y="84" width="8" height="21" rx="2" fill="#fcd34d"/>
+	                    <polygon points="50,58 24,84 76,84" fill="#16a34a"/>
+	                    <polygon points="50,36 30,62 70,62" fill="#22c55e"/>
+	                    <polygon points="50,16 36,40 64,40" fill="#4ade80"/>
+	                    <polygon points="50,16 42,30 58,30" fill="#a7f3d0" opacity="0.6"/>
+	                  </g>
+	                </svg>`,
+	            3: `<svg viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg">
+	                  <ellipse cx="50" cy="105" rx="28" ry="5" fill="rgba(255,255,255,0.15)"/>
+	                  <g class="c-pine-lv3">
+	                    <rect x="45" y="82" width="10" height="23" rx="2" fill="#fcd34d"/>
+	                    <polygon points="50,62 18,82 82,82" fill="#14532d"/>
+	                    <polygon points="50,44 24,66 76,66" fill="#16a34a"/>
+	                    <polygon points="50,26 30,48 70,48" fill="#22c55e"/>
+	                    <polygon points="50,10 34,32 66,32" fill="#4ade80"/>
+	                    <polygon points="50,10 42,24 58,24" fill="#a7f3d0" opacity="0.55"/>
+	                    <circle cx="40" cy="60" r="2" fill="rgba(255,255,255,0.4)"/>
+	                  </g>
+	                </svg>`,
+	            4: `<svg viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg">
+	                  <ellipse cx="50" cy="105" rx="30" ry="5" fill="rgba(255,255,255,0.15)"/>
+	                  <g class="c-pine-lv4">
+	                    <rect x="44" y="80" width="12" height="25" rx="3" fill="#fcd34d"/>
+	                    <polygon points="50,66 13,80 87,80" fill="#14532d"/>
+	                    <polygon points="50,50 18,68 82,68" fill="#166534"/>
+	                    <polygon points="50,34 24,54 76,54" fill="#16a34a"/>
+	                    <polygon points="50,18 30,40 70,40" fill="#22c55e"/>
+	                    <polygon points="50,4 35,24 65,24" fill="#4ade80"/>
+	                    <polygon points="50,4 42,18 58,18" fill="#a7f3d0" opacity="0.55"/>
+	                    <path d="M13,80 Q32,74 50,76" stroke="rgba(255,255,255,0.35)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+	                    <circle cx="50" cy="6" r="2" fill="rgba(255,255,255,0.6)"/>
+	                  </g>
+	                </svg>`,
+	            5: `<svg viewBox="0 0 160 110" xmlns="http://www.w3.org/2000/svg">
+	                  <ellipse cx="80" cy="105" rx="70" ry="5" fill="rgba(255,255,255,0.15)"/>
+	                  <g class="c-pine-lv5-l">
+	                    <rect x="24" y="86" width="8" height="19" rx="2" fill="#fcd34d"/>
+	                    <polygon points="28,62 8,86 48,86" fill="#16a34a"/>
+	                    <polygon points="28,42 12,66 44,66" fill="#22c55e"/>
+	                    <polygon points="28,24 16,46 40,46" fill="#4ade80"/>
+	                    <polygon points="28,10 20,28 36,28" fill="#86efac"/>
+	                  </g>
+	                  <g class="c-pine-lv5-c">
+	                    <rect x="75" y="80" width="10" height="25" rx="2" fill="#fcd34d"/>
+	                    <polygon points="80,58 50,80 110,80" fill="#14532d"/>
+	                    <polygon points="80,40 54,62 106,62" fill="#16a34a"/>
+	                    <polygon points="80,22 58,46 102,46" fill="#22c55e"/>
+	                    <polygon points="80,6 62,28 98,28" fill="#4ade80"/>
+	                    <polygon points="80,6 72,20 88,20" fill="#a7f3d0" opacity="0.6"/>
+	                    <circle cx="80" cy="8" r="2" fill="rgba(255,255,255,0.6)"/>
+	                  </g>
+	                  <g class="c-pine-lv5-r">
+	                    <rect x="126" y="84" width="8" height="21" rx="2" fill="#fcd34d"/>
+	                    <polygon points="130,62 110,84 150,84" fill="#16a34a"/>
+	                    <polygon points="130,42 114,66 146,66" fill="#22c55e"/>
+	                    <polygon points="130,24 116,46 144,46" fill="#4ade80"/>
+	                    <polygon points="130,10 122,28 138,28" fill="#86efac"/>
+	                  </g>
+	                  <circle cx="18" cy="82" r="1.5" fill="rgba(255,255,255,0.4)"/>
+	                  <circle cx="112" cy="78" r="1.5" fill="rgba(255,255,255,0.35)"/>
+	                </svg>`
+	        };
+	        return svgs[level] || svgs[1];
+	    }
+
+	    async function loadCommunityForest() {
+	        const container = document.getElementById('communityForestCard');
+	        try {
+	            const res = await fetch('/api/v1/mypage/esg/community');
+	            if (!res.ok) throw new Error('サーバーエラー');
+
+	            const data     = await res.json();
+	            const level    = data.communityLevel || 1;
+	            const totalSum = data.totalLevelSum  || 0;
+	            const info     = COMMUNITY_LEVEL_INFO[level] || COMMUNITY_LEVEL_INFO[1];
+
+	            container.innerHTML = `
+	                <div class="community-forest-card">
+	                    <div class="community-gif-wrap">
+	                        ${getCommunitySvg(level)}
+	                    </div>
+	                    <div class="community-forest-info">
+	                        <div class="community-forest-level-badge">LEVEL ${level} / 5</div>
+	                        <div class="community-forest-level-name">${info.name}</div>
+	                        <div class="community-forest-desc">${info.desc}</div>
+	                        <div class="community-forest-stat">
+	                            <i class="bi bi-people-fill"></i>
+	                            コミュニティ合計レベル <strong style="color:#a7f3d0; margin-left:0.3rem;">${totalSum}</strong>
+	                        </div>
+	                    </div>
+	                </div>`;
+
+	        } catch (err) {
+	            console.warn('[Community Forest] データ取得失敗:', err);
+	            container.innerHTML = `
+	                <div class="community-forest-card">
+	                    <div class="community-gif-wrap">
+	                        ${getCommunitySvg(1)}
+	                    </div>
+	                    <div class="community-forest-info">
+	                        <div class="community-forest-level-badge">LEVEL 1 / 5</div>
+	                        <div class="community-forest-level-name">種（たね）の森</div>
+	                        <div class="community-forest-desc">みんなの活動で小さな種が芽吹き始めています。</div>
+	                    </div>
+	                </div>`;
+	        }
+	    }
+
+	    // DOM 준비 후 즉시 로드
+	    document.addEventListener('DOMContentLoaded', loadCommunityForest);
+	})();
+	</script>
 
 </body>
 </html>

@@ -21,7 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Gemini 1.5 Flash 기반 리뷰 요약 서비스
+ * Gemini 3.1 Flash lite 기반 리뷰 요약 서비스
  *
  * [Map-Reduce 처리 흐름]
  *  1. DB에서 해당 가게의 전체 리뷰 조회
@@ -173,29 +173,40 @@ public class GeminiReviewSummaryService {
      * @return Gemini가 반환한 텍스트 (JSON 형식)
      */
     private String callGeminiApi(String prompt) {
-    	JsonObject requestBody = new JsonObject();
+        JsonObject requestBody = new JsonObject();
 
         // 1. contents 구성
         JsonArray contentsArray = new JsonArray();
         JsonObject contentObj = new JsonObject();
-        // role은 생략 가능하지만 명시하는 것이 안전합니다.
         contentObj.addProperty("role", "user"); 
-        
         JsonArray partsArray = new JsonArray();
         JsonObject textPart = new JsonObject();
         textPart.addProperty("text", prompt);
-        
         partsArray.add(textPart);
         contentObj.add("parts", partsArray);
         contentsArray.add(contentObj);
         requestBody.add("contents", contentsArray);
 
-        // 2. generationConfig 구성 (400 에러 해결의 핵심)
+        // 2. safetySettings 추가 (리뷰 분석 시 차단 방지)
+        JsonArray safetySettings = new JsonArray();
+        String[] categories = {
+            "HARM_CATEGORY_HARASSMENT", 
+            "HARM_CATEGORY_HATE_SPEECH", 
+            "HARM_CATEGORY_SEXUALLY_EXPLICIT", 
+            "HARM_CATEGORY_DANGEROUS_CONTENT"
+        };
+        for (String category : categories) {
+            JsonObject setting = new JsonObject();
+            setting.addProperty("category", category);
+            setting.addProperty("threshold", "BLOCK_NONE");
+            safetySettings.add(setting);
+        }
+        requestBody.add("safetySettings", safetySettings);
+
+        // 3. generationConfig 구성
         JsonObject generationConfig = new JsonObject();
-        // 필드명이 responseMimeType이 아니라 response_mime_type인지 확인
         generationConfig.addProperty("response_mime_type", "application/json");
         generationConfig.addProperty("temperature", 0.1); 
-        
         requestBody.add("generationConfig", generationConfig);
         try {
             // URI 생성 (이전 단계에서 수정한 정상 경로)
