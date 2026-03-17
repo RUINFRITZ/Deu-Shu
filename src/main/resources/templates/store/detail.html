@@ -230,8 +230,22 @@
                 <label style="margin-top:12px;">写真（任意）</label>
                 <input id="imageInput" type="file" accept="image/*"/>
                 <div id="imagePreview" style="display:none;margin-top:8px;">
-                    <img id="previewImage" style="max-width:100%;"/>
-                    <button type="button" onclick="removeImage()">削除</button>
+                    <img id="previewImage" style="width:200px; height:200px; object-fit:cover; border-radius:8px; display: block;"/>
+                    <button type="button" onclick="removeImage()"
+				        style="margin-top:15px;
+							   padding:0.375rem 0.875rem;
+				               background:none;
+				               color:#ef4444;
+				               border:1px solid #ef4444;
+				               border-radius:6px;
+				               font-size:0.8125rem;
+				               font-weight:600;
+				               cursor:pointer;
+				               transition:all 0.15s;"
+				        onmouseover="this.style.background='#ef4444'; this.style.color='#fff';"
+				        onmouseout="this.style.background='none'; this.style.color='#ef4444';">
+				        <i class="bi bi-trash3"></i> 削除
+                    </button>
                 </div>
             </div>
             <div class="modal-footer">

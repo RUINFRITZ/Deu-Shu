@@ -40,6 +40,7 @@ async function openReviewModal() {
 
 function closeReviewModal() {
     document.getElementById('reviewModal').classList.remove('active');
+	ratingLocked = false;
 }
 function handleModalClick(event) {
     if (event.target.id === 'reviewModal') closeReviewModal();
@@ -94,9 +95,11 @@ function backToOrderList() {
 // ============================================
 const starButtons = document.querySelectorAll('.star-btn');
 let currentRating = 5.0;
+let ratingLocked  = false;
 
 starButtons.forEach((star, index) => {
     star.addEventListener("mousemove", (e) => {
+		if (ratingLocked) return;
         const rect = star.getBoundingClientRect();
         const x = e.clientX - rect.left;
         currentRating = x < rect.width / 2 ? index + 0.5 : index + 1;
@@ -104,9 +107,14 @@ starButtons.forEach((star, index) => {
         const ratingValue = document.querySelector('.rating-value');
         if (ratingValue) ratingValue.textContent = currentRating.toFixed(1);
     });
-    star.addEventListener("click", () => {
-        const ratingValue = document.querySelector('.rating-value');
-        if (ratingValue) ratingValue.textContent = currentRating.toFixed(1);
+    star.addEventListener("click", (e) => {
+		const rect = star.getBoundingClientRect();
+		        const x = e.clientX - rect.left;
+		        currentRating = x < rect.width / 2 ? index + 0.5 : index + 1;  // ← 클릭 시 정확한 값 저장
+		        ratingLocked = true;  // ← 고정
+		        updateStars();
+		        const ratingValue = document.querySelector('.rating-value');
+		        if (ratingValue) ratingValue.textContent = currentRating.toFixed(1);
     });
 });
 
@@ -482,6 +490,7 @@ async function submitReview() {
         document.getElementById('reviewTitle').value   = '';
         document.getElementById('reviewContent').value = '';
         currentRating = 5.0;
+		ratingLocked  = false;
         updateStars();
         removeImage();
         loadReviews(storeId);
