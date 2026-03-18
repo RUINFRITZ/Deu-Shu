@@ -12,11 +12,30 @@ function escapeHtml(str) {
 }
 
 // ============================================
+// カート KEY (最上部に移動 — DOMContentLoadedより先に必要)
+// ============================================
+const CART_KEY = `deushu_cart_${window._sessionMemberId ?? 'guest'}_${storeId}`;
+let _cart        = [];
+let _lastOrderId = null;  // 決済完了後 orderId 保管 → レビュー作成に連携
+
+// ページ進入時にカートキャッシュをクリア
+localStorage.removeItem(CART_KEY);
+
+// ============================================
 // レビューモーダル — 2段階: 注文選択 → レビュー作成
 // ============================================
 let _selectedOrderId = null;
 
 async function openReviewModal() {
+
+    // 未ログインチェック — API呼び出し前に確認
+    if (!window._sessionMemberId) {
+        if (confirm('レビュー作成にはログインが必要です。\nログインページへ移動しますか？')) {
+            openModal('user');
+        }
+        return;
+    }
+
     _selectedOrderId = null;
     showReviewStep(1);
     document.getElementById('reviewModal').classList.add('active');
@@ -24,8 +43,10 @@ async function openReviewModal() {
     try {
         const res = await fetch(`/api/v1/orders/my?storeId=${storeId}`);
         if (res.status === 401) {
-            alert('ログインが必要です。');
             document.getElementById('reviewModal').classList.remove('active');
+            if (confirm('レビュー作成にはログインが必要です。\nログインページへ移動しますか？')) {
+                openModal('user');
+            }
             return;
         }
         const data   = await res.json();
@@ -40,7 +61,7 @@ async function openReviewModal() {
 
 function closeReviewModal() {
     document.getElementById('reviewModal').classList.remove('active');
-	ratingLocked = false;
+    ratingLocked = false;  // 評価固定をリセット
 }
 function handleModalClick(event) {
     if (event.target.id === 'reviewModal') closeReviewModal();
@@ -99,7 +120,7 @@ let ratingLocked  = false;
 
 starButtons.forEach((star, index) => {
     star.addEventListener("mousemove", (e) => {
-		if (ratingLocked) return;
+        if (ratingLocked) return;
         const rect = star.getBoundingClientRect();
         const x = e.clientX - rect.left;
         currentRating = x < rect.width / 2 ? index + 0.5 : index + 1;
@@ -108,13 +129,13 @@ starButtons.forEach((star, index) => {
         if (ratingValue) ratingValue.textContent = currentRating.toFixed(1);
     });
     star.addEventListener("click", (e) => {
-		const rect = star.getBoundingClientRect();
-		        const x = e.clientX - rect.left;
-		        currentRating = x < rect.width / 2 ? index + 0.5 : index + 1;  // ← 클릭 시 정확한 값 저장
-		        ratingLocked = true;  // ← 고정
-		        updateStars();
-		        const ratingValue = document.querySelector('.rating-value');
-		        if (ratingValue) ratingValue.textContent = currentRating.toFixed(1);
+        const rect = star.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        currentRating = x < rect.width / 2 ? index + 0.5 : index + 1;
+        ratingLocked = true;
+        updateStars();
+        const ratingValue = document.querySelector('.rating-value');
+        if (ratingValue) ratingValue.textContent = currentRating.toFixed(1);
     });
 });
 
@@ -188,6 +209,11 @@ function toggleReviewText(button) {
 document.addEventListener("DOMContentLoaded", () => {
     if (!storeId) return;
 
+    // ページ進入時にカートキャッシュをクリア (CART_KEYは最上部で宣言済み)
+    localStorage.removeItem(CART_KEY);
+    _cart = [];
+    updateCartBadge();
+
     fetch(`/api/stores/${storeId}`)
         .then(res => {
             if (!res.ok) throw new Error("詳細取得失敗: " + res.status);
@@ -259,8 +285,7 @@ async function loadAiSummary(storeId) {
     const loadingEl = document.getElementById('aiSummaryLoading');
     const emptyEl   = document.getElementById('aiSummaryEmpty');
     const resultEl  = document.getElementById('aiSummaryResult');
-
-    // 初期状態: スピナー表示
+	// 初期状態: スピナー表示
     if (loadingEl) loadingEl.style.display = '';
     if (emptyEl)   emptyEl.style.display   = 'none';
     if (resultEl)  resultEl.style.display  = 'none';
@@ -270,23 +295,20 @@ async function loadAiSummary(storeId) {
         if (!res.ok) throw new Error('AI要約 API エラー: ' + res.status);
 
         const data = await res.json();
-
-        // スピナー非表示
+		// スピナー非表示
         if (loadingEl) loadingEl.style.display = 'none';
-
-        // レビューがない場合
+		// レビューがない場合
         if (!data.hasReviews) {
             if (emptyEl) emptyEl.style.display = '';
             return;
         }
-
-        // AI要約結果 レンダリング
+		// AI要約結果 レンダリング
         renderAiSummary(data);
         if (resultEl) resultEl.style.display = '';
 
     } catch (err) {
         console.error('[AI要約] ロード失敗:', err);
-        // エラー時はセクション自体を非表示 (UX妨害防止)
+		// エラー時はセクション自体を非表示 (UX妨害防止)
         const block = document.getElementById('aiSummaryBlock');
         if (block) block.style.display = 'none';
     }
@@ -298,11 +320,10 @@ async function loadAiSummary(storeId) {
  * @param {Object} data - ReviewSummaryResponseDto
  */
 function renderAiSummary(data) {
-    // 統合要約文
+	// 統合要約文
     const summaryEl = document.getElementById('aiSummarySummary');
     if (summaryEl) summaryEl.textContent = data.summary || '';
-
-    // 主要キーワードタグ レンダリング
+	// 主要キーワードタグ レンダリング
     const keywordsEl = document.getElementById('aiKeywords');
     if (keywordsEl) {
         keywordsEl.innerHTML = '';
@@ -317,33 +338,60 @@ function renderAiSummary(data) {
 }
 
 // ============================================
-// レビュー API 呼び出し
+// レビュー API 呼び出し (cursor 基盤 無限スクロール)
 // ============================================
-function loadReviews(storeId) {
-    fetch(`/api/reviews?storeId=${storeId}`)
+let _reviewCursor  = null;
+let _reviewLoading = false;
+let _reviewHasMore = true;
+
+function loadReviews(storeId, reset = true) {
+    if (_reviewLoading) return;
+    if (!reset && !_reviewHasMore) return;
+
+    if (reset) {
+        _reviewCursor  = null;
+        _reviewHasMore = true;
+        document.getElementById('reviewsList').innerHTML = '';
+        const moreBtn = document.getElementById('reviewsMoreBtn');
+        if (moreBtn) moreBtn.style.display = 'none';
+    }
+
+    _reviewLoading = true;
+
+    const url = `/api/reviews?storeId=${storeId}` + (_reviewCursor ? `&cursor=${_reviewCursor}` : '');
+
+    fetch(url)
         .then(res => {
             if (!res.ok) throw new Error("レビュー取得失敗");
             return res.json();
         })
         .then(data => {
-            const list = data.items || data || [];
-            renderReviews(Array.isArray(list) ? list : []);
+            const list = data.items || [];
+            _reviewCursor  = data.nextCursor ?? null;
+            _reviewHasMore = _reviewCursor !== null;
+            renderReviews(list, reset);
+            const moreBtn = document.getElementById('reviewsMoreBtn');
+            if (moreBtn) moreBtn.style.display = _reviewHasMore ? '' : 'none';
         })
-        .catch(err => console.error("レビューデータエラー:", err));
+        .catch(err => console.error("レビューデータエラー:", err))
+        .finally(() => { _reviewLoading = false; });
+}
+
+function loadMoreReviews() {
+    loadReviews(storeId, false);
 }
 
 // ============================================
 // レビュー レンダリング
 // ============================================
-function renderReviews(reviews) {
+function renderReviews(reviews, reset = true) {
     const reviewsList = document.getElementById("reviewsList");
-    reviewsList.innerHTML = "";
-    if (!reviews.length) {
+    if (reset) reviewsList.innerHTML = "";
+    if (!reviews.length && reset) {
         reviewsList.innerHTML = `<div class="empty">レビューがありません。</div>`;
         return;
     }
-
-    // 現在のログインセッション memberId (ヘッダーから取得)
+	// 現在のログインセッション memberId (ヘッダーから取得)
     const sessionMemberId = window._sessionMemberId ?? null;
 
     reviews.forEach(r => {
@@ -411,7 +459,7 @@ async function deleteReview(reviewId) {
         if (json.success) {
             const el = document.querySelector(`.review-item[data-review-id="${reviewId}"]`);
             if (el) el.remove();
-            // レビュー件数 更新
+			// レビュー件数 更新
             const countEl = document.getElementById('reviewCount');
             if (countEl) {
                 const cur = parseInt(countEl.textContent.replace(/[^0-9]/g, '')) || 0;
@@ -438,7 +486,7 @@ async function submitReview() {
     if (!content) { alert('内容を入力してください。'); return; }
     if (currentRating < 1) { alert('評価を選択してください。'); return; }
 
-    // 画像がある場合、先にS3へアップロード
+	// 画像がある場合、先にS3へアップロード
     let photoUrl = null;
     if (fileInput && fileInput.files.length > 0) {
         const formData = new FormData();
@@ -490,7 +538,7 @@ async function submitReview() {
         document.getElementById('reviewTitle').value   = '';
         document.getElementById('reviewContent').value = '';
         currentRating = 5.0;
-		ratingLocked  = false;
+        ratingLocked  = false;
         updateStars();
         removeImage();
         loadReviews(storeId);
@@ -598,12 +646,8 @@ function initMap(lat, lng, name, category, closeTime, address, minDiscountPrice,
 }
 
 // ============================================
-// カート
+// カート 関数群
 // ============================================
-const CART_KEY   = `deushu_cart_${window._sessionMemberId ?? 'guest'}_${storeId}`;
-let _cart        = [];
-let _lastOrderId = null;  // 決済完了後 orderId 保管 → レビュー作成に連携
-
 function cartLoad() {
     try { _cart = JSON.parse(localStorage.getItem(CART_KEY)) || []; }
     catch { _cart = []; }
@@ -872,8 +916,8 @@ function resetCardQty(card) {
  * 2. 成功時、PortOneの決済窓口を呼び出し
  */
 async function processCheckout(cartItems, totalPrice, storeId) {
-    // 0. 未ログイン防御
-    const userNameElement = document.getElementById('headerUserName');
+	// 0. 未ログイン防御
+	 const userNameElement = document.getElementById('headerUserName');
     if (!userNameElement || !userNameElement.innerText) {
         showToast(' * 決済を行うにはログインが必要です。', 'error');
         openModal('user');
@@ -881,29 +925,26 @@ async function processCheckout(cartItems, totalPrice, storeId) {
     }
 
     try {
-        // STEP 1: 注文生成 (悲観的ロックで在庫確保)
+		// STEP 1: 注文生成 (悲観的ロックで在庫確保)
         const orderResponse = await fetch('/api/v1/orders', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body:    JSON.stringify({ storeId, cartItems, totalPrice })
         });
-
-        // HTTP 4xx, 5xx エラー (在庫不足、販売終了など) のハンドリング
+		// HTTP 4xx, 5xx エラー (在庫不足、販売終了など) のハンドリング
         if (!orderResponse.ok) {
             const errorData = await orderResponse.json();
             const errorMessage = errorData.message || '既に他のお客様が購入したか、在庫が不足しています。';
-
-            // 1. ユーザーに在庫変動を警告(Alert)
+			// 1. ユーザーに在庫変動を警告(Alert)
             alert('⚠️ ' + errorMessage);
-
-            // 2. 最新の在庫状態を画面に反映させるためにページを強制リロード
+			// 2. 最新の在庫状態を画面に反映させるためにページを強制リロード
             window.location.reload();
             return;
         }
 
         const orderData = await orderResponse.json();
-
-        // ApiResponse の isSuccess が false の場合 (カスタム例外処理のフォールバック)
+		
+		// ApiResponse の isSuccess が false の場合 (カスタム例外処理のフォールバック)
         if (!orderData.isSuccess) {
             alert('⚠️ ' + (orderData.message || '注文の生成に失敗しました。'));
             window.location.reload();
@@ -911,8 +952,8 @@ async function processCheckout(cartItems, totalPrice, storeId) {
         }
 
         const pendingOrderId = orderData.data;
-
-        // STEP 2: PortOne 決済画面呼び出し
+		
+		// STEP 2: PortOne 決済画面呼び出し
         IMP.init("imp41118237");
         const paymentData = {
             pg:           "tosspayments",
@@ -928,8 +969,7 @@ async function processCheckout(cartItems, totalPrice, storeId) {
             console.log("========== [PortOne 決済応答データ] ==========");
             console.log(JSON.stringify(rsp, null, 2));
             console.log("==============================================");
-
-            // Toss Payments edge case対応: successフィールド欠如時はimp_uidで判断
+			// Toss Payments edge case対応: successフィールド欠如時はimp_uidで判断
             const isPaymentSuccessful = rsp.success || (rsp.imp_uid && !rsp.error_msg && !rsp.error_code);
 
             if (isPaymentSuccessful) {
@@ -938,12 +978,7 @@ async function processCheckout(cartItems, totalPrice, storeId) {
             } else {
                 console.error(`❌ 決済失敗: ${rsp.error_msg || '理由不明'}`);
                 showToast(`決済がキャンセルされました: ${rsp.error_msg || 'ユーザーキャンセル'}`, 'error');
-
-                // 決済がキャンセルされた場合、すでにサーバー側で確保(減少)された
-                // 在庫状態を画面に正しく反映させるため、0.5秒後にページをリロードします。
-                setTimeout(() => {
-                    window.location.reload();
-                }, 500);
+                setTimeout(() => { window.location.reload(); }, 500);
             }
         });
 
@@ -952,7 +987,6 @@ async function processCheckout(cartItems, totalPrice, storeId) {
         showToast('サーバーとの通信に失敗しました。', 'error');
     }
 }
-
 /*
  * PortOne 決済完了後 バックエンド検証
  */
@@ -966,9 +1000,9 @@ async function verifyPayment(impUid, orderId) {
         const verifyData = await verifyRes.json();
 
         if (verifyData.isSuccess) {
-            // _lastOrderId 保管 (レビュー作成時の連携用)
+			// _lastOrderId 保管 (レビュー作成時の連携用)
             _lastOrderId = orderId;
-            // カート 初期化
+			// カート 初期化
             localStorage.removeItem(CART_KEY);
             _cart = [];
             updateCartBadge();
@@ -999,6 +1033,14 @@ function initFavBtn(favorited) {
 async function handleFavClick() {
     const btn = document.getElementById('favBtn');
     if (!btn || btn.dataset.loading === 'true') return;
+
+    if (!window._sessionMemberId) {
+        if (confirm('お気に入りにはログインが必要です。\nログインページへ移動しますか？')) {
+            openModal('user');
+        }
+        return;
+    }
+
     btn.dataset.loading = 'true';
     try {
         const res  = await fetch(`/api/stores/${storeId}/favorite/toggle`, {
@@ -1006,8 +1048,9 @@ async function handleFavClick() {
         });
         const json = await res.json();
         if (res.status === 401 || json.success === false) {
-            alert('お気に入りはログイン後にご利用いただけます。');
-            window.location.href = '/';
+            if (confirm('お気に入りはログインが必要です。\nログインページへ移動しますか？')) {
+                openModal('user');
+            }
             return;
         }
         _setFavState(btn, json.favorited);

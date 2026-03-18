@@ -32,8 +32,11 @@ public class ReviewController {
 
     // GET /api/reviews?storeId=1
     @GetMapping
-    public ReviewListResponse list(@RequestParam("storeId") long storeId) {
-        return reviewService.listByStore(storeId);
+    public ReviewListResponse list(
+            @RequestParam("storeId")           long storeId,
+            @RequestParam(value = "cursor",    required = false) Long cursor,
+            @RequestParam(value = "size",      required = false, defaultValue = "10") int size) {
+        return reviewService.listByStore(storeId, cursor);
     }
 
     // POST /api/reviews

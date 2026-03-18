@@ -9,7 +9,13 @@ import java.util.List;
 
 @Mapper
 public interface ReviewMapper {
-    List<ReviewItem> findByStoreId(@Param("storeId") long storeId);
+	
+	// cursor 기반 페이징 조회
+    List<ReviewItem> findByStoreId(
+            @Param("storeId") long storeId,
+            @Param("cursor")  Long cursor,   // null이면 첫 페이지
+            @Param("size")    int  size
+    );
 
     int existsByOrderId(@Param("orderId") long orderId);
 
