@@ -1,11 +1,14 @@
 package com.deushu.esg.service;
 
-import com.deushu.esg.mapper.EsgRepository;
-import com.deushu.esg.dto.EsgForestDto;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.deushu.esg.dto.CarbonPreviewDto;
+import com.deushu.esg.dto.EsgForestDto;
+import com.deushu.esg.mapper.EsgRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * ESG 탄소 절감 핵심 비즈니스 로직
@@ -94,5 +97,35 @@ public class EsgService {
         if (totalLevelSum >= 50)  return 3;
         if (totalLevelSum >= 10)  return 2;
         return 1;
+    }
+    
+    
+    /**
+     * 결제 완료 직후 탄소 절감 미리보기 계산
+     *
+     * order_carbon_savings 는 PICKUP_COMPLETED 시에만 저장되므로,
+     * PAYMENT_COMPLETED 시점에는 order_items × carbon_emission_factors 를 동적으로 계산합니다.
+     *
+     * carbon_emission_factors 기본 데이터:
+     *   BAKERY   → 0.60 kg / 33일
+     *   SUSHI    → 1.20 kg / 66일
+     *   LUNCHBOX → 2.00 kg / 110일
+     *   CAFE     → 0.40 kg / 22일
+     *   SIDEDISH → 0.80 kg / 44일
+     *
+     * @param orderId 결제 완료된 주문 ID
+     * @return CarbonPreviewDto (category, totalCarbonKg, totalTreeDays)
+     */
+    public CarbonPreviewDto calcCarbonPreview(Long orderId) {
+        CarbonPreviewDto preview = esgRepository.calcOrderCarbonPreview(orderId);
+        if (preview == null) {
+            // carbon_emission_factors 미설정 또는 주문 없음 — 빈 DTO 반환
+            CarbonPreviewDto empty = new CarbonPreviewDto();
+            empty.setCategory("LUNCHBOX");
+            empty.setTotalCarbonKg(0.0);
+            empty.setTotalTreeDays(0);
+            return empty;
+        }
+        return preview;
     }
 }

@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.deushu.esg.service.EsgService;
 import com.deushu.order.domain.OrderEntity;
 import com.deushu.order.dto.OrderQrDto;
 import com.deushu.order.dto.PickupVerifyResponse;
@@ -27,7 +28,7 @@ public class OrderQrService {
 
     private final OrderMapper orderMapper;
     private final StoreMapper storeMapper;
-
+    private final EsgService esgService;
     // ── 고객: QR 코드 정보 조회 ──────────────────────────────────────
 
     /**
@@ -132,5 +133,17 @@ public class OrderQrService {
         // 상태 변경 (신규 쿼리: pickupCode 기반)
         orderMapper.updateStatusByPickupCode(pickupCode, "PICKUP_COMPLETED");
         log.info("[PickupComplete] pickupCode={} → PICKUP_COMPLETED", pickupCode);
+        
+        // ★ 4. ESG 탄소 절감 처리
+        //      order_carbon_savings 저장 + virtual_forests 누적 업데이트
+        //      order.getMemberId() 는 주문자(고객) ID
+        try {
+            esgService.processPickupCompletion(order.getId(), order.getMemberId());
+        } catch (Exception e) {
+            // ESG 처리 실패가 픽업 완료 자체를 롤백시키지 않도록 로그만 기록
+            // (탄소 데이터는 보조 기능 — 픽업 완료가 핵심 트랜잭션)
+            log.error("[ESG] 탄소 절감 처리 실패 — orderId: {}, memberId: {} | {}",
+                    order.getId(), order.getMemberId(), e.getMessage());
+        }
     }
 }

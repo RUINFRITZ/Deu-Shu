@@ -1,9 +1,11 @@
 package com.deushu.esg.mapper;
 
-import com.deushu.esg.dto.EsgForestDto;
-import com.deushu.esg.dto.OrderCarbonSavingDto;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+
+import com.deushu.esg.dto.CarbonPreviewDto;
+import com.deushu.esg.dto.EsgForestDto;
+import com.deushu.esg.dto.OrderCarbonSavingDto;
 
 /**
  * ESG 탄소 절감 전용 MyBatis Mapper
@@ -70,4 +72,13 @@ public interface EsgRepository {
 
     /** 현재 누적 소나무 일수 조회 (레벨 계산용) */
     Long getCumulativeDays(@Param("memberId") Long memberId);
+    
+    /**
+     * 결제 완료 직후 탄소 절감 미리보기 계산
+     * order_items × stores.category × carbon_emission_factors 동적 JOIN
+     * → category / totalCarbonKg / totalTreeDays 를 한 번에 반환
+     * (order_carbon_savings 저장 전 PAYMENT_COMPLETED 시점에 호출)
+     */
+    CarbonPreviewDto calcOrderCarbonPreview(@Param("orderId") Long orderId);
+
 }

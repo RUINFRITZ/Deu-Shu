@@ -956,6 +956,14 @@ async function processCheckout(cartItems, totalPrice, storeId) {
 /*
  * PortOne 決済完了後 バックエンド検証
  */
+// ────────────────────────────────────────────────────────────
+// [1] verifyPayment  (기존 함수 수정)
+//
+// 변경점:
+//   - API 응답에서 category 를 직접 받아 openCarbonModal 에 전달
+//     (기존: DOM의 storeCategory 텍스트를 카테고리로 사용 → 한국어/일본어가 섞일 수 있어 switch 미동작)
+//   - ApiResponse 래퍼 언래핑 처리 추가 (json.result ?? json.data ?? json)
+// ────────────────────────────────────────────────────────────
 async function verifyPayment(impUid, orderId) {
     try {
         const verifyRes = await fetch(`/api/v1/orders/${orderId}/payment`, {
@@ -977,19 +985,26 @@ async function verifyPayment(impUid, orderId) {
 	        // ★ 탄소 절감 모달 표시 (결제 완료 직후)
 	        try {
 	            const carbonRes  = await fetch(`/api/v1/mypage/orders/${orderId}/carbon`);
-	            const carbonData = await carbonRes.json();
-	            // 가게 카테고리는 이미 DOM에 렌더링된 값 사용
-	            const storeCategory = document.getElementById('storeCategory')?.textContent?.trim() || 'LUNCHBOX';
-	            openCarbonModal(carbonData.totalCarbonKg || 0, carbonData.totalTreeDays || 0, storeCategory);
-	        } catch (carbonErr) {
-	            // 탄소 모달 실패 시 조용히 무시하고 기존 흐름 유지
-	            console.warn('[탄소 모달] 데이터 조회 실패:', carbonErr);
-	            showToast('決済が正常に完了しました！マイページへ移動します。', 'success');
-	            setTimeout(() => { window.location.href = '/mypage'; }, 1500);
-	        }
-	    } else {
-	        showToast(verifyData.message || '決済の検証に失敗しました。', 'error');
-	    }
+				const carbonJson = await carbonRes.json();
+
+	            // ApiResponse 래퍼 언래핑 (result / data 필드 모두 대응)
+		        const carbonData = carbonJson.result ?? carbonJson.data ?? carbonJson;
+
+				const carbonKg   = carbonData.totalCarbonKg  || 0;
+				const treeDays   = carbonData.totalTreeDays   || 0;
+				// API 가 반환하는 category 는 DB ENUM 값 (BAKERY/SUSHI/LUNCHBOX/CAFE/SIDEDISH)
+				const category   = carbonData.category        || 'LUNCHBOX';
+				openCarbonModal(carbonKg, treeDays, category);
+
+				} catch (carbonErr) {
+              // 탄소 모달 조회 실패 시 조용히 무시하고 기존 흐름 유지
+				console.warn('[탄소 모달] 데이터 조회 실패:', carbonErr);
+				showToast('決済が正常に完了しました！マイページへ移動します。', 'success');
+				setTimeout(() => { window.location.href = '/mypage'; }, 1500);
+				}
+			} else {
+	        	showToast(verifyData.message || '決済の検証に失敗しました。', 'error');
+			}
 	} catch (error) {
 	    console.error("検証プロセス中にエラーが発生:", error);
 	    showToast('サーバー通信エラーが発生しました。', 'error');
@@ -1141,48 +1156,100 @@ function openPhotoOverlay(url) {
     overlay.classList.add('active');
 }
 
+// ────────────────────────────────────────────────────────────
+// [2] openCarbonModal  (기존 함수 교체)
+//
+// 변경점:
+//   - 버그 수정: getElementById('carbonAmountDisplay') → 'carbonKgDisplay'
+//     (HTML 에 carbonKgDisplay 로 선언되어 있어 기존 코드는 null 참조)
+//   - treeDaysDisplay 형식 통일: "約XX日分" / "約X年X日分"
+//   - carbon_emission_factors 스키마 기반 카테고리별 메시지 + 수치 표시
+//     BAKERY   → パン    0.60 kg / 33日
+//     SUSHI    → お寿司  1.20 kg / 66日
+//     LUNCHBOX → お弁当  2.00 kg / 110日
+//     CAFE     → デザート 0.40 kg / 22日
+//     SIDEDISH → お惣菜  0.80 kg / 44日
+//   - SIDEDISH 케이스 추가 (기존 switch에서 누락)
+// ────────────────────────────────────────────────────────────
+ 
 /**
  * 탄소 절감 모달 열기
- * 하드코딩 예시: openCarbonModal(2.40, 110, 'LUNCHBOX')
  *
- * 실제 사용 시 주문 완료 콜백에서 아래처럼 호출:
- *   // PortOne 결제 완료 콜백 안에서
- *   const carbonRes = await fetch(`/api/v1/mypage/${orderId}/carbon`);
- *   const carbonData = await carbonRes.json();
- *   openCarbonModal(carbonData.totalCarbonKg, carbonData.totalTreeDays, category);
- *
- * @param {number}  carbonKg   절감한 탄소량 (kg)
- * @param {number}  treeDays   소나무 환산 일수
- * @param {string}  category   카테고리 (BAKERY/SUSHI/LUNCHBOX/CAFE/SIDEDISH)
+ * @param {number} carbonKg   절감한 총 탄소량 (kg) — DB: order_items × carbon_emission_factors.carbon_kg
+ * @param {number} treeDays   소나무 환산 일수       — DB: order_items × carbon_emission_factors.tree_days
+ * @param {string} category   DB ENUM 값: BAKERY / SUSHI / LUNCHBOX / CAFE / SIDEDISH
  */
 function openCarbonModal(carbonKg, treeDays, category) {
-    // 카테고리별 메시지 매핑 (하드코딩 예시)
-    const categoryMessages = {
-        'BAKERY':   'パン1つを救って、松の木が<strong style="color:#065f46;">約##日分</strong>働く量のCO₂を削減！パン屋さんとあなたで地球を守りました。🍞',
-        'SUSHI':    'お寿司を救って、松の木が<strong style="color:#065f46;">約##日分</strong>働く量のCO₂を削減！新鮮な食材が無駄にならずに済みました。🍱',
-        'LUNCHBOX': '今日あなたが救ったお弁当1つで、松の木が<strong style="color:#065f46;">約##日分</strong>吸収するCO₂をあなた自身が代わりに削減しました。🌿',
-        'CAFE':     'カフェのフードを救って、松の木が<strong style="color:#065f46;">約##日分</strong>働く量のCO₂を削減！コーヒーブレイクも環境貢献になります。☕',
-        'SIDEDISH': 'お惣菜を救って、松の木が<strong style="color:#065f46;">約##日分</strong>働く量のCO₂を削減！地域のお惣菜屋さんとともに地球に優しい選択を。🥗'
-    };
  
-    // 표시 값 업데이트
-    document.getElementById('carbonKgDisplay').textContent = Number(carbonKg).toFixed(2);
+    // ── 수치 표시 ──────────────────────────────────────────
+    // HTML id: carbonKgDisplay (주의: carbonAmountDisplay 아님)
+    const carbonKgEl = document.getElementById('carbonKgDisplay');
+    if (carbonKgEl) carbonKgEl.textContent = Number(carbonKg).toFixed(2);
  
-    // 소나무 일수 포맷
-    let treeDaysText = '約' + treeDays + '日分';
-    if (treeDays >= 365) {
-        const years = Math.floor(treeDays / 365);
-        const remain = treeDays % 365;
-        treeDaysText = remain === 0 ? '約' + years + '年分' : '約' + years + '年' + remain + '日分';
+    // "約XX日分" / "約X年X日分" 형식
+    const treeDaysEl = document.getElementById('treeDaysDisplay');
+    if (treeDaysEl) treeDaysEl.textContent = formatTreeDays(treeDays);
+ 
+    let itemName    = "食品";   // fallback
+    let itemEmoji   = "🍱";
+    let perItemKg   = null;    // carbon_emission_factors.carbon_kg (1개당)
+    let perItemDays = null;    // carbon_emission_factors.tree_days (1개당)
+ 
+    switch (category) {
+        case 'BAKERY':
+            itemName    = "パン";
+            itemEmoji   = "🥖";
+            perItemKg   = 0.60;
+            perItemDays = 33;
+            break;
+        case 'SUSHI':
+            itemName    = "お寿司";
+            itemEmoji   = "🍱";
+            perItemKg   = 1.20;
+            perItemDays = 66;
+            break;
+        case 'LUNCHBOX':
+            itemName    = "お弁当";
+            itemEmoji   = "🍱";
+            perItemKg   = 2.00;
+            perItemDays = 110;
+            break;
+        case 'CAFE':
+            itemName    = "デザート";
+            itemEmoji   = "🍰";
+            perItemKg   = 0.40;
+            perItemDays = 22;
+            break;
+        case 'SIDEDISH':
+            itemName    = "お惣菜";
+            itemEmoji   = "🥗";
+            perItemKg   = 0.80;
+            perItemDays = 44;
+            break;
+        default:
+            itemName    = "食品";
+            itemEmoji   = "🌿";
     }
-    document.getElementById('treeDaysDisplay').textContent = treeDaysText;
  
-    // 카테고리별 메시지 (없으면 기본 메시지)
-    const cat = (category || 'LUNCHBOX').toUpperCase();
-    const msgTemplate = categoryMessages[cat] || categoryMessages['LUNCHBOX'];
-    document.getElementById('carbonMessage').innerHTML = msgTemplate.replace('##', treeDays);
+    // ── 기여도 메시지 업데이트 ──────────────────────────────
+    const messageEl = document.getElementById('carbonMessage');
+    if (messageEl) {
+        // 품목 1개당 절감량이 있으면 함께 표시 (carbon_emission_factors 수치)
+        const perItemNote = perItemKg
+            ? `<span style="font-size:0.85em;color:#6b7280;">
+                   （${itemName} 1個あたり ${perItemKg}kg・${formatTreeDays(perItemDays)}）
+               </span><br>`
+            : '';
  
-    // 모달 오픈
+        messageEl.innerHTML = `
+            今日あなたが救った${itemEmoji} <strong>${itemName}</strong> で、<br>
+            ${perItemNote}
+            松の木が <strong style="color:#065f46;">${formatTreeDays(treeDays)}</strong> 吸収するCO₂を<br>
+            あなた自身が代わりに削減しました。🌿
+        `;
+    }
+ 
+    // ── 모달 표시 ─────────────────────────────────────────
     document.getElementById('carbonOverlay').classList.add('open');
     document.body.style.overflow = 'hidden';
 }
@@ -1196,33 +1263,20 @@ function handleCarbonOverlayClick(e) {
     if (e.target === document.getElementById('carbonOverlay')) closeCarbonModal();
 }
  
-/*
- * [실제 연동 예시 — 하드코딩 부분을 이 코드로 교체]
- * PortOne 결제 완료 콜백에서 호출:
- *
- * IMP.request_pay({ ... }, async function(rsp) {
- *     if (rsp.success) {
- *         // 1. 결제 검증
- *         const verifyRes = await fetch(`/api/v1/orders/${orderId}/payment`, { ... });
- *         const verifyData = await verifyRes.json();
- *         if (verifyData.isSuccess) {
- *             // 2. 탄소 절감량 조회
- *             const carbonRes = await fetch(`/api/v1/mypage/${orderId}/carbon`);
- *             const carbonData = await carbonRes.json();
- *             // 3. 모달 오픈
- *             openCarbonModal(carbonData.totalCarbonKg, carbonData.totalTreeDays, storeCategory);
- *         }
- *     }
- * });
- *
- * [하드코딩 데모 실행 예시 (테스트용 버튼)]
+/**
+ * 소나무 일수를 "約XX日分" / "約X年X日分" 형식으로 포맷
+ * @param {number} days
+ * @returns {string}
  */
-document.addEventListener('DOMContentLoaded', function() {
-    // 테스트용: 하드코딩 데이터로 모달 자동 오픈 여부
-    // URL 파라미터에 ?demo=carbon 이 있을 때만 자동 오픈 (개발 테스트용)
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('demo') === 'carbon') {
-        // 하드코딩 예시 데이터 (LUNCHBOX 1개 주문)
-        setTimeout(() => openCarbonModal(2.40, 110, 'LUNCHBOX'), 500);
+function formatTreeDays(days) {
+    if (!days || days <= 0) return "約0日分";
+    const d = Math.round(days);
+    if (d >= 365) {
+        const years  = Math.floor(d / 365);
+        const remain = d % 365;
+        return remain === 0
+            ? `約${years}年分`
+            : `約${years}年${remain}日分`;
     }
-});
+    return `約${d}日分`;
+}

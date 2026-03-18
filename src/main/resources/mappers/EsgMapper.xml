@@ -23,6 +23,16 @@
         <result property="totalCarbonKg"  column="total_carbon_kg"/>
         <result property="totalTreeDays"  column="total_tree_days"/>
     </resultMap>
+    
+    <!--
+        CarbonPreviewDto 전용 resultMap
+        결제 완료 직후 모달용: category + 동적 계산값 포함
+    -->
+    <resultMap id="carbonPreviewResultMap" type="com.deushu.esg.dto.CarbonPreviewDto">
+        <result property="category"      column="category"/>
+        <result property="totalCarbonKg" column="total_carbon_kg"/>
+        <result property="totalTreeDays" column="total_tree_days"/>
+    </resultMap>
 
     <!-- ============================================================
          마이페이지 ESG 섹션 — 특정 회원의 숲 정보 조회
@@ -59,6 +69,35 @@
         FROM order_carbon_savings
         WHERE order_id = #{orderId}
     </select>
+    
+    <!-- ============================================================
+         결제 완료 직후 탄소 절감 미리보기 (PAYMENT_COMPLETED 시점 호출)
+ 
+         order_items × items × stores.category × carbon_emission_factors 를
+         한 번에 JOIN 하여 category / totalCarbonKg / totalTreeDays 를 반환합니다.
+ 
+         carbon_emission_factors 기본 데이터 (Schema V1.5):
+           BAKERY   → 0.60 kg / 33일
+           SUSHI    → 1.20 kg / 66일
+           LUNCHBOX → 2.00 kg / 110일
+           CAFE     → 0.40 kg / 22일
+           SIDEDISH → 0.80 kg / 44일
+    ============================================================ -->
+    <select id="calcOrderCarbonPreview" parameterType="Long" resultMap="carbonPreviewResultMap">
+        SELECT
+            s.category                                              AS category,
+            COALESCE(SUM(oi.quantity * cef.carbon_kg), 0.0)        AS total_carbon_kg,
+            COALESCE(SUM(oi.quantity * cef.tree_days), 0)          AS total_tree_days
+        FROM order_items oi
+        JOIN items i
+          ON oi.item_id = i.id
+        JOIN stores s
+          ON i.store_id = s.id
+        JOIN carbon_emission_factors cef
+          ON s.category = cef.category
+        WHERE oi.order_id = #{orderId}
+        GROUP BY s.category
+    </select>    
 
     <!-- ============================================================
          픽업 완료 처리 — 탄소량 계산

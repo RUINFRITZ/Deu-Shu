@@ -7,12 +7,10 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.deushu.esg.dto.EsgForestDto;
-import com.deushu.esg.dto.OrderCarbonSavingDto;
 import com.deushu.esg.mapper.EsgRepository;
 import com.deushu.member.mapper.MemberRepository;
 import com.deushu.order.dto.MyPageOrderResponseDto;
@@ -168,44 +166,5 @@ public class MyPageApiController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("サーバーエラーが発生しました。");
         }
     }
- 
-    /*
-     * [추가] FR-ESG-03: 특정 주문의 탄소 절감량 조회 (결제 완료 모달용)
-     * GET /api/v1/orders/{orderId}/carbon
-     * 인증 필요 (세션)
-     * 반환: { orderId, totalCarbonKg, totalTreeDays, treeDaysMessage }
-     */
-    @GetMapping("/orders/{orderId}/carbon")
-    public ResponseEntity<?> getOrderCarbonSaving(@PathVariable Long orderId, HttpSession session) {
-        Long loginMemberId = (Long) session.getAttribute("memberId");
- 
-        if (loginMemberId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("ログインが必要です。");
-        }
- 
-        try {
-            OrderCarbonSavingDto saving = esgRepository.findOrderCarbonSaving(orderId);
- 
-            if (saving == null) {
-                // 픽업 완료 전이거나 아직 계산 전 — 빈 응답 반환
-                Map<String, Object> empty = new HashMap<>();
-                empty.put("orderId",         orderId);
-                empty.put("totalCarbonKg",   0.0);
-                empty.put("totalTreeDays",   0);
-                empty.put("treeDaysMessage", "約0日分");
-                return ResponseEntity.ok(empty);
-            }
- 
-            Map<String, Object> result = new HashMap<>();
-            result.put("orderId",         saving.getOrderId());
-            result.put("totalCarbonKg",   saving.getTotalCarbonKg());
-            result.put("totalTreeDays",   saving.getTotalTreeDays());
-            result.put("treeDaysMessage", saving.getTreeDaysMessage());
- 
-            return ResponseEntity.ok(result);
-        } catch (Exception e) {
-            log.error("❌ 注文タンソデータの取得中にエラーが発生しました: ", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("サーバーエラーが発生しました。");
-        }
-    }
+
 }

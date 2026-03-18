@@ -12,18 +12,21 @@
     <select id="findOrderByPickupCode"
             parameterType="string"
             resultType="com.deushu.order.domain.OrderEntity">
-        SELECT
-            id,
-            member_id   AS memberId,
-            store_id    AS storeId,
-            order_status AS orderStatus,
-            total_price  AS totalPrice,
-            pickup_code  AS pickupCode,
-            created_at   AS createdAt,
-            updated_at   AS updatedAt
-        FROM orders
-        WHERE pickup_code = #{pickupCode}
-        LIMIT 1
+	    SELECT
+	        o.id,
+	        o.member_id   AS memberId,
+	        o.store_id    AS storeId,
+	        o.order_status AS orderStatus,
+	        o.total_price  AS totalPrice,
+	        o.pickup_code  AS pickupCode,
+	        o.created_at   AS createdAt,
+	        o.updated_at   AS updatedAt,
+	        s.name         AS storeName,   <!-- 준성 추가 -->
+	        s.category     AS category     <!-- 준성 추가 -->
+	    FROM orders o
+	    JOIN stores s ON s.id = o.store_id
+	    WHERE o.pickup_code = #{pickupCode}
+	    LIMIT 1
     </select>
 
     <!-- ══════════════════════════════════════════════════════════════
@@ -172,6 +175,45 @@
         SELECT *
         FROM order_items
         WHERE order_id = #{orderId}
+    </select>
+    
+     <!-- ══════════════════════════════════════════════════════════════
+         ★ 신규: 오너 페이지 — 결제 완료 대기 주문 목록
+         GET /api/owner/orders/pending-pickup
+ 
+         PAYMENT_COMPLETED 상태인 주문을 결제 시각 오래된 순(ASC)으로 반환.
+         대기 시간이 긴 고객이 위에 표시되어 오너가 순서대로 처리 가능.
+    ══════════════════════════════════════════════════════════════ -->
+    <resultMap id="pendingPickupResultMap"
+               type="com.deushu.order.dto.PendingPickupOrderDto">
+        <result property="orderId"    column="order_id"/>
+        <result property="pickupCode" column="pickup_code"/>
+        <result property="totalPrice" column="total_price"/>
+        <result property="itemCount"  column="item_count"/>
+        <result property="createdAt"  column="created_at"/>
+    </resultMap>
+ 
+    <select id="findPendingPickupOrders"
+            parameterType="long"
+            resultMap="pendingPickupResultMap">
+        SELECT
+            o.id                                             AS order_id,
+            o.pickup_code,
+            o.total_price,
+            COUNT(oi.id)                                     AS item_count,
+            DATE_FORMAT(o.created_at, '%Y-%m-%d %H:%i')     AS created_at,
+            GROUP_CONCAT(
+                CONCAT(i.name, ' ×', oi.quantity)
+                ORDER BY oi.id ASC
+                SEPARATOR ' / '
+            )                                                AS item_summary
+        FROM orders o
+        JOIN order_items oi ON oi.order_id = o.id
+        JOIN items       i  ON i.id        = oi.item_id
+        WHERE o.store_id     = #{storeId}
+          AND o.order_status = 'PAYMENT_COMPLETED'
+        GROUP BY o.id, o.pickup_code, o.total_price, o.created_at
+        ORDER BY o.created_at ASC
     </select>
     
 </mapper>

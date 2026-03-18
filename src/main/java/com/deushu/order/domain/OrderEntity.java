@@ -14,4 +14,9 @@ public class OrderEntity {
     private String pickupCode; // UUID
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    
+    // 준성 추가
+    
+    private String storeName;
+    private String category ;
 }

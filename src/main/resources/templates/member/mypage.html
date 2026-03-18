@@ -515,6 +515,28 @@
 	    from { opacity: 0; transform: translateY(20px); }
 	    to   { opacity: 1; transform: translateY(0); }
 	}
+	/* =============================================
+	   준비중 섹션
+	============================================= */
+	
+	.coming-soon {
+	    background: #fff;
+	    border: 1px solid var(--border);
+	    border-radius: 12px;
+	    padding: 4rem 2rem;
+	    text-align: center;
+	    color: var(--light-gray);
+	}
+	
+	.coming-soon i {
+	    font-size: 3rem;
+	    margin-bottom: 1rem;
+	    display: block;
+	}
+	
+	.coming-soon p {
+	    font-size: 0.925rem;
+	}
 	
 	/* =============================================
 	   ★ 수정: ESG 섹션 — 탄소 절감량 + 숲 gif 표시
@@ -567,7 +589,7 @@
 	    margin-top: 0.6rem;
 	    line-height: 1.6;
 	}
-
+	
 	/* 숲 레벨 배지 */
 	.esg-level-badge {
 	    display: inline-flex;
@@ -583,8 +605,6 @@
 
 	/* 소나무 SVG 애니메이션 컨테이너 */
 	.esg-forest-svg-wrap {
-	    width: 110px;
-	    height: 110px;
 	    flex-shrink: 0;
 	    display: flex;
 	    align-items: center;
@@ -737,28 +757,6 @@
 	    line-height: 1.7;
 	}
 
-	/* =============================================
-	   준비중 섹션
-	============================================= */
-	
-	.coming-soon {
-	    background: #fff;
-	    border: 1px solid var(--border);
-	    border-radius: 12px;
-	    padding: 4rem 2rem;
-	    text-align: center;
-	    color: var(--light-gray);
-	}
-	
-	.coming-soon i {
-	    font-size: 3rem;
-	    margin-bottom: 1rem;
-	    display: block;
-	}
-	
-	.coming-soon p {
-	    font-size: 0.925rem;
-	}
 	
 	/* =============================================
 	   회원 탈퇴
@@ -805,18 +803,21 @@
 	
 	/* =============================================
 	   Card Grid Layout (厳密な 2 x n 配列)
+	   データが1件だけでも、必ず左側に半分のサイズで配置されます。
 	============================================= */
 	.card-grid-container {
 	    display: grid;
+	    /* [核心] auto-fit を外し、強制的に「1fr 1fr (1:1の比率)」で2列に固定します */
 	    grid-template-columns: 1fr 1fr;
-	    gap: 1.5rem;
-	    align-items: stretch;
+	    gap: 1.5rem; /* カード間の余白 */
+	    align-items: stretch; /* カードの高さを揃える */
 	}
 	
 	.card-grid-container.single-col {
 	    grid-template-columns: 1fr;
 	}
 	
+	/* グリッド内のカードの余白調整 */
 	.card-grid-container .info-card {
 	    margin-bottom: 0 !important;
 	    display: flex;
@@ -824,12 +825,10 @@
 	    height: 100%;
 	}
 	
+	/* モバイルレスポンシブ対応: 画面幅が狭い場合は1列(1fr)に変更 */
 	@media screen and (max-width: 768px) {
 	    .card-grid-container {
 	        grid-template-columns: 1fr;
-	    }
-	    .esg-stats-grid {
-	        grid-template-columns: 1fr 1fr;
 	    }
 	}
 	</style>
@@ -931,7 +930,7 @@
             </div>
         </section>
 
-        <!-- ★ 수정: ESG 섹션 전면 개편 — 탄소 절감량 + 숲 gif -->
+<!-- ★ 수정: ESG 섹션 전면 개편 — 탄소 절감량 + 숲 gif -->
         <section class="mypage-section" id="section-esg">
             <h2 class="section-title">🌱 エコ活動</h2>
 
@@ -1098,6 +1097,7 @@
             </div>
         </section>
 
+
         <!-- 찜한 가게 -->
         <section class="mypage-section" id="section-favorites">
             <h2 class="section-title">お気に入り</h2>
@@ -1115,7 +1115,7 @@
             <div class="danger-card">
                 <div class="danger-card-title">退会する前にご確認ください</div>
                 <p>
-                    退会すると、ご注文履歴・ESGエコ活動・お気に入りなど<br>
+                    退会すると、ご注文履歴・エコ活動・お気に入りなど<br>
                     すべてのデータが削除され、復元できません。<br>
                     本当に退会しますか？
                 </p>
@@ -1221,10 +1221,7 @@
 
 <script>
 const DEFAULT_ITEM_IMAGE = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIiB2aWV3Qm94PSIwIDAgMTUwIDE1MCI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIxNTAiIHJ4PSIxMCIgZmlsbD0iI0Y4RkFGRCIvPjwvc3ZnPg==';
-
-/*
- * ★ 수정: switchSection — esg 탭 클릭 시 loadEsgForest() 추가 호출
- */
+// 섹션 전환
 function switchSection(name, btn) {
     document.querySelectorAll('.mypage-section').forEach(function(s) {
         s.classList.remove('active');
@@ -1234,18 +1231,6 @@ function switchSection(name, btn) {
     });
     document.getElementById('section-' + name).classList.add('active');
     if (btn) btn.classList.add('active');
-
-    // タブがクリックされた瞬間にデータをフェッチ(ネットワークコストの最適化)
-    if (name === 'orders') {
-        loadOrderHistory();
-    } else if (name === 'pickup') {
-        loadTodayPickupOrders();
-    } else if (name === 'favorites') {
-        loadFavorites();
-    } else if (name === 'esg') {
-        // ★ 추가: ESG 탭 전환 시 데이터 로드
-        loadEsgForest();
-    }
 }
 
 // 정보수정 모달 열기
@@ -1288,6 +1273,8 @@ function handleSaveAll() {
     if (!lastNameKana || !firstNameKana) { alert('フリガナを入力してください'); return; }
     if (!phone)                          { alert('電話番号を入力してください'); return; }
 
+    // 비밀번호 변경 시 — 현재/새 비밀번호 중 하나라도 입력했으면 둘 다 필요
+    // (둘 다 비어있으면 비밀번호 변경 안 함 → 이름/전화번호만 수정)
     if (currentPw && !newPw)  { alert('新しいパスワードを入力してください'); return; }
     if (newPw && !currentPw)  { alert('現在のパスワードを入力してください'); return; }
     if (newPw && newPw !== newPwConfirm) { alert('新しいパスワードが一致しません'); return; }
@@ -1300,15 +1287,18 @@ function handleSaveAll() {
     .then(function(res) { return res.json(); })
     .then(function(data) {
         if (data.success) {
+            // 비밀번호 변경 여부에 따라 다른 토스트 메시지 표시
             var toastMsg = (currentPw && newPw)
                 ? 'パスワードと情報が更新されました'
                 : '情報が更新されました';
 
+            // 토스트를 먼저 띄운 후 모달 닫기 (토스트가 가려지지 않도록)
             showToast(toastMsg, 'success');
             setTimeout(function() {
                 closeEditModal();
             }, 300);
 
+            // 화면 정보 즉시 갱신
             document.getElementById('infoName').textContent  = lastName + ' ' + firstName;
             document.getElementById('infoKana').textContent  = lastNameKana + ' ' + firstNameKana;
             document.getElementById('infoPhone').textContent = phone;
@@ -1319,14 +1309,14 @@ function handleSaveAll() {
         }
     })
     .catch(function() { showToast('サーバーエラーが発生しました', 'error'); });
-}
+}// 페이지 로드 시 회원 정보 불러오기
 
-// 페이지 로드 시 회원 정보 불러오기
 document.addEventListener('DOMContentLoaded', function() {
     fetch('/api/auth/me')
     .then(function(res) { return res.json(); })
     .then(function(data) {
         if (!data.success) {
+            // 비로그인 시 메인으로 리다이렉트
             location.href = '/';
             return;
         }
@@ -1349,13 +1339,13 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('editLastNameKana').value  = data.lastNameKana  || '';
         document.getElementById('editFirstNameKana').value = data.firstNameKana || '';
         document.getElementById('editPhone').value         = data.phone         || '';
-    })
+        var esgPointEl = document.getElementById('esgPoint');
+        if (esgPointEl) esgPointEl.innerHTML = (data.esgPoint || 0) + '<span>pt</span>';
+        })
     .catch(function() {
+    	console.error('[MyPage] 초기화 오류:', err); // ← 에러 원인 출력
         location.href = '/';
     });
-
-    // ★ 추가: 페이지 로드 시 픽업 탭(기본 활성) 데이터 로드
-    loadTodayPickupOrders();
 });
 
 // 退会 — POST /api/auth/withdraw
@@ -1380,6 +1370,7 @@ function handleWithdraw() {
 async function loadTodayPickupOrders() {
     const container = document.getElementById('pickupContainer');
     
+    // ローディング状態のUI表示
     container.innerHTML = `
         <div class="coming-soon">
             <i class="bi bi-hourglass-split spinner-border"></i>
@@ -1387,6 +1378,7 @@ async function loadTodayPickupOrders() {
         </div>`;
 
     try {
+        // API呼び出し (べさんが作成したコントローラーのURLに合わせて適宜修正してください)
         const response = await fetch('/api/v1/mypage/orders/today');
         
         if (!response.ok) {
@@ -1411,72 +1403,6 @@ async function loadTodayPickupOrders() {
     }
 }
 
-// ★ 추가: ESG 숲 데이터 로드 및 렌더링
-async function loadEsgForest() {
-    try {
-        const res = await fetch('/api/v1/mypage/esg');
-        if (res.status === 401) {
-            showToast('ログインセッションが切れました。', 'error');
-            setTimeout(() => location.href = '/', 1500);
-            return;
-        }
-        if (!res.ok) throw new Error('サーバーエラー: ' + res.status);
-
-        const data = await res.json();
-        renderEsgForest(data);
-
-    } catch (error) {
-        console.error('[ESG] データの取得失敗:', error);
-    }
-}
-
-// ★ 추가: ESG 데이터를 DOM에 렌더링
-function renderEsgForest(data) {
-    const carbon    = data.cumulativeCarbon  || 0;
-    const days      = data.cumulativeDays    || 0;
-    const trees     = data.treeCount         || 0;
-    const level     = data.forestLevel       || 1;
-    const levelName = data.forestLevelName   || '種（たね）';
-    const gifPath   = data.forestGifPath     || '/images/esg/forest-level1.gif';
-    const daysLeft  = data.daysUntilNextLevel || 365;
-
-    // 탄소량 표시
-    document.getElementById('esgCarbonKg').textContent = Number(carbon).toFixed(2);
-
-    // 숲 레벨 배지
-    document.getElementById('esgLevelName').textContent = levelName;
-
-    // 소나무 SVG — 해당 레벨만 표시
-    document.querySelectorAll('#esgForestSvg .pine-anim').forEach(el => {
-        el.classList.toggle('active', parseInt(el.dataset.level) === level);
-    });
-
-    // 통계 카드
-    document.getElementById('esgTreeCount').textContent      = trees;
-    document.getElementById('esgCumulativeDays').textContent = days;
-    document.getElementById('esgForestLevelNum').textContent = level;
-
-    // 다음 레벨 진행 바 계산
-    const currentLevelStart = Math.floor(days / 365) * 365;
-    const nextLevelDays = currentLevelStart + 365;
-    const progressPct = Math.min(((days - currentLevelStart) / 365) * 100, 100);
-
-    document.getElementById('esgDaysLeft').textContent    = daysLeft;
-    document.getElementById('esgTotalDays').textContent   = days;
-    document.getElementById('esgNextLevelDays').textContent = nextLevelDays;
-    document.getElementById('esgProgressBar').style.width = progressPct.toFixed(1) + '%';
-
-    // 탄소 절감 기여도 메시지 (레벨에 따라 변경)
-    const messages = {
-        1: '🌱 まだ始まったばかり。食品を救うたびに、<strong>30年生の松の木が数日分</strong>の働きをします。',
-        2: '🌿 苗木が育ってきました！地球への貢献が着実に積み上がっています。これからも一緒に頑張りましょう。',
-        3: '🌳 小さな森を育てています。あなたの行動が<strong>地域の食品ロス削減</strong>に直接貢献しています。',
-        4: '🌲 立派な森になりました！あなたのESG活動は周りのお手本です。今後も続けていきましょう。',
-        5: '🏔️ 大きな森の主人公！あなたは<strong>地球環境のヒーロー</strong>です。素晴らしい貢献に感謝します！'
-    };
-    document.getElementById('esgMessageBanner').innerHTML = messages[level] || messages[1];
-}
-
 /*
  * モーダルを開き、QRCode.js を使用してピックアップコード(UUID等)のQRを生成・描画します。
  */
@@ -1486,37 +1412,209 @@ function openQRModal(pickupCode, storeName) {
         return;
     }
 
+    // モーダルのタイトルを店舗名に変更（UX向上）
     const modalHeader = document.querySelector('#qrModal h3');
     if (modalHeader) modalHeader.textContent = `${storeName} 受取用QR`;
 
     const qrContainer = document.getElementById('qrcodeBox');
     if (qrContainer) {
+        // 既存のQRコードを初期化（重複生成防止）
         qrContainer.innerHTML = ''; 
 
+        // QRコードの生成処理
         new QRCode(qrContainer, {
             text: pickupCode,
             width: 180,
             height: 180,
-            colorDark: '#065f46',
-            colorLight: '#ffffff',
-            correctLevel: QRCode.CorrectLevel.M
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
         });
     }
+    
+    const codeTextContainer = document.getElementById('pickupCodeText');
+    if (codeTextContainer) {
+        codeTextContainer.textContent = pickupCode;
+    }
 
-    const codeText = document.getElementById('pickupCodeText');
-    if (codeText) codeText.textContent = pickupCode;
-
+    // 既存のモーダルUIを開くロジックを再利用
     document.getElementById('qrOverlay').classList.add('open');
+	document.getElementById('qrModal').classList.add('open')
     document.body.style.overflow = 'hidden';
 }
 
+// -------------------------------------------------------------------------
+// DOMContentLoaded イベントで初期実行
+// -------------------------------------------------------------------------
+document.addEventListener('DOMContentLoaded', () => {
+    // マイページ進入時、デフォルトでピックアップ情報をロードする
+    loadTodayPickupOrders();
+});
+
+//=========================================================================
+//QRモーダル制御用 JSロジック
+//=========================================================================
+
+//QRモーダルを閉じる
 function closeQRModal() {
-    document.getElementById('qrOverlay').classList.remove('open');
-    document.body.style.overflow = '';
+	document.getElementById('qrOverlay').classList.remove('open');
+	document.getElementById('qrModal').classList.remove('open');
+	document.body.style.overflow = '';
 }
 
+//オーバーレイ(背景)クリック時にQRモーダルを閉じる
 function handleQROverlayClick(e) {
-    if (e.target === document.getElementById('qrOverlay')) closeQRModal();
+	if (e.target === document.getElementById('qrOverlay')) {
+	    closeQRModal();
+	}
+}
+
+/*
+ * 注文履歴データをサーバーから非同期で取得します。
+ */
+async function loadOrderHistory() {
+    const container = document.getElementById('historyContainer');
+    
+    try {
+        // MyPageApiController に追加した全履歴取得APIを呼び出します
+        const response = await fetch('/api/v1/mypage/orders/history');
+        
+        if (!response.ok) {
+            if (response.status === 401) return; // 未認証処理は auth/me 等で制御済みと仮定
+            throw new Error('サーバーエラー: ' + response.status);
+        }
+
+        const orders = await response.json();
+        renderOrderHistory(orders);
+
+    } catch (error) {
+        console.error("[MyPage] 注文履歴の取得失敗:", error);
+        container.innerHTML = `
+            <div class="coming-soon" style="color: var(--error);">
+                <i class="bi bi-exclamation-triangle"></i>
+                <p>データの読み込みに失敗しました。</p>
+            </div>`;
+    }
+}
+
+/*
+ * 本日のピックアップ ＆ 注文履歴 のレンダリングロジック共通化
+ */
+function renderPickupOrders(orders) {
+    const container = document.getElementById('pickupContainer');
+    if (!orders || orders.length === 0) {
+        container.innerHTML = `<div class="coming-soon"><i class="bi bi-box-seam"></i><p>現在、本日受け取る予定の商品はありません。</p></div>`;
+        return;
+    }
+    _renderCards(orders, container, true);
+}
+
+function renderOrderHistory(orders) {
+    const container = document.getElementById('historyContainer');
+    if (!orders || orders.length === 0) {
+        container.innerHTML = `<div class="coming-soon"><i class="bi bi-receipt"></i><p>過去の注文履歴がありません。</p></div>`;
+        return;
+    }
+    _renderCards(orders, container, false);
+}
+
+// カード生成用 共通ヘルパー関数
+function _renderCards(orders, container, isPickupTab) {
+    let html = '<div class="card-grid-container single-col">';
+    
+    orders.forEach(order => {
+        const storeName = order.storeName || '店舗名不明';
+        const totalPrice = order.totalPrice ? order.totalPrice.toLocaleString() : '0';
+        const pickupCode = order.pickupCode || '';
+        const orderTime = order.orderTime || '';
+        const mainItemName = order.mainItemName || '商品名未定';
+        const displayItemName = order.itemCount > 1 ? `${mainItemName} 外 ${order.itemCount - 1}件` : mainItemName;
+        const imgUrl = order.imageUrl || DEFAULT_ITEM_IMAGE;
+        
+        let statusBadge = '';
+        let bottomAction = '';
+
+        // 状態別のUI分岐処理 (CANCELED, EXPIRED から再決済ボタンを削除)
+        if (order.orderStatus === 'PICKUP_COMPLETED') {
+            statusBadge = `<span style="font-size:0.75rem; background:var(--mid-gray); color:#fff; padding:0.2rem 0.6rem; border-radius:4px;">受取完了</span>`;
+            bottomAction = `<span style="color:var(--mid-gray); font-size: 0.95rem; font-weight: bold;">商品の受け取りが完了しました</span>`;
+            
+        } else if (order.orderStatus === 'PAYMENT_COMPLETED') {
+            statusBadge = `<span style="font-size:0.75rem; background:var(--primary); color:#fff; padding:0.2rem 0.6rem; border-radius:4px;">決済完了</span>`;
+            // ピックアップタブならQRボタン表示、履歴タブなら金額強調
+            if (isPickupTab) {
+                bottomAction = `<button class="btn-save" style="padding: 0.8rem 1.6rem; font-size: 1.2rem;" onclick="openQRModal('${pickupCode}', '${storeName}')"><i class="bi bi-qr-code-scan"></i> 受け取り用 QR表示</button>`;
+            } else {
+                bottomAction = `<strong style="font-size:1.4rem; color: var(--primary);">${totalPrice}円</strong>`;
+            }
+            
+        } else if (order.orderStatus === 'PAYMENT_PENDING') {
+            // 決済中断 (5分以内のゴールデンタイム対象のみ再決済ボタンを表示)
+            statusBadge = `<span style="font-size:0.75rem; background:#FF9800; color:#fff; padding:0.2rem 0.6rem; border-radius:4px;">決済中断</span>`;
+            bottomAction = `<button class="btn-save" style="padding: 0.5rem 1rem; font-size: 0.9rem; background: var(--primary);" onclick="executeReorder('${order.orderId}')"><i class="bi bi-arrow-clockwise"></i> 再決済する</button>`;
+            
+        } else {
+            // キャンセル または 期限切れ (ボタン表示なし、履歴として残すのみ)
+            statusBadge = `<span style="font-size:0.75rem; background:var(--error); color:#fff; padding:0.2rem 0.6rem; border-radius:4px;">キャンセル</span>`;
+            bottomAction = `<strong style="font-size:1.4rem; color: var(--mid-gray); text-decoration: line-through;">${totalPrice}円</strong>`;
+        }
+
+        html += `
+            <div class="info-card" style="${order.orderStatus === 'PAYMENT_COMPLETED' && isPickupTab ? 'border-left: 4px solid var(--primary);' : ''} display: flex; flex-direction: column;">
+                
+                <div style="display: flex; gap: 1.5rem; margin-bottom: 1.0rem;">
+                    <div style="flex-shrink: 0;">
+                        <img src="${imgUrl}" alt="${mainItemName}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); opacity: ${order.orderStatus === 'PICKED_UP' || order.orderStatus === 'CANCELED' || order.orderStatus === 'EXPIRED' ? '0.5' : '1'};">
+                    </div>
+                    
+                    <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                        <div style="margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.5rem;">
+                            ${statusBadge}
+                            <span class="info-card-title" style="margin:0; color: var(--primary);"><i class="bi bi-shop"></i> ${storeName}</span>
+                        </div>
+                        <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--charcoal); margin-bottom: 0.4rem;">
+                            ${displayItemName}
+                        </h3>
+                        <p style="font-size: 0.85rem; color: var(--mid-gray); margin: 0;">
+                            決済時間: ${orderTime} &nbsp;|&nbsp; 決済金額: <strong style="color:var(--charcoal); font-size:1rem;">${totalPrice}円</strong>
+                        </p>
+                    </div>
+                </div>
+
+                <div style="border-top: 1px solid #f3f4f6; padding-top: 1rem; display: flex; justify-content: flex-end; align-items: center;">
+                    ${bottomAction}
+                </div>
+
+            </div>
+        `;
+    });
+
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+// =========================================================================
+// 既存の switchSection 関数を拡張し、タブ切り替え時にデータを怠惰ロード(Lazy Load)します
+// =========================================================================
+function switchSection(name, btn) {
+    document.querySelectorAll('.mypage-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.sidebar-nav-item').forEach(b => b.classList.remove('active'));
+    
+    document.getElementById('section-' + name).classList.add('active');
+    if (btn) btn.classList.add('active');
+
+    // タブがクリックされた瞬間にデータをフェッチ(ネットワークコストの最適化)
+    if (name === 'orders') {
+        loadOrderHistory();
+    } else if (name === 'pickup') {
+        loadTodayPickupOrders(); // 既存のピックアップ関数
+    } else if (name === 'favorites') {
+        loadFavorites();
+    }else if (name === 'esg') {
+        // ★ 추가: ESG 탭 전환 시 데이터 로드
+        loadEsgForest();
+    }
+
 }
 
 /*
@@ -1624,6 +1722,7 @@ function renderFavorites(stores) {
 
 /*
  * お気に入りを解除し、アニメーション付きでカードを削除します。
+ * 既存の POST /api/favorites/{storeId}/toggle を再利用します。
  */
 async function removeFavorite(storeId, btn) {
     if (!confirm('お気に入りを解除しますか？')) return;
@@ -1631,12 +1730,14 @@ async function removeFavorite(storeId, btn) {
         const res  = await fetch('/api/favorites/' + storeId + '/toggle', { method: 'POST' });
         const json = await res.json();
         if (!json.favorited) {
+            // カードをフェードアウトしてDOMから削除
             const card = btn.closest('.info-card');
             if (card) {
                 card.style.transition = 'opacity 0.3s';
                 card.style.opacity = '0';
                 setTimeout(() => {
                     card.remove();
+                    // 残りカードがなければ空の状態を再描画
                     const grid = document.querySelector('#favoritesContainer > div');
                     if (grid && grid.children.length === 0) loadFavorites();
                 }, 300);
@@ -1649,30 +1750,35 @@ async function removeFavorite(storeId, btn) {
 }
 
 /*
- * 再決済処理と PortOne 呼び出し関数
+ * 再決済処理と PortOne 呼び出し関数 (バグ修正)
  */
 async function executeReorder(oldOrderId) {
 
+	// 1. 既存のブラウザの confirm() の代わりに、SweetAlert2 の洗練されたモーダルを使用します
     const swalResult = await Swal.fire({
         title: '再決済を行いますか？',
         text: 'この注文内容でもう一度決済を進行します。',
-        icon: 'success',
+        
+        icon: 'success', 
         iconColor: '#065f46',
+        
         showCancelButton: true,
-        confirmButtonColor: '#065f46',
-        cancelButtonColor: '#9ca3af',
+        confirmButtonColor: '#065f46', // ドゥーシューのプライマリーカラー (var(--primary))
+        cancelButtonColor: '#9ca3af',  // ミッドグレー (var(--mid-gray))
         confirmButtonText: 'はい、決済します',
         cancelButtonText: 'キャンセル',
-        reverseButtons: true
+        reverseButtons: true // キャンセルボタンを左、確認ボタンを右に配置 (UXの定石)
     });
 	
     if (!swalResult.isConfirmed) return;
 	
     try {
+        // 2. バックエンドに注文クローンを要請
         const response = await fetch(`/api/v1/orders/${oldOrderId}/reorder`, { method: 'POST' });
         
         if (!response.ok) {
             const errData = await response.json();
+            // ここも Swal に変更可能ですが、緊急エラーなので一旦 alert を維持するか Swal.fire に変更します。
             await Swal.fire({
                 icon: 'error',
                 title: '再決済エラー',
@@ -1697,6 +1803,7 @@ async function executeReorder(oldOrderId) {
             return;
         }
 
+        // 3. PortOne 決済モジュールの呼び出し
         const IMP = window.IMP; 
         IMP.init("imp41118237"); 
         
@@ -1740,90 +1847,10 @@ async function executeReorder(oldOrderId) {
     }
 }
 
-/*
- * 本日のピックアップ注文リストをDOMに描画します。
- * loadTodayPickupOrders() から呼び出されます。
- */
-function renderPickupOrders(orders) {
-    const container = document.getElementById('pickupContainer');
-    if (!orders || orders.length === 0) {
-        container.innerHTML = `
-            <div class="coming-soon">
-                <i class="bi bi-bag-check"></i>
-                <p>本日のピックアップ対象の注文がありません。</p>
-            </div>`;
-        return;
-    }
-
-    let html = '<div class="card-grid-container">';
-    orders.forEach(o => {
-        const statusMap = {
-            'PAYMENT_COMPLETED': { label: '決済完了', color: 'var(--primary)' },
-            'PAYMENT_PENDING':   { label: '決済待ち', color: '#f59e0b' },
-            'PICKUP_COMPLETED':  { label: '受取完了', color: 'var(--mid-gray)' },
-            'CANCELED':          { label: 'キャンセル', color: 'var(--error)' },
-            'EXPIRED':           { label: '期限切れ',  color: 'var(--light-gray)' }
-        };
-        const status  = statusMap[o.orderStatus] || { label: o.orderStatus, color: '#888' };
-        const imgUrl  = o.imageUrl || DEFAULT_ITEM_IMAGE;
-        const itemName = o.mainItemName || '商品';
-        const itemCount = o.itemCount > 1 ? ` 他${o.itemCount - 1}点` : '';
-
-        html += `
-            <div class="info-card" style="margin-bottom:0;">
-                <div style="display:flex; gap:1rem; margin-bottom:0.8rem;">
-                    <img src="${imgUrl}" alt="${itemName}"
-                         style="width:72px; height:72px; object-fit:cover; border-radius:8px;
-                                border:1px solid var(--border); flex-shrink:0;"
-                         onerror="this.style.background='#f3f4f6'; this.removeAttribute('src')">
-                    <div style="flex:1; min-width:0;">
-                        <div style="font-size:0.75rem; font-weight:700; margin-bottom:0.2rem;
-                                    color:${status.color};">
-                            ${status.label}
-                        </div>
-                        <div style="font-size:1rem; font-weight:700; color:var(--charcoal);
-                                    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                            ${itemName}${itemCount}
-                        </div>
-                        <div style="font-size:0.82rem; color:var(--mid-gray); margin-top:0.2rem;">
-                            ${o.storeName || ''}
-                        </div>
-                    </div>
-                </div>
-                <div style="border-top:1px solid #f3f4f6; padding-top:0.6rem;
-                            display:flex; justify-content:space-between; align-items:center;">
-                    <div style="font-size:0.85rem; font-weight:700; color:var(--charcoal);">
-                        ¥${(o.totalPrice || 0).toLocaleString()}
-                    </div>
-                    <div style="font-size:0.78rem; color:var(--mid-gray);">${o.orderTime || ''}</div>
-                </div>
-                ${o.orderStatus === 'PAYMENT_COMPLETED' ? `
-                <div style="margin-top:0.8rem; display:flex; gap:0.5rem;">
-                    <button class="info-edit-btn" style="flex:1; text-align:center;"
-                            onclick="openQRModal('${o.pickupCode}', '${o.storeName}')">
-                        <i class="bi bi-qr-code"></i> QRを表示
-                    </button>
-                </div>` : ''}
-            </div>`;
-    });
-    html += '</div>';
-    container.innerHTML = html;
-}
-
-/*
- * 全注文履歴をサーバーから取得してDOMに描画します。
- * switchSection('orders') から呼び出されます。
- */
-async function loadOrderHistory() {
-    const container = document.getElementById('historyContainer');
-    container.innerHTML = `
-        <div class="coming-soon">
-            <i class="bi bi-hourglass-split"></i>
-            <p>注文履歴を読み込んでいます...</p>
-        </div>`;
-
+//★ 추가: ESG 숲 데이터 로드 및 렌더링
+async function loadEsgForest() {
     try {
-        const res = await fetch('/api/v1/mypage/orders/history');
+        const res = await fetch('/api/v1/mypage/esg');
         if (res.status === 401) {
             showToast('ログインセッションが切れました。', 'error');
             setTimeout(() => location.href = '/', 1500);
@@ -1831,81 +1858,61 @@ async function loadOrderHistory() {
         }
         if (!res.ok) throw new Error('サーバーエラー: ' + res.status);
 
-        const orders = await res.json();
-
-        if (!orders || orders.length === 0) {
-            container.innerHTML = `
-                <div class="coming-soon">
-                    <i class="bi bi-receipt"></i>
-                    <p>注文履歴がありません。</p>
-                </div>`;
-            return;
-        }
-
-        const statusMap = {
-            'PAYMENT_COMPLETED': { label: '決済完了',   color: 'var(--primary)' },
-            'PAYMENT_PENDING':   { label: '決済待ち',   color: '#f59e0b' },
-            'PICKUP_COMPLETED':  { label: '受取完了',   color: 'var(--mid-gray)' },
-            'CANCELED':          { label: 'キャンセル', color: 'var(--error)' },
-            'EXPIRED':           { label: '期限切れ',   color: 'var(--light-gray)' }
-        };
-
-        let html = '<div class="card-grid-container">';
-        orders.forEach(o => {
-            const status    = statusMap[o.orderStatus] || { label: o.orderStatus, color: '#888' };
-            const imgUrl    = o.imageUrl || DEFAULT_ITEM_IMAGE;
-            const itemName  = o.mainItemName || '商品';
-            const itemCount = o.itemCount > 1 ? ` 他${o.itemCount - 1}点` : '';
-
-            html += `
-                <div class="info-card" style="margin-bottom:0;">
-                    <div style="display:flex; gap:1rem; margin-bottom:0.8rem;">
-                        <img src="${imgUrl}" alt="${itemName}"
-                             style="width:72px; height:72px; object-fit:cover; border-radius:8px;
-                                    border:1px solid var(--border); flex-shrink:0;"
-                             onerror="this.style.background='#f3f4f6'; this.removeAttribute('src')">
-                        <div style="flex:1; min-width:0;">
-                            <div style="font-size:0.75rem; font-weight:700; margin-bottom:0.2rem;
-                                        color:${status.color};">
-                                ${status.label}
-                            </div>
-                            <div style="font-size:1rem; font-weight:700; color:var(--charcoal);
-                                        white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                                ${itemName}${itemCount}
-                            </div>
-                            <div style="font-size:0.82rem; color:var(--mid-gray); margin-top:0.2rem;">
-                                ${o.storeName || ''}
-                            </div>
-                        </div>
-                    </div>
-                    <div style="border-top:1px solid #f3f4f6; padding-top:0.6rem;
-                                display:flex; justify-content:space-between; align-items:center;">
-                        <div style="font-size:0.85rem; font-weight:700; color:var(--charcoal);">
-                            ¥${(o.totalPrice || 0).toLocaleString()}
-                        </div>
-                        <div style="font-size:0.78rem; color:var(--mid-gray);">${o.orderTime || ''}</div>
-                    </div>
-                    ${o.orderStatus === 'PAYMENT_COMPLETED' || o.orderStatus === 'PICKUP_COMPLETED' ? `
-                    <div style="margin-top:0.8rem; text-align:right;">
-                        <button class="info-edit-btn"
-                                onclick="executeReorder(${o.orderId})">
-                            <i class="bi bi-arrow-repeat"></i> 再注文
-                        </button>
-                    </div>` : ''}
-                </div>`;
-        });
-        html += '</div>';
-        container.innerHTML = html;
+        const data = await res.json();
+        renderEsgForest(data);
 
     } catch (error) {
-        console.error('[MyPage] 注文履歴の取得失敗:', error);
-        container.innerHTML = `
-            <div class="coming-soon" style="color: var(--error);">
-                <i class="bi bi-exclamation-triangle"></i>
-                <p>データの読み込みに失敗しました。</p>
-            </div>`;
+        console.error('[ESG] データの取得失敗:', error);
     }
 }
+
+// ★ 추가: ESG 데이터를 DOM에 렌더링
+function renderEsgForest(data) {
+    const carbon    = data.cumulativeCarbon  || 0;
+    const days      = data.cumulativeDays    || 0;
+    const trees     = data.treeCount         || 0;
+    const level     = data.forestLevel       || 1;
+    const levelName = data.forestLevelName   || '種（たね）';
+    const gifPath   = data.forestGifPath     || '/images/esg/forest-level1.gif';
+    const daysLeft  = data.daysUntilNextLevel || 365;
+
+    // 탄소량 표시
+    document.getElementById('esgCarbonKg').textContent = Number(carbon).toFixed(2);
+
+    // 숲 레벨 배지
+    document.getElementById('esgLevelName').textContent = levelName;
+
+    // 소나무 SVG — 해당 레벨만 표시
+    document.querySelectorAll('#esgForestSvg .pine-anim').forEach(el => {
+        el.classList.toggle('active', parseInt(el.dataset.level) === level);
+    });
+
+    // 통계 카드
+    document.getElementById('esgTreeCount').textContent      = trees;
+    document.getElementById('esgCumulativeDays').textContent = days;
+    document.getElementById('esgForestLevelNum').textContent = level;
+
+    // 다음 레벨 진행 바 계산
+    const currentLevelStart = Math.floor(days / 365) * 365;
+    const nextLevelDays = currentLevelStart + 365;
+    const progressPct = Math.min(((days - currentLevelStart) / 365) * 100, 100);
+
+    document.getElementById('esgDaysLeft').textContent    = daysLeft;
+    document.getElementById('esgTotalDays').textContent   = days;
+    document.getElementById('esgNextLevelDays').textContent = nextLevelDays;
+    document.getElementById('esgProgressBar').style.width = progressPct.toFixed(1) + '%';
+
+    // 탄소 절감 기여도 메시지 (레벨에 따라 변경)
+    const messages = {
+        1: '🌱 まだ始まったばかり。食品を救うたびに、<strong>30年生の松の木が数日分</strong>の働きをします。',
+        2: '🌿 苗木が育ってきました！地球への貢献が着実に積み上がっています。これからも一緒に頑張りましょう。',
+        3: '🌳 小さな森を育てています。あなたの行動が<strong>地域の食品ロス削減</strong>に直接貢献しています。',
+        4: '🌲 立派な森になりました！あなたのESG活動は周りのお手本です。今後も続けていきましょう。',
+        5: '🏔️ 大きな森の主人公！あなたは<strong>地球環境のヒーロー</strong>です。素晴らしい貢献に感謝します！'
+    };
+    document.getElementById('esgMessageBanner').innerHTML = messages[level] || messages[1];
+}
+
 
 </script>
 

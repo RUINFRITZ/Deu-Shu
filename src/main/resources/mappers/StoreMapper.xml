@@ -5,6 +5,22 @@
 <mapper namespace="com.deushu.store.mapper.StoreMapper">
 
   <!-- 1) 가게 기본 정보 -->
+     <select id="findStoreInfo" parameterType="long"
+            resultType="com.deushu.store.dto.StoreDetailResponse$StoreInfo">
+        SELECT
+            s.id,
+            s.name,
+            s.category,
+            s.address,
+            s.lat,
+            s.lng,
+            s.thumbnail_url AS thumbnailUrl,
+            CAST(s.open_time AS CHAR)  AS openTime,
+            CAST(s.close_time AS CHAR) AS closeTime
+        FROM stores s
+        WHERE s.id = #{storeId}
+   </select>
+   
    <select id="findByStoreId" resultType="com.deushu.review.dto.ReviewListResponse">
         SELECT 
             r.id, 
