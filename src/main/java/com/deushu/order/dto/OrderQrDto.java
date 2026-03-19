@@ -17,7 +17,7 @@ public class OrderQrDto {
 
     private Long   orderId;
     private String pickupCode;    // QR 내용 (UUID)
-    private String orderStatus;   // PAYMENT_COMPLETED / PICKUP_COMPLETED 등
+    private String orderStatus;   // PICKUP_COMPLETED / PAYMENT_COMPLETED / PAYMENT_PENDING / CANCELED / EXPIRED
     private int    totalPrice;
     private String storeName;
     private String createdAt;     // 포맷: yyyy-MM-dd HH:mm

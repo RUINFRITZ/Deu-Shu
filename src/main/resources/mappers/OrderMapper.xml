@@ -107,7 +107,7 @@
 		FROM orders
 		WHERE member_id = #{memberId}
 		AND store_id = #{storeId}
-		AND order_status = 'PAYMENT_COMPLETED'
+		AND order_status = 'PICKUP_COMPLETED'
 		)
 	</select>
 
@@ -149,7 +149,7 @@
 		LEFT JOIN reviews r ON r.order_id = o.id
 		WHERE o.member_id = #{memberId}
 		AND o.store_id = #{storeId}
-		AND o.order_status = 'PAYMENT_COMPLETED'
+		AND o.order_status = 'PICKUP_COMPLETED'
 		ORDER BY o.created_at DESC
 	</select>
     

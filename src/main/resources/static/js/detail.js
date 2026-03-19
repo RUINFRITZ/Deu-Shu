@@ -24,7 +24,7 @@ async function openReviewModal() {
     try {
         const res = await fetch(`/api/v1/orders/my?storeId=${storeId}`);
         if (res.status === 401) {
-            alert('ログインが必要です。');
+            Swal.fire({ title: 'ログインが必要です', text: 'レビューを作成するにはログインしてください。', icon: 'warning', iconColor: '#F28940', confirmButtonColor: '#065f46', confirmButtonText: '確認' });
             document.getElementById('reviewModal').classList.remove('active');
             return;
         }
@@ -51,17 +51,41 @@ function showReviewStep(step) {
     document.getElementById('reviewStep2').style.display = step === 2 ? '' : 'none';
 }
 
+/* =========================================================================
+   [ ドゥーシュー ] レビュー作成のための注文リストレンダリング
+   修正: 受取完了 (PICKUP_COMPLETED) 状態の注文のみをフィルタリングして表示します。
+========================================================================= */
 function renderOrderList(orders) {
     const body = document.getElementById('orderListBody');
-    if (!orders.length) {
-        body.innerHTML = '<p style="color:var(--gray-500);padding:1rem 0;">この店舗での決済完了済み注文がありません。</p>';
+    
+    // 1. ステータスが 'PICKUP_COMPLETED' (受取完了) の注文のみを抽出
+    // ※ バックエンドの DTO フィールド名が 'status' または 'orderStatus' の場合を両方考慮
+    const pickupCompletedOrders = orders.filter(order => {
+        const currentStatus = order.status || order.orderStatus;
+        return currentStatus === 'PICKUP_COMPLETED';
+    });
+
+    // 2. 受取完了の注文が一つもない場合のメッセージ処理
+    if (!pickupCompletedOrders.length) {
+        body.innerHTML = `
+            <div style="text-align:center; padding:2rem 1rem;">
+                <i class="bi bi-bag-x" style="font-size: 2rem; color: #d1d5db;"></i>
+                <p style="color:var(--gray-500); margin-top: 0.5rem;">
+                    レビューを作成できる注文がありません。<br>
+                    <span style="font-size: 0.8rem;">(※ レビューは商品の「受取完了」後に作成可能です)</span>
+                </p>
+            </div>`;
         return;
     }
+
     body.innerHTML = '';
-    orders.forEach(order => {
+    
+    // 3. フィルタリングされた注文のみを画面に描画
+    pickupCompletedOrders.forEach(order => {
         const itemNames = (order.items || []).map(i => i.itemName).join(', ');
         const date      = order.createdAt
             ? new Date(order.createdAt).toLocaleDateString('ja-JP') : '';
+            
         const div = document.createElement('div');
         div.className = 'review-order-item' + (order.reviewed ? ' reviewed' : '');
         div.innerHTML = `
@@ -404,7 +428,22 @@ function renderStars(rating) {
 }
 
 async function deleteReview(reviewId) {
-    if (!confirm('レビューを削除しますか？')) return;
+
+	const swalResult = await Swal.fire({
+        title: 'レビューを削除しますか？',
+        text: '削除したレビューは復元できません。',
+        icon: 'warning',
+        iconColor: '#dc2626',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626', 
+        cancelButtonColor: '#9ca3af',  
+        confirmButtonText: '削除する',
+        cancelButtonText: 'キャンセル',
+        reverseButtons: true 
+    });
+
+    if (!swalResult.isConfirmed) return;	
+	
     try {
         const res  = await fetch(`/api/reviews/${reviewId}`, { method: 'DELETE' });
         const json = await res.json();
@@ -417,12 +456,21 @@ async function deleteReview(reviewId) {
                 const cur = parseInt(countEl.textContent.replace(/[^0-9]/g, '')) || 0;
                 countEl.textContent = `レビュー ${Math.max(0, cur - 1)}件`;
             }
+			
+			Swal.fire({
+                title: '削除完了',
+                text: 'レビューを削除しました。',
+                icon: 'success',
+                iconColor: '#065f46',
+                confirmButtonColor: '#065f46',
+                confirmButtonText: '確認'
+            });
         } else {
-            alert(json.message || '削除に失敗しました。');
+            Swal.fire({ title: 'エラー', text: json.message || '削除に失敗しました。', icon: 'error', iconColor: '#dc2626', confirmButtonColor: '#065f46', confirmButtonText: '確認' });
         }
     } catch (err) {
         console.error('[レビュー削除] エラー:', err);
-        alert('エラーが発生しました。');
+        Swal.fire({ title: 'エラー', text: 'エラーが発生しました。', icon: 'error', iconColor: '#dc2626', confirmButtonColor: '#065f46', confirmButtonText: '確認' });
     }
 }
 
@@ -433,10 +481,12 @@ async function submitReview() {
     const title   = document.getElementById('reviewTitle')?.value.trim();
     const content = document.getElementById('reviewContent')?.value.trim();
     const fileInput = document.getElementById('imageInput');
+	
+	const showWarning = (text) => Swal.fire({ title: '確認', text: text, icon: 'info', iconColor: '#F28940', confirmButtonColor: '#065f46', confirmButtonText: '確認' });
 
-    if (!title)   { alert('タイトルを入力してください。'); return; }
-    if (!content) { alert('内容を入力してください。'); return; }
-    if (currentRating < 1) { alert('評価を選択してください。'); return; }
+	if (!title)   { showWarning('タイトルを入力してください。'); return; }
+    if (!content) { showWarning('内容を入力してください。'); return; }
+    if (currentRating < 1) { showWarning('評価を選択してください。'); return; }
 
     // 画像がある場合、先にS3へアップロード
     let photoUrl = null;
@@ -447,13 +497,13 @@ async function submitReview() {
             const uploadRes  = await fetch('/api/reviews/image', { method: 'POST', body: formData });
             const uploadJson = await uploadRes.json();
             if (!uploadJson.success) {
-                alert(uploadJson.message || '画像のアップロードに失敗しました。');
+                Swal.fire({ title: 'エラー', text: uploadJson.message || '画像のアップロードに失敗しました。', icon: 'error', iconColor: '#dc2626', confirmButtonColor: '#065f46', confirmButtonText: '確認' });
                 return;
             }
             photoUrl = uploadJson.url;
         } catch (err) {
             console.error('[画像アップロード] エラー:', err);
-            alert('画像アップロード中にエラーが発生しました。');
+            Swal.fire({ title: 'エラー', text: '画像アップロード中にエラーが発生しました。', icon: 'error', iconColor: '#dc2626', confirmButtonColor: '#065f46', confirmButtonText: '確認' });
             return;
         }
     }
@@ -476,17 +526,26 @@ async function submitReview() {
         const json = await res.json();
 
         if (res.status === 401) {
-            alert('レビュー作成はログイン後にご利用いただけます。');
+            await Swal.fire({ title: 'ログインが必要です', text: 'レビュー作成はログイン後にご利用いただけます。', icon: 'warning', iconColor: '#F28940', confirmButtonColor: '#065f46', confirmButtonText: '確認' });
             window.location.href = '/';
             return;
         }
         if (!json.success) {
-            alert(json.message || 'レビューの登録に失敗しました。');
+            Swal.fire({ title: 'エラー', text: json.message || 'レビューの登録に失敗しました。', icon: 'error', iconColor: '#dc2626', confirmButtonColor: '#065f46', confirmButtonText: '確認' });
             return;
         }
 
-        alert('レビューが登録されました。');
+		await Swal.fire({
+            title: '登録完了',
+            text: 'レビューが正常に登録されました。',
+            icon: 'success',
+            iconColor: '#065f46',
+            confirmButtonColor: '#065f46',
+            confirmButtonText: '確認'
+        });
+		
         closeReviewModal();
+		
         document.getElementById('reviewTitle').value   = '';
         document.getElementById('reviewContent').value = '';
         currentRating = 5.0;
@@ -497,7 +556,7 @@ async function submitReview() {
 
     } catch (err) {
         console.error('[レビュー登録] エラー:', err);
-        alert('エラーが発生しました。もう一度お試しください。');
+        Swal.fire({ title: 'エラー', text: 'エラーが発生しました。もう一度お試しください。', icon: 'error', iconColor: '#dc2626', confirmButtonColor: '#065f46', confirmButtonText: '確認' });
     }
 }
 
@@ -894,7 +953,14 @@ async function processCheckout(cartItems, totalPrice, storeId) {
             const errorMessage = errorData.message || '既に他のお客様が購入したか、在庫が不足しています。';
 
             // 1. ユーザーに在庫変動を警告(Alert)
-            alert('⚠️ ' + errorMessage);
+			await Swal.fire({
+	            title: '在庫不足',
+	            text: errorMessage,
+	            icon: 'warning',
+	            iconColor: '#F28940',
+	            confirmButtonColor: '#065f46',
+	            confirmButtonText: '確認'
+	        });
 
             // 2. 最新の在庫状態を画面に反映させるためにページを強制リロード
             window.location.reload();
@@ -905,7 +971,14 @@ async function processCheckout(cartItems, totalPrice, storeId) {
 
         // ApiResponse の isSuccess が false の場合 (カスタム例外処理のフォールバック)
         if (!orderData.isSuccess) {
-            alert('⚠️ ' + (orderData.message || '注文の生成に失敗しました。'));
+			await Swal.fire({
+                title: '注文失敗',
+                text: orderData.message || '注文の生成に失敗しました。',
+                icon: 'error',
+                iconColor: '#dc2626',
+                confirmButtonColor: '#065f46',
+                confirmButtonText: '確認'
+            });
             window.location.reload();
             return;
         }
@@ -937,19 +1010,33 @@ async function processCheckout(cartItems, totalPrice, storeId) {
                 verifyPayment(rsp.imp_uid, pendingOrderId);
             } else {
                 console.error(`❌ 決済失敗: ${rsp.error_msg || '理由不明'}`);
-                showToast(`決済がキャンセルされました: ${rsp.error_msg || 'ユーザーキャンセル'}`, 'error');
+				
+				// 決済キャンセル時も Swal を適用してUXを統一
+                await Swal.fire({
+                    title: '決済キャンセル',
+                    text: rsp.error_msg || '決済がキャンセルされました。',
+                    icon: 'info',
+                    iconColor: '#9ca3af',
+                    confirmButtonColor: '#065f46',
+                    confirmButtonText: '確認'
+                });
 
                 // 決済がキャンセルされた場合、すでにサーバー側で確保(減少)された
-                // 在庫状態を画面に正しく反映させるため、0.5秒後にページをリロードします。
-                setTimeout(() => {
-                    window.location.reload();
-                }, 500);
+                // 在庫状態を画面に正しく反映させるため、ページをリロードします。
+                window.location.reload();
             }
         });
 
     } catch (error) {
         console.error("決済プロセス中にエラーが発生しました:", error);
-        showToast('サーバーとの通信に失敗しました。', 'error');
+		await Swal.fire({
+            title: 'システムエラー',
+            text: 'サーバーとの通信に失敗しました。',
+            icon: 'error',
+            iconColor: '#dc2626',
+            confirmButtonColor: '#065f46',
+            confirmButtonText: '確認'
+        });
     }
 }
 
@@ -1006,7 +1093,7 @@ async function handleFavClick() {
         });
         const json = await res.json();
         if (res.status === 401 || json.success === false) {
-            alert('お気に入りはログイン後にご利用いただけます。');
+            await Swal.fire({ title: 'ログインが必要です', text: 'お気に入りはログイン後にご利用いただけます。', icon: 'warning', iconColor: '#F28940', confirmButtonColor: '#065f46', confirmButtonText: '確認' });
             window.location.href = '/';
             return;
         }
