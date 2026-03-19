@@ -257,17 +257,68 @@
     </div>
 </div>
 
+<div class="carbon-overlay" id="carbonOverlay" onclick="handleCarbonOverlayClick(event)">
+    <div class="carbon-modal" id="carbonModal">
+ 
+        <!-- 헤더 -->
+        <div class="carbon-modal-header">
+            <div class="check-circle">✅</div>
+            <h3>決済が完了しました！</h3>
+            <p>あなたの選択が地球を救いました</p>
+        </div>
+ 
+        <!-- 탄소 절감량 메인 표시 -->
+        <div class="carbon-amount-block">
+            <div class="carbon-amount-label">🌍 今回の注文で節約した CO₂量</div>
+            <div class="carbon-amount-value">
+                <span id="carbonKgDisplay">2.40</span><span>kg</span>
+            </div>
+        </div>
+ 
+        <!-- 소나무 환산 표시 -->
+        <div class="carbon-tree-block">
+            <div class="carbon-tree-icon">🌲</div>
+            <div class="carbon-tree-text">
+                <strong id="treeDaysDisplay">約110日分</strong>
+                30年生の松の木が働いてくれる量
+            </div>
+        </div>
+ 
+        <!-- 기여도 메시지 -->
+        <div class="carbon-message-block">
+            <p id="carbonMessage">
+                今日あなたが救ったお弁当1つで、<br>
+                <strong style="color:#065f46;">松の木が約110日分</strong>吸収するCO₂を<br>
+                あなた自身が代わりに削減しました。🌿
+            </p>
+        </div>
+ 
+        <!-- 버튼 영역 -->
+        <div class="carbon-modal-footer">
+            <button class="carbon-btn-primary" onclick="closeCarbonModal(); location.href='/mypage';">
+                <i class="bi bi-tree"></i> 自分の森を確認する
+            </button>
+            <button class="carbon-btn-secondary" onclick="closeCarbonModal();">
+                閉じる
+            </button>
+        </div>
+ 
+    </div>
+</div>
+
 <div th:replace="~{fragments/footer :: footer}"></div>
 
 <script th:inline="javascript">
     window.storeId = /*[[${storeId}]]*/ 0;
-    window._sessionMemberId = /*[[${sessionMemberId}]]*/ null;
 </script>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<!-- 결제처리 로직 (PortOne / 구 Iamport) -->
-<script src="https://cdn.iamport.kr/v1/iamport.js"></script>
+<script src="https://cdn.iamport.kr/v1/iamport.js"></script> <!-- 결제처리 로직 (PortOne / 구 Iamport) -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script th:src="@{/js/detail.js}"></script>
 
-</body>
+	</body>
+	
 </html>

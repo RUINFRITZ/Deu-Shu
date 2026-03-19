@@ -34,7 +34,7 @@
     -->
     <select id="findTotalSummary" parameterType="Long" resultMap="summaryResultMap">
         SELECT
-            COALESCE(SUM(CASE WHEN order_status = 'PAYMENT_COMPLETED'
+            COALESCE(SUM(CASE WHEN order_status IN ('PAYMENT_COMPLETED', 'PICKUP_COMPLETED')
                               THEN total_price ELSE 0 END), 0) AS total_revenue,
             COUNT(*)                                             AS total_orders,
             SUM(CASE WHEN order_status = 'PICKUP_COMPLETED'  THEN 1 ELSE 0 END) AS pickup_completed,
@@ -48,55 +48,55 @@
     <!--
         최근 N일 일별 매출 집계 쿼리 (기존 유지)
     -->
-    <select id="findDailySummary" resultMap="dailyResultMap">
-        SELECT
-            DATE(created_at)                                    AS order_date,
-            COALESCE(SUM(CASE WHEN order_status = 'PAYMENT_COMPLETED'
-                               THEN total_price ELSE 0 END), 0) AS daily_revenue,
-            COUNT(*)                                             AS daily_count,
-            SUM(CASE WHEN order_status = 'PAYMENT_COMPLETED'   THEN 1 ELSE 0 END) AS payment_completed
-        FROM orders
-        WHERE store_id   = #{storeId}
-          AND created_at >= DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
-        GROUP BY DATE(created_at)
-        ORDER BY order_date ASC
-    </select>
-
+	 <select id="findDailySummary" resultMap="dailyResultMap">
+	    SELECT
+	        DATE(created_at)                                    AS order_date,
+	        COALESCE(SUM(CASE WHEN order_status IN ('PAYMENT_COMPLETED', 'PICKUP_COMPLETED')
+	                           THEN total_price ELSE 0 END), 0) AS daily_revenue,
+	        COUNT(*)                                             AS daily_count,
+	        SUM(CASE WHEN order_status IN ('PAYMENT_COMPLETED', 'PICKUP_COMPLETED') 
+	                 THEN 1 ELSE 0 END)                          AS payment_completed
+	    FROM orders
+	    WHERE store_id   = #{storeId}
+	      AND created_at >= DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
+	    GROUP BY DATE(created_at)
+	    ORDER BY order_date ASC
+	</select>
     <!--
         날짜 범위 기준 전체 매출 집계
         달력 선택 범위의 요약 카드 데이터 제공용
     -->
-    <select id="findSummaryByRange" resultMap="summaryResultMap">
-        SELECT
-            COALESCE(SUM(CASE WHEN order_status = 'PAYMENT_COMPLETED'
-                              THEN total_price ELSE 0 END), 0) AS total_revenue,
-            COUNT(*)                                             AS total_orders,
-            SUM(CASE WHEN order_status = 'PICKUP_COMPLETED'  THEN 1 ELSE 0 END) AS pickup_completed,
-            SUM(CASE WHEN order_status = 'PAYMENT_PENDING'   THEN 1 ELSE 0 END) AS payment_pending,
-            SUM(CASE WHEN order_status = 'CANCELED'          THEN 1 ELSE 0 END) AS canceled,
-            SUM(CASE WHEN order_status = 'EXPIRED'           THEN 1 ELSE 0 END) AS expired
-        FROM orders
-        WHERE store_id = #{storeId}
-          AND DATE(created_at) BETWEEN #{startDate} AND #{endDate}
-    </select>
+	<select id="findSummaryByRange" resultMap="summaryResultMap">
+	    SELECT
+	        COALESCE(SUM(CASE WHEN order_status IN ('PAYMENT_COMPLETED', 'PICKUP_COMPLETED')
+	                          THEN total_price ELSE 0 END), 0) AS total_revenue,
+	        COUNT(*)                                             AS total_orders,
+	        SUM(CASE WHEN order_status = 'PICKUP_COMPLETED'  THEN 1 ELSE 0 END) AS pickup_completed,
+	        SUM(CASE WHEN order_status = 'PAYMENT_PENDING'   THEN 1 ELSE 0 END) AS payment_pending,
+	        SUM(CASE WHEN order_status = 'CANCELED'          THEN 1 ELSE 0 END) AS canceled,
+	        SUM(CASE WHEN order_status = 'EXPIRED'           THEN 1 ELSE 0 END) AS expired
+	    FROM orders
+	    WHERE store_id = #{storeId}
+	      AND DATE(created_at) BETWEEN #{startDate} AND #{endDate}
+	</select>
 
     <!--
         날짜 범위 기준 일별 매출 집계 (결제완료건수 포함)
         테이블 컬럼: 일시 / 주문건수 / 결제완료건수 / 매상액
     -->
     <select id="findDailySummaryByRange" resultMap="dailyResultMap">
-        SELECT
-            DATE(created_at)                                     AS order_date,
-            COUNT(*)                                             AS daily_count,
-            SUM(CASE WHEN order_status = 'PAYMENT_COMPLETED'
-                     THEN 1 ELSE 0 END)                          AS payment_completed,
-            COALESCE(SUM(CASE WHEN order_status = 'PAYMENT_COMPLETED'
-                               THEN total_price ELSE 0 END), 0)  AS daily_revenue
-        FROM orders
-        WHERE store_id = #{storeId}
-          AND DATE(created_at) BETWEEN #{startDate} AND #{endDate}
-        GROUP BY DATE(created_at)
-        ORDER BY order_date DESC
+	    SELECT
+	        DATE(created_at)                                     AS order_date,
+	        COUNT(*)                                             AS daily_count,
+	        SUM(CASE WHEN order_status IN ('PAYMENT_COMPLETED', 'PICKUP_COMPLETED')
+	                 THEN 1 ELSE 0 END)                          AS payment_completed,
+	        COALESCE(SUM(CASE WHEN order_status IN ('PAYMENT_COMPLETED', 'PICKUP_COMPLETED')
+	                           THEN total_price ELSE 0 END), 0)  AS daily_revenue
+	    FROM orders
+	    WHERE store_id = #{storeId}
+	      AND DATE(created_at) BETWEEN #{startDate} AND #{endDate}
+	    GROUP BY DATE(created_at)
+	    ORDER BY order_date DESC
     </select>
 
     <!--
@@ -113,7 +113,7 @@
         JOIN items       i  ON i.id        = oi.item_id
         WHERE o.store_id       = #{storeId}
           AND DATE(o.created_at) = #{date}
-          AND o.order_status    = 'PAYMENT_COMPLETED'
+          AND o.order_status    IN ('PAYMENT_COMPLETED', 'PICKUP_COMPLETED')
         GROUP BY i.id, i.name
         ORDER BY total_revenue DESC
     </select>
@@ -133,7 +133,7 @@
         JOIN items       i  ON i.id        = oi.item_id
         WHERE o.store_id = #{storeId}
           AND DATE(o.created_at) BETWEEN #{startDate} AND #{endDate}
-          AND o.order_status = 'PAYMENT_COMPLETED'
+          AND o.order_status IN ('PAYMENT_COMPLETED', 'PICKUP_COMPLETED')
         GROUP BY i.id, i.name
         ORDER BY total_revenue DESC
     </select>

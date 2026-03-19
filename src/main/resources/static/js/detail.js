@@ -43,6 +43,7 @@ async function openReviewModal() {
     try {
         const res = await fetch(`/api/v1/orders/my?storeId=${storeId}`);
         if (res.status === 401) {
+            Swal.fire({ title: 'ログインが必要です', text: 'レビューを作成するにはログインしてください。', icon: 'warning', iconColor: '#F28940', confirmButtonColor: '#065f46', confirmButtonText: '確認' });
             document.getElementById('reviewModal').classList.remove('active');
             if (confirm('レビュー作成にはログインが必要です。\nログインページへ移動しますか？')) {
                 openModal('user');
@@ -72,17 +73,41 @@ function showReviewStep(step) {
     document.getElementById('reviewStep2').style.display = step === 2 ? '' : 'none';
 }
 
+/* =========================================================================
+   [ ドゥーシュー ] レビュー作成のための注文リストレンダリング
+   修正: 受取完了 (PICKUP_COMPLETED) 状態の注文のみをフィルタリングして表示します。
+========================================================================= */
 function renderOrderList(orders) {
     const body = document.getElementById('orderListBody');
-    if (!orders.length) {
-        body.innerHTML = '<p style="color:var(--gray-500);padding:1rem 0;">この店舗での決済完了済み注文がありません。</p>';
+    
+    // 1. ステータスが 'PICKUP_COMPLETED' (受取完了) の注文のみを抽出
+    // ※ バックエンドの DTO フィールド名が 'status' または 'orderStatus' の場合を両方考慮
+    const pickupCompletedOrders = orders.filter(order => {
+        const currentStatus = order.status || order.orderStatus;
+        return currentStatus === 'PICKUP_COMPLETED';
+    });
+
+    // 2. 受取完了の注文が一つもない場合のメッセージ処理
+    if (!pickupCompletedOrders.length) {
+        body.innerHTML = `
+            <div style="text-align:center; padding:2rem 1rem;">
+                <i class="bi bi-bag-x" style="font-size: 2rem; color: #d1d5db;"></i>
+                <p style="color:var(--gray-500); margin-top: 0.5rem;">
+                    レビューを作成できる注文がありません。<br>
+                    <span style="font-size: 0.8rem;">(※ レビューは商品の「受取完了」後に作成可能です)</span>
+                </p>
+            </div>`;
         return;
     }
+
     body.innerHTML = '';
-    orders.forEach(order => {
+    
+    // 3. フィルタリングされた注文のみを画面に描画
+    pickupCompletedOrders.forEach(order => {
         const itemNames = (order.items || []).map(i => i.itemName).join(', ');
         const date      = order.createdAt
             ? new Date(order.createdAt).toLocaleDateString('ja-JP') : '';
+            
         const div = document.createElement('div');
         div.className = 'review-order-item' + (order.reviewed ? ' reviewed' : '');
         div.innerHTML = `
@@ -452,7 +477,22 @@ function renderStars(rating) {
 }
 
 async function deleteReview(reviewId) {
-    if (!confirm('レビューを削除しますか？')) return;
+
+	const swalResult = await Swal.fire({
+        title: 'レビューを削除しますか？',
+        text: '削除したレビューは復元できません。',
+        icon: 'warning',
+        iconColor: '#dc2626',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626', 
+        cancelButtonColor: '#9ca3af',  
+        confirmButtonText: '削除する',
+        cancelButtonText: 'キャンセル',
+        reverseButtons: true 
+    });
+
+    if (!swalResult.isConfirmed) return;	
+	
     try {
         const res  = await fetch(`/api/reviews/${reviewId}`, { method: 'DELETE' });
         const json = await res.json();
@@ -465,12 +505,21 @@ async function deleteReview(reviewId) {
                 const cur = parseInt(countEl.textContent.replace(/[^0-9]/g, '')) || 0;
                 countEl.textContent = `レビュー ${Math.max(0, cur - 1)}件`;
             }
+			
+			Swal.fire({
+                title: '削除完了',
+                text: 'レビューを削除しました。',
+                icon: 'success',
+                iconColor: '#065f46',
+                confirmButtonColor: '#065f46',
+                confirmButtonText: '確認'
+            });
         } else {
-            alert(json.message || '削除に失敗しました。');
+            Swal.fire({ title: 'エラー', text: json.message || '削除に失敗しました。', icon: 'error', iconColor: '#dc2626', confirmButtonColor: '#065f46', confirmButtonText: '確認' });
         }
     } catch (err) {
         console.error('[レビュー削除] エラー:', err);
-        alert('エラーが発生しました。');
+        Swal.fire({ title: 'エラー', text: 'エラーが発生しました。', icon: 'error', iconColor: '#dc2626', confirmButtonColor: '#065f46', confirmButtonText: '確認' });
     }
 }
 
@@ -481,10 +530,12 @@ async function submitReview() {
     const title   = document.getElementById('reviewTitle')?.value.trim();
     const content = document.getElementById('reviewContent')?.value.trim();
     const fileInput = document.getElementById('imageInput');
+	
+	const showWarning = (text) => Swal.fire({ title: '確認', text: text, icon: 'info', iconColor: '#F28940', confirmButtonColor: '#065f46', confirmButtonText: '確認' });
 
-    if (!title)   { alert('タイトルを入力してください。'); return; }
-    if (!content) { alert('内容を入力してください。'); return; }
-    if (currentRating < 1) { alert('評価を選択してください。'); return; }
+	if (!title)   { showWarning('タイトルを入力してください。'); return; }
+    if (!content) { showWarning('内容を入力してください。'); return; }
+    if (currentRating < 1) { showWarning('評価を選択してください。'); return; }
 
 	// 画像がある場合、先にS3へアップロード
     let photoUrl = null;
@@ -495,13 +546,13 @@ async function submitReview() {
             const uploadRes  = await fetch('/api/reviews/image', { method: 'POST', body: formData });
             const uploadJson = await uploadRes.json();
             if (!uploadJson.success) {
-                alert(uploadJson.message || '画像のアップロードに失敗しました。');
+                Swal.fire({ title: 'エラー', text: uploadJson.message || '画像のアップロードに失敗しました。', icon: 'error', iconColor: '#dc2626', confirmButtonColor: '#065f46', confirmButtonText: '確認' });
                 return;
             }
             photoUrl = uploadJson.url;
         } catch (err) {
             console.error('[画像アップロード] エラー:', err);
-            alert('画像アップロード中にエラーが発生しました。');
+            Swal.fire({ title: 'エラー', text: '画像アップロード中にエラーが発生しました。', icon: 'error', iconColor: '#dc2626', confirmButtonColor: '#065f46', confirmButtonText: '確認' });
             return;
         }
     }
@@ -524,17 +575,26 @@ async function submitReview() {
         const json = await res.json();
 
         if (res.status === 401) {
-            alert('レビュー作成はログイン後にご利用いただけます。');
+            await Swal.fire({ title: 'ログインが必要です', text: 'レビュー作成はログイン後にご利用いただけます。', icon: 'warning', iconColor: '#F28940', confirmButtonColor: '#065f46', confirmButtonText: '確認' });
             window.location.href = '/';
             return;
         }
         if (!json.success) {
-            alert(json.message || 'レビューの登録に失敗しました。');
+            Swal.fire({ title: 'エラー', text: json.message || 'レビューの登録に失敗しました。', icon: 'error', iconColor: '#dc2626', confirmButtonColor: '#065f46', confirmButtonText: '確認' });
             return;
         }
 
-        alert('レビューが登録されました。');
+		await Swal.fire({
+            title: '登録完了',
+            text: 'レビューが正常に登録されました。',
+            icon: 'success',
+            iconColor: '#065f46',
+            confirmButtonColor: '#065f46',
+            confirmButtonText: '確認'
+        });
+		
         closeReviewModal();
+		
         document.getElementById('reviewTitle').value   = '';
         document.getElementById('reviewContent').value = '';
         currentRating = 5.0;
@@ -545,7 +605,7 @@ async function submitReview() {
 
     } catch (err) {
         console.error('[レビュー登録] エラー:', err);
-        alert('エラーが発生しました。もう一度お試しください。');
+        Swal.fire({ title: 'エラー', text: 'エラーが発生しました。もう一度お試しください。', icon: 'error', iconColor: '#dc2626', confirmButtonColor: '#065f46', confirmButtonText: '確認' });
     }
 }
 
@@ -935,9 +995,18 @@ async function processCheckout(cartItems, totalPrice, storeId) {
         if (!orderResponse.ok) {
             const errorData = await orderResponse.json();
             const errorMessage = errorData.message || '既に他のお客様が購入したか、在庫が不足しています。';
-			// 1. ユーザーに在庫変動を警告(Alert)
-            alert('⚠️ ' + errorMessage);
-			// 2. 最新の在庫状態を画面に反映させるためにページを強制リロード
+
+            // 1. ユーザーに在庫変動を警告(Alert)
+			await Swal.fire({
+	            title: '在庫不足',
+	            text: errorMessage,
+	            icon: 'warning',
+	            iconColor: '#F28940',
+	            confirmButtonColor: '#065f46',
+	            confirmButtonText: '確認'
+	        });
+
+            // 2. 最新の在庫状態を画面に反映させるためにページを強制リロード
             window.location.reload();
             return;
         }
@@ -946,7 +1015,14 @@ async function processCheckout(cartItems, totalPrice, storeId) {
 		
 		// ApiResponse の isSuccess が false の場合 (カスタム例外処理のフォールバック)
         if (!orderData.isSuccess) {
-            alert('⚠️ ' + (orderData.message || '注文の生成に失敗しました。'));
+			await Swal.fire({
+                title: '注文失敗',
+                text: orderData.message || '注文の生成に失敗しました。',
+                icon: 'error',
+                iconColor: '#dc2626',
+                confirmButtonColor: '#065f46',
+                confirmButtonText: '確認'
+            });
             window.location.reload();
             return;
         }
@@ -977,19 +1053,46 @@ async function processCheckout(cartItems, totalPrice, storeId) {
                 verifyPayment(rsp.imp_uid, pendingOrderId);
             } else {
                 console.error(`❌ 決済失敗: ${rsp.error_msg || '理由不明'}`);
-                showToast(`決済がキャンセルされました: ${rsp.error_msg || 'ユーザーキャンセル'}`, 'error');
-                setTimeout(() => { window.location.reload(); }, 500);
+				
+				// 決済キャンセル時も Swal を適用してUXを統一
+                await Swal.fire({
+                    title: '決済キャンセル',
+                    text: rsp.error_msg || '決済がキャンセルされました。',
+                    icon: 'info',
+                    iconColor: '#9ca3af',
+                    confirmButtonColor: '#065f46',
+                    confirmButtonText: '確認'
+                });
+
+                // 決済がキャンセルされた場合、すでにサーバー側で確保(減少)された
+                // 在庫状態を画面に正しく反映させるため、ページをリロードします。
+                window.location.reload();
             }
         });
 
     } catch (error) {
         console.error("決済プロセス中にエラーが発生しました:", error);
-        showToast('サーバーとの通信に失敗しました。', 'error');
+		await Swal.fire({
+            title: 'システムエラー',
+            text: 'サーバーとの通信に失敗しました。',
+            icon: 'error',
+            iconColor: '#dc2626',
+            confirmButtonColor: '#065f46',
+            confirmButtonText: '確認'
+        });
     }
 }
 /*
  * PortOne 決済完了後 バックエンド検証
  */
+// ────────────────────────────────────────────────────────────
+// [1] verifyPayment  (기존 함수 수정)
+//
+// 변경점:
+//   - API 응답에서 category 를 직접 받아 openCarbonModal 에 전달
+//     (기존: DOM의 storeCategory 텍스트를 카테고리로 사용 → 한국어/일본어가 섞일 수 있어 switch 미동작)
+//   - ApiResponse 래퍼 언래핑 처리 추가 (json.result ?? json.data ?? json)
+// ────────────────────────────────────────────────────────────
 async function verifyPayment(impUid, orderId) {
     try {
         const verifyRes = await fetch(`/api/v1/orders/${orderId}/payment`, {
@@ -1007,15 +1110,35 @@ async function verifyPayment(impUid, orderId) {
             _cart = [];
             updateCartBadge();
             closeCart();
-            showToast('決済が正常に完了しました！マイページへ移動します。', 'success');
-            setTimeout(() => { window.location.href = '/mypage'; }, 1500);
-        } else {
-            showToast(verifyData.message || '決済の検証に失敗しました。', 'error');
-        }
-    } catch (error) {
-        console.error("検証プロセス中にエラーが発生:", error);
-        showToast('サーバー通信エラーが発生しました。', 'error');
-    }
+			
+	        // ★ 탄소 절감 모달 표시 (결제 완료 직후)
+	        try {
+	            const carbonRes  = await fetch(`/api/v1/mypage/orders/${orderId}/carbon`);
+				const carbonJson = await carbonRes.json();
+
+	            // ApiResponse 래퍼 언래핑 (result / data 필드 모두 대응)
+		        const carbonData = carbonJson.result ?? carbonJson.data ?? carbonJson;
+
+				const carbonKg   = carbonData.totalCarbonKg  || 0;
+				const treeDays   = carbonData.totalTreeDays   || 0;
+				// API 가 반환하는 category 는 DB ENUM 값 (BAKERY/SUSHI/LUNCHBOX/CAFE/SIDEDISH)
+				const category   = carbonData.category        || 'LUNCHBOX';
+				openCarbonModal(carbonKg, treeDays, category);
+
+				} catch (carbonErr) {
+              // 탄소 모달 조회 실패 시 조용히 무시하고 기존 흐름 유지
+				console.warn('[탄소 모달] 데이터 조회 실패:', carbonErr);
+				showToast('決済が正常に完了しました！マイページへ移動します。', 'success');
+				setTimeout(() => { window.location.href = '/mypage'; }, 1500);
+				}
+			} else {
+	        	showToast(verifyData.message || '決済の検証に失敗しました。', 'error');
+			}
+	} catch (error) {
+	    console.error("検証プロセス中にエラーが発生:", error);
+	    showToast('サーバー通信エラーが発生しました。', 'error');
+	}			
+		
 }
 
 // ============================================
@@ -1048,9 +1171,8 @@ async function handleFavClick() {
         });
         const json = await res.json();
         if (res.status === 401 || json.success === false) {
-            if (confirm('お気に入りはログインが必要です。\nログインページへ移動しますか？')) {
-                openModal('user');
-            }
+            await Swal.fire({ title: 'ログインが必要です', text: 'お気に入りはログイン後にご利用いただけます。', icon: 'warning', iconColor: '#F28940', confirmButtonColor: '#065f46', confirmButtonText: '確認' });
+            window.location.href = '/';
             return;
         }
         _setFavState(btn, json.favorited);
@@ -1169,4 +1291,129 @@ function openPhotoOverlay(url) {
     if (!overlay || !img) return;
     img.src = url;
     overlay.classList.add('active');
+}
+
+// ────────────────────────────────────────────────────────────
+// [2] openCarbonModal  (기존 함수 교체)
+//
+// 변경점:
+//   - 버그 수정: getElementById('carbonAmountDisplay') → 'carbonKgDisplay'
+//     (HTML 에 carbonKgDisplay 로 선언되어 있어 기존 코드는 null 참조)
+//   - treeDaysDisplay 형식 통일: "約XX日分" / "約X年X日分"
+//   - carbon_emission_factors 스키마 기반 카테고리별 메시지 + 수치 표시
+//     BAKERY   → パン    0.60 kg / 33日
+//     SUSHI    → お寿司  1.20 kg / 66日
+//     LUNCHBOX → お弁当  2.00 kg / 110日
+//     CAFE     → デザート 0.40 kg / 22日
+//     SIDEDISH → お惣菜  0.80 kg / 44日
+//   - SIDEDISH 케이스 추가 (기존 switch에서 누락)
+// ────────────────────────────────────────────────────────────
+ 
+/**
+ * 탄소 절감 모달 열기
+ *
+ * @param {number} carbonKg   절감한 총 탄소량 (kg) — DB: order_items × carbon_emission_factors.carbon_kg
+ * @param {number} treeDays   소나무 환산 일수       — DB: order_items × carbon_emission_factors.tree_days
+ * @param {string} category   DB ENUM 값: BAKERY / SUSHI / LUNCHBOX / CAFE / SIDEDISH
+ */
+function openCarbonModal(carbonKg, treeDays, category) {
+ 
+    // ── 수치 표시 ──────────────────────────────────────────
+    // HTML id: carbonKgDisplay (주의: carbonAmountDisplay 아님)
+    const carbonKgEl = document.getElementById('carbonKgDisplay');
+    if (carbonKgEl) carbonKgEl.textContent = Number(carbonKg).toFixed(2);
+ 
+    // "約XX日分" / "約X年X日分" 형식
+    const treeDaysEl = document.getElementById('treeDaysDisplay');
+    if (treeDaysEl) treeDaysEl.textContent = formatTreeDays(treeDays);
+ 
+    let itemName    = "食品";   // fallback
+    let itemEmoji   = "🍱";
+    let perItemKg   = null;    // carbon_emission_factors.carbon_kg (1개당)
+    let perItemDays = null;    // carbon_emission_factors.tree_days (1개당)
+ 
+    switch (category) {
+        case 'BAKERY':
+            itemName    = "パン";
+            itemEmoji   = "🥖";
+            perItemKg   = 0.60;
+            perItemDays = 33;
+            break;
+        case 'SUSHI':
+            itemName    = "お寿司";
+            itemEmoji   = "🍱";
+            perItemKg   = 1.20;
+            perItemDays = 66;
+            break;
+        case 'LUNCHBOX':
+            itemName    = "お弁当";
+            itemEmoji   = "🍱";
+            perItemKg   = 2.00;
+            perItemDays = 110;
+            break;
+        case 'CAFE':
+            itemName    = "デザート";
+            itemEmoji   = "🍰";
+            perItemKg   = 0.40;
+            perItemDays = 22;
+            break;
+        case 'SIDEDISH':
+            itemName    = "お惣菜";
+            itemEmoji   = "🥗";
+            perItemKg   = 0.80;
+            perItemDays = 44;
+            break;
+        default:
+            itemName    = "食品";
+            itemEmoji   = "🌿";
+    }
+ 
+    // ── 기여도 메시지 업데이트 ──────────────────────────────
+    const messageEl = document.getElementById('carbonMessage');
+    if (messageEl) {
+        // 품목 1개당 절감량이 있으면 함께 표시 (carbon_emission_factors 수치)
+        const perItemNote = perItemKg
+            ? `<span style="font-size:0.85em;color:#6b7280;">
+                   （${itemName} 1個あたり ${perItemKg}kg・${formatTreeDays(perItemDays)}）
+               </span><br>`
+            : '';
+ 
+        messageEl.innerHTML = `
+            今日あなたが救った${itemEmoji} <strong>${itemName}</strong> で、<br>
+            ${perItemNote}
+            松の木が <strong style="color:#065f46;">${formatTreeDays(treeDays)}</strong> 吸収するCO₂を<br>
+            あなた自身が代わりに削減しました。🌿
+        `;
+    }
+ 
+    // ── 모달 표시 ─────────────────────────────────────────
+    document.getElementById('carbonOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+ 
+function closeCarbonModal() {
+    document.getElementById('carbonOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+}
+ 
+function handleCarbonOverlayClick(e) {
+    if (e.target === document.getElementById('carbonOverlay')) closeCarbonModal();
+}
+ 
+/**
+ * 소나무 일수를 "約XX日分" / "約X年X日分" 형식으로 포맷
+ * @param {number} days
+ * @returns {string}
+ */
+function formatTreeDays(days) {
+    if (!days || days <= 0) return "約0日分";
+    const d = Math.round(days);
+    if (d >= 365) {
+        const years  = Math.floor(d / 365);
+        const remain = d % 365;
+        return remain === 0
+            ? `約${years}年分`
+            : `約${years}年${remain}日分`;
+    }
+    return `約${d}日分`;
 }

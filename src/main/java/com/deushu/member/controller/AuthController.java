@@ -150,7 +150,7 @@ public class AuthController {
             return ResponseEntity.badRequest().body(result);
         }
 
-        if (!"ROLE_USER".equals(회원.getRole())) {
+        if (!"ROLE_USER".equals(회원.getRole()) && !"ROLE_ADMIN".equals(회원.getRole())) {
             result.put("success", false);
             result.put("message", "一般会員アカウントではありません");
             return ResponseEntity.badRequest().body(result);
@@ -179,6 +179,7 @@ public class AuthController {
         // =====================================================================
 
         result.put("success", true);
+        result.put("role", 회원.getRole());
         result.put("message", "ログイン成功");
         return ResponseEntity.ok(result);
     }

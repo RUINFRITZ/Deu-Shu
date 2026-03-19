@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ダッシュボード — ドゥーシュー 管理者</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link
+	href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap"
+	rel="stylesheet">
+<link
+	href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css"
+	rel="stylesheet">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+<link rel="stylesheet" th:href="@{/css/admin.css}">
+
+</head>
+<body>
+	<div th:replace="~{fragments/header :: header}"></div>
+	<main>
+		<div class="admin-wrap">
+			<div th:replace="~{fragments/admin_sidebar :: sidebar}"></div>
+			<div class="admin-content">
+				<div class="admin-section active" id="sec-dashboard">
+					<div class="section-header">
+						<div>
+							<div class="section-title">
+								<i class="bi bi-grid-1x2"></i> ダッシュボード
+							</div>
+							<div class="section-subtitle" id="dashDate"></div>
+						</div>
+					</div>
+
+					<!-- 통계 카드 -->
+					<div class="stats-grid">
+						<div class="stat-card">
+							<div class="stat-icon orange">
+								<i class="bi bi-bag-check"></i>
+							</div>
+							<div class="stat-body">
+								<div class="stat-label">本日の注文数</div>
+								<div class="stat-value" id="dashOrderCount">-</div>
+								<div class="stat-delta" id="dashOrderDelta">読み込み中...</div>
+							</div>
+						</div>
+						<div class="stat-card">
+							<div class="stat-icon dark">
+								<i class="bi bi-currency-yen"></i>
+							</div>
+							<div class="stat-body">
+								<div class="stat-label">本日の売上</div>
+								<div class="stat-value" id="dashTotalSales">-</div>
+								<div class="stat-delta" id="dashSalesDelta">読み込み中...</div>
+							</div>
+						</div>
+						<div class="stat-card">
+							<div class="stat-icon green">
+								<i class="bi bi-people"></i>
+							</div>
+							<div class="stat-body">
+								<div class="stat-label">全会員数</div>
+								<div class="stat-value" id="dashMemberCount">-</div>
+								<div class="stat-delta" id="dashMemberDelta">読み込み中...</div>
+							</div>
+						</div>
+						<div class="stat-card">
+							<div class="stat-icon blue">
+								<i class="bi bi-shop"></i>
+							</div>
+							<div class="stat-body">
+								<div class="stat-label">営業中の店舗</div>
+								<div class="stat-value" id="dashStoreCount">-</div>
+								<div class="stat-delta" id="dashStoreDelta">読み込み中...</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- 차트 -->
+					<div class="dashboard-row">
+						<div class="admin-card">
+							<div class="admin-card-header">
+								<span class="admin-card-title"><i class="bi bi-bar-chart"></i>
+									週間売上推移</span> <span class="text-muted text-sm">直近7日間</span>
+							</div>
+							<div class="admin-card-body">
+								<div class="chart-bar-wrap" id="barChart"></div>
+							</div>
+						</div>
+
+						<div class="admin-card">
+							<div class="admin-card-header">
+								<span class="admin-card-title"><i class="bi bi-pie-chart"></i>
+									カテゴリ別</span>
+							</div>
+							<div class="admin-card-body">
+								<div class="donut-chart-wrap" id="donutChartWrap">
+									<svg class="donut-svg" viewBox="0 0 100 100" id="donutSvg">
+                                <circle cx="50" cy="50" r="38"
+											fill="none" stroke="#F0DDD0" stroke-width="16" />
+                                <text x="50" y="54" text-anchor="middle"
+											font-size="10" font-weight="700" fill="#1C1C1C"
+											font-family="JetBrains Mono" id="donutTotal">-</text>
+                            </svg>
+									<div style="width: 100%;" id="donutLegend">
+										<p
+											style="color: var(--light-gray); font-size: 0.78rem; text-align: center;">読み込み中...</p>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- 최근 주문 / 신규 회원 -->
+					<div class="dashboard-bottom-row">
+						<div class="admin-card">
+							<div class="admin-card-header">
+								<span class="admin-card-title"><i
+									class="bi bi-person-plus"></i> 新規会員</span>
+								<button class="btn-admin btn-admin-ghost"
+									onclick="location.href='/admin/members'">全て見る</button>
+							</div>
+							<div class="admin-card-body" id="recentOrdersList">
+								<!-- JS로 렌더 -->
+							</div>
+						</div>
+						<div class="admin-card">
+							<div class="admin-card-header">
+								<span class="admin-card-title"><i class="bi bi-shop-window"></i> 新規店舗</span>
+								<button class="btn-admin btn-admin-ghost"
+									onclick="location.href='/admin/stores'">全て見る</button>
+							</div>
+							<div class="admin-card-body" id="recentMembersList">
+								<!-- JS로 렌더 -->
+							</div>
+						</div>
+					</div>
+				</div>
+
+
+
+			</div>
+		</div>
+	</main>
+	<div th:replace="~{fragments/footer :: footer}"></div>
+	<div class="toast-wrap" id="toastWrap"></div>
+	<script th:src="@{/js/admin.js}"></script>
+	<script>
+		// 1. 대시보드 상단에 오늘 날짜 띄우기 
+		// (이 기능은 디자인을 위한 것이라 admin.js에 없으므로 HTML에 남겨둡니다)
+		(function() {
+			const d = new Date();
+			const opts = {
+				year : 'numeric',
+				month : '2-digit',
+				day : '2-digit',
+				weekday : 'long'
+			};
+			const dateEl = document.getElementById('dashDate');
+			if (dateEl)
+				dateEl.textContent = d.toLocaleDateString('ja-JP', opts);
+		})();
+
+		// 2. 화면이 켜지면 admin.js에 있는 함수(반장님)들에게 일 시작하라고 스위치만 켜줍니다.
+		document.addEventListener('DOMContentLoaded', function() {
+			loadDashboardStats(); // 상단 네모 박스 4개 통계 가져오기
+			loadBarChart(); // 주간 매출 막대그래프 그리기
+			loadDonutChart(); // 카테고리별 도넛그래프 그리기
+			loadDashboardRecent(); // 하단 최근 주문 및 신규 회원 목록 가져오기
+		});
+	</script>
+</body>
+</html>
