@@ -37,6 +37,7 @@ import com.deushu.order.domain.ItemEntity;
 import com.deushu.order.dto.PickupVerifyResponse;
 import com.deushu.order.dto.ItemSalesSummaryDto;
 import com.deushu.order.dto.SalesSummaryDto;
+import com.deushu.order.mapper.OrderMapper;
 import com.deushu.order.service.OrderQrService;
 import com.deushu.store.domain.StoreEntity;
 import com.deushu.store.dto.StoreImageDto;
@@ -66,13 +67,14 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class OwnerController {
 	
-    private final OrderQrService orderQrService;
+    private final OrderQrService   orderQrService;
     private final MemberRepository memberRepository;
     private final StoreMapper      storeMapper;
     private final ItemRepository   itemRepository;
     private final SalesRepository  salesRepository;
     private final S3Service        s3Service;
-
+    private	final OrderMapper 	   orderMapper;
+    
     @Value("${aws.s3.bucket}")
     private String bucket;
 
@@ -662,6 +664,35 @@ public class OwnerController {
 
         orderQrService.completePickup(pickupCode, owner.getId());
         return ResponseEntity.ok(ApiResponse.onSuccess("ピックアップ完了に更新しました。"));
+    }
+    
+    // ── ★ 오너: 결제 완료 대기 주문 목록 ──────────────────────────────
+    /**
+     * GET /api/owner/orders/pending-pickup
+     *
+     * 해당 오너 가게의 PAYMENT_COMPLETED 주문 목록 반환.
+     * ownerPage.html section-pickup 하단 "入金済み注文リスト" 에서 호출.
+     * 결제 시각 오래된 순(ASC) — 대기 시간이 긴 주문을 상단 표시.
+     */
+    @GetMapping("/orders/pending-pickup")
+    public ResponseEntity<Map<String, Object>> getPendingPickupOrders(HttpSession session) {
+        Map<String, Object> result = new HashMap<>();
+        MemberEntity owner = getOwner(session);
+        if (owner == null) return unauthorized();
+ 
+        StoreEntity store = storeMapper.findByOwnerId(owner.getId());
+        if (store == null) {
+            result.put("success", true);
+            result.put("orders", List.of());
+            return ResponseEntity.ok(result);
+        }
+ 
+        List<com.deushu.order.dto.PendingPickupOrderDto> orders =
+                orderMapper.findPendingPickupOrders(store.getId());
+ 
+        result.put("success", true);
+        result.put("orders", orders);
+        return ResponseEntity.ok(result);
     }
 
 

@@ -258,7 +258,7 @@ body { font-family: 'Noto Sans JP', sans-serif; background: #f7f8fa; }
             <button class="sidebar-nav-item" onclick="switchSection('sales',this)" data-bs-dismiss="offcanvas">
                 <i class="bi bi-bar-chart-line"></i> 売上精算
             </button>
-            <button class="sidebar-nav-item" onclick="switchSection('pickup',this);initQrScanner();" data-bs-dismiss="offcanvas">
+            <button class="sidebar-nav-item" onclick="switchSection('pickup',this);initQrScanner();loadPendingPickupOrders();" data-bs-dismiss="offcanvas">
                 <i class="bi bi-qr-code-scan"></i> ピックアップ確認
             </button>
             <div class="sidebar-divider"></div>
@@ -298,7 +298,7 @@ body { font-family: 'Noto Sans JP', sans-serif; background: #f7f8fa; }
             <button class="sidebar-nav-item" onclick="switchSection('sales',this)">
                 <i class="bi bi-bar-chart-line"></i> 売上精算
             </button>
-            <button class="sidebar-nav-item" onclick="switchSection('pickup',this);initQrScanner();">
+            <button class="sidebar-nav-item" onclick="switchSection('pickup',this);initQrScanner();loadPendingPickupOrders();">
                 <i class="bi bi-qr-code-scan"></i> ピックアップ確認
             </button>
             <div class="sidebar-divider"></div>
@@ -576,6 +576,50 @@ body { font-family: 'Noto Sans JP', sans-serif; background: #f7f8fa; }
 		            </div>
 		        </div>
 		    </div>
+		    
+		    <!-- 결제 완료 대기 주문 리스트 -->
+			<div class="mt-4">
+			    <div class="info-card">
+			        <div class="d-flex align-items-center justify-content-between mb-3">
+			            <div class="info-card-title mb-0">
+			                💳 入金済み注文リスト
+			                <span class="badge bg-success ms-2" id="pendingPickupCount">0</span>
+			            </div>
+			            <button class="btn btn-outline-secondary btn-sm" onclick="loadPendingPickupOrders()">
+			                <i class="bi bi-arrow-clockwise"></i> 更新
+			            </button>
+			        </div>
+			        <p class="small text-muted mb-3">
+			            決済完了（ピックアップ待ち）の注文一覧です。QRコードをスキャンするか、コードを手動入力して確認してください。
+			        </p>
+			 
+			        <!-- 로딩 / 빈 상태 -->
+			        <div id="pendingPickupLoading" class="text-center py-3 text-muted small">
+			            <span class="spinner-border spinner-border-sm me-1"></span> 読み込み中...
+			        </div>
+			        <div id="pendingPickupEmpty" class="text-center py-3 text-muted small" style="display:none;">
+			            <i class="bi bi-check-circle text-success fs-5 d-block mb-1"></i>
+			            現在、ピックアップ待ちの注文はありません。
+			        </div>
+			 
+			        <!-- 주문 테이블 -->
+			        <div class="table-responsive" id="pendingPickupTableWrap" style="display:none;">
+			            <table class="table table-hover table-sm mb-0">
+			                <thead class="table-light">
+			                    <tr>
+			                        <th class="text-center" style="width:80px;">注文番号</th>
+			                        <th class="text-center" style="width:450px;">ピックアップコード</th>
+			                        <th class="text-center">商品数</th>
+			                        <th class="text-center">金額</th>
+			                        <th class="text-center">注文日時</th>
+			                        <th class="text-center" style="width:100px;">QRナンバー</th>
+			                    </tr>
+			                </thead>
+			                <tbody id="pendingPickupTableBody"></tbody>
+			            </table>
+			        </div>
+			    </div>
+			</div>
 		</div>
         
 
@@ -874,11 +918,25 @@ async function verifyPickup(code) {
         badge.textContent = s.label;
         badge.className   = 'badge fs-6 ' + s.cls;
 
+     // 카테고리 이모지 매핑
+        const categoryMap = {
+            SUSHI:    '🍣 寿司',
+            BAKERY:   '🥐 ベーカリー',
+            LUNCHBOX: '🍱 お弁当',
+            CAFE:     '☕ カフェ',
+            SIDEDISH: '🥗 惣菜'
+        };
+        const categoryLabel = categoryMap[o.category] || o.category || '—';
+
         document.getElementById('pickupOrderInfo').innerHTML = `
-            <div class="col-5 text-muted">注文番号</div><div class="col-7 fw-bold">#${o.orderId}</div>
-            <div class="col-5 text-muted">合計金額</div><div class="col-7 fw-bold">¥${Number(o.totalPrice).toLocaleString()}</div>
-            <div class="col-5 text-muted">商品種類</div><div class="col-7">${o.itemCount}種類</div>
-            <div class="col-5 text-muted">注文日時</div><div class="col-7">${o.createdAt || '—'}</div>
+            <div class="col-5 text-muted text-center">注文番号</div>
+            <div class="col-7 fw-bold text-center">#${o.orderId}</div>
+            <div class="col-5 text-muted text-center">合計金額</div>
+            <div class="col-7 fw-bold text-center">¥${Number(o.totalPrice).toLocaleString()}</div>
+            <div class="col-5 text-muted text-center">商品種類</div>
+            <div class="col-7">${o.itemCount}種類</div>
+            <div class="col-5 text-muted text-center">注文日時</div>
+            <div class="col-7">${o.createdAt || '—'}</div>
         `;
 
         const complBtn = document.getElementById('btnCompletePickup');
@@ -913,6 +971,143 @@ async function completePickup() {
         }
     } catch (e) {
         showToast('サーバーエラーが発生しました', 'error');
+    }
+}
+
+/**
+ * 결제 완료 대기 주문 목록 로드
+ * GET /api/owner/orders/pending-pickup
+ */
+async function loadPendingPickupOrders() {
+    const loadingEl   = document.getElementById('pendingPickupLoading');
+    const emptyEl     = document.getElementById('pendingPickupEmpty');
+    const tableWrapEl = document.getElementById('pendingPickupTableWrap');
+    const bodyEl      = document.getElementById('pendingPickupTableBody');
+    const countEl     = document.getElementById('pendingPickupCount');
+ 
+    // 초기화
+    if (loadingEl)   loadingEl.style.display   = '';
+    if (emptyEl)     emptyEl.style.display     = 'none';
+    if (tableWrapEl) tableWrapEl.style.display = 'none';
+ 
+    try {
+        const res  = await fetch('/api/owner/orders/pending-pickup');
+        const json = await res.json();
+ 
+        if (!res.ok || !json.success) {
+            showToast('注文リストの取得に失敗しました', 'error');
+            return;
+        }
+ 
+        const orders = json.orders || [];
+ 
+        // 배지 카운트 업데이트
+        if (countEl) countEl.textContent = orders.length;
+ 
+        if (loadingEl) loadingEl.style.display = 'none';
+ 
+        if (!orders.length) {
+            if (emptyEl) emptyEl.style.display = '';
+            return;
+        }
+ 
+        // ── 테이블 렌더링 ────────────────────────────────────────────
+        bodyEl.innerHTML = '';
+        orders.forEach(o => {
+            // itemSummary: "鮭弁当 ×2 / 唐揚げ弁当 ×1"
+            // 없을 경우 fallback
+            const itemSummaryHtml = o.itemSummary
+                ? escHtml(o.itemSummary)
+                    .split(' / ')
+                    .map(part => `<span class="badge bg-light text-dark border me-1 mb-1"
+                                        style="font-size:0.78rem; font-weight:500;">${part}</span>`)
+                    .join('')
+                : '<span class="text-muted small">—</span>';
+ 
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <!-- 주문번호 -->
+                <td class="fw-bold text-success text-center">#${o.orderId}</td>
+ 
+                <!-- ★ 상품명 × 수량 (badge 형식) -->
+                <td style="max-width:260px;">
+                    <div style="display:flex; flex-wrap:wrap; gap:2px;">
+                        ${itemSummaryHtml}
+                    </div>
+                </td>
+ 
+                <!-- 종류 수 -->
+                <td class="text-center">
+                    <span class="badge bg-secondary">${o.itemCount}種類</span>
+                </td>
+ 
+                <!-- 금액 -->
+                <td class="text-center fw-bold ">¥${Number(o.totalPrice).toLocaleString()}</td>
+ 
+                <!-- 주문 일시 -->
+                <td class="text-muted small text-center">${o.createdAt || '—'}</td>
+ 
+                <!-- 픽업 코드 (복사 버튼 포함) -->
+                <td>
+                    <div class="d-flex align-items-center gap-1">
+                        <code class="bg-light px-2 py-1 rounded"
+                              style="font-size:0.75rem; letter-spacing:0.04em; white-space:nowrap;">
+                            ${escHtml(o.pickupCode)}
+                        </code>
+                        <button class="btn btn-sm btn-link p-0 text-muted"
+                                title="コードをコピー"
+                                onclick="copyPickupCode('${escHtml(o.pickupCode)}')">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+                </td>
+ 
+                <!-- 확인 버튼 -->
+                <td class="text-center">
+                    <button class="btn btn-outline-success btn-sm"
+                            onclick="fillPickupCode('${escHtml(o.pickupCode)}')">
+                        <i class="bi bi-qr-code-scan"></i> 確認
+                    </button>
+                </td>
+            `;
+            bodyEl.appendChild(tr);
+        });
+ 
+        if (tableWrapEl) tableWrapEl.style.display = '';
+ 
+    } catch (err) {
+        console.error('[pendingPickup] 로드 실패:', err);
+        if (loadingEl) loadingEl.style.display = 'none';
+        showToast('サーバーエラーが発生しました', 'error');
+    }
+}
+ 
+/** XSS 방지용 이스케이프 */
+function escHtml(str) {
+    return String(str || '').replace(/[&<>"']/g, m => ({
+        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[m]));
+}
+ 
+/**
+ * "確認" 버튼 클릭 시 수동 입력 필드에 코드 자동 입력 후 verifyPickup 호출
+ */
+function fillPickupCode(code) {
+    const input = document.getElementById('pickupCodeInput');
+    if (input) {
+        input.value = code;
+        input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    verifyPickup(code);
+}
+ 
+/** 클립보드 복사 */
+async function copyPickupCode(code) {
+    try {
+        await navigator.clipboard.writeText(code);
+        showToast('コードをコピーしました');
+    } catch {
+        showToast('コピーに失敗しました', 'error');
     }
 }
 </script>

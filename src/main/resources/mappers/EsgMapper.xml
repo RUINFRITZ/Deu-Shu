@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.deushu.esg.mapper.EsgRepository">
+
+    <!--
+        DB 컬럼명(snake_case) → Java 필드명(camelCase) 매핑
+        EsgForestDto 전용
+    -->
+    <resultMap id="esgForestResultMap" type="com.deushu.esg.dto.EsgForestDto">
+        <result property="cumulativeCarbon" column="cumulative_carbon"/>
+        <result property="cumulativeDays"   column="cumulative_days"/>
+        <result property="treeCount"        column="tree_count"/>
+        <result property="forestLevel"      column="forest_level"/>
+    </resultMap>
+
+    <!--
+        OrderCarbonSavingDto 전용 resultMap
+    -->
+    <resultMap id="orderCarbonSavingResultMap" type="com.deushu.esg.dto.OrderCarbonSavingDto">
+        <result property="orderId"        column="order_id"/>
+        <result property="totalCarbonKg"  column="total_carbon_kg"/>
+        <result property="totalTreeDays"  column="total_tree_days"/>
+    </resultMap>
+    
+    <!--
+        CarbonPreviewDto 전용 resultMap
+        결제 완료 직후 모달용: category + 동적 계산값 포함
+    -->
+    <resultMap id="carbonPreviewResultMap" type="com.deushu.esg.dto.CarbonPreviewDto">
+        <result property="category"      column="category"/>
+        <result property="totalCarbonKg" column="total_carbon_kg"/>
+        <result property="totalTreeDays" column="total_tree_days"/>
+    </resultMap>
+
+    <!-- ============================================================
+         마이페이지 ESG 섹션 — 특정 회원의 숲 정보 조회
+         virtual_forests 레코드가 없는 신규 회원은 기본값(0, level 1)으로 반환
+    ============================================================ -->
+    <select id="findEsgForest" parameterType="Long" resultMap="esgForestResultMap">
+        SELECT
+            COALESCE(vf.cumulative_carbon, 0.00) AS cumulative_carbon,
+            COALESCE(vf.cumulative_days,   0)    AS cumulative_days,
+            COALESCE(vf.tree_count,        0)    AS tree_count,
+            COALESCE(vf.forest_level,      1)    AS forest_level
+        FROM members m
+        LEFT JOIN virtual_forests vf ON vf.member_id = m.id
+        WHERE m.id = #{memberId}
+          AND m.deleted_at IS NULL
+    </select>
+
+    <!-- ============================================================
+         index.html 커뮤니티 숲 — 전체 회원의 forest_level 합 반환
+    ============================================================ -->
+    <select id="findCommunityForestTotal" resultType="Integer">
+        SELECT COALESCE(SUM(forest_level), 0)
+        FROM virtual_forests
+    </select>
+
+    <!-- ============================================================
+         결제 완료 모달 — 주문별 탄소 절감 이력 조회
+    ============================================================ -->
+    <select id="findOrderCarbonSaving" parameterType="Long" resultMap="orderCarbonSavingResultMap">
+        SELECT
+            order_id,
+            total_carbon_kg,
+            total_tree_days
+        FROM order_carbon_savings
+        WHERE order_id = #{orderId}
+    </select>
+    
+    <!-- ============================================================
+         결제 완료 직후 탄소 절감 미리보기 (PAYMENT_COMPLETED 시점 호출)
+ 
+         order_items × items × stores.category × carbon_emission_factors 를
+         한 번에 JOIN 하여 category / totalCarbonKg / totalTreeDays 를 반환합니다.
+ 
+         carbon_emission_factors 기본 데이터 (Schema V1.5):
+           BAKERY   → 0.60 kg / 33일
+           SUSHI    → 1.20 kg / 66일
+           LUNCHBOX → 2.00 kg / 110일
+           CAFE     → 0.40 kg / 22일
+           SIDEDISH → 0.80 kg / 44일
+    ============================================================ -->
+    <select id="calcOrderCarbonPreview" parameterType="Long" resultMap="carbonPreviewResultMap">
+        SELECT
+            s.category                                              AS category,
+            COALESCE(SUM(oi.quantity * cef.carbon_kg), 0.0)        AS total_carbon_kg,
+            COALESCE(SUM(oi.quantity * cef.tree_days), 0)          AS total_tree_days
+        FROM order_items oi
+        JOIN items i
+          ON oi.item_id = i.id
+        JOIN stores s
+          ON i.store_id = s.id
+        JOIN carbon_emission_factors cef
+          ON s.category = cef.category
+        WHERE oi.order_id = #{orderId}
+        GROUP BY s.category
+    </select>    
+
+    <!-- ============================================================
+         픽업 완료 처리 — 탄소량 계산
+         주문 상품의 store.category → carbon_emission_factors 와 JOIN 하여
+         수량(quantity) × carbon_kg / tree_days 를 합산
+    ============================================================ -->
+    <select id="calcOrderCarbonKg" parameterType="Long" resultType="Double">
+        SELECT
+            COALESCE(SUM(oi.quantity * cef.carbon_kg), 0.0)
+        FROM order_items oi
+        JOIN items i      ON oi.item_id = i.id
+        JOIN stores s     ON i.store_id = s.id
+        JOIN carbon_emission_factors cef ON s.category = cef.category
+        WHERE oi.order_id = #{orderId}
+    </select>
+
+    <select id="calcOrderTreeDays" parameterType="Long" resultType="Integer">
+        SELECT
+            COALESCE(SUM(oi.quantity * cef.tree_days), 0)
+        FROM order_items oi
+        JOIN items i      ON oi.item_id = i.id
+        JOIN stores s     ON i.store_id = s.id
+        JOIN carbon_emission_factors cef ON s.category = cef.category
+        WHERE oi.order_id = #{orderId}
+    </select>
+
+    <!-- order_carbon_savings INSERT (픽업 완료 시 1회만 저장, IGNORE로 중복 방지) -->
+    <insert id="insertOrderCarbonSaving">
+        INSERT IGNORE INTO order_carbon_savings
+            (order_id, member_id, total_carbon_kg, total_tree_days)
+        VALUES
+            (#{orderId}, #{memberId}, #{totalCarbonKg}, #{totalTreeDays})
+    </insert>
+
+    <!-- virtual_forests 초기 레코드 생성 (신규 회원 대응) -->
+    <insert id="initVirtualForestIfAbsent">
+        INSERT IGNORE INTO virtual_forests (member_id)
+        VALUES (#{memberId})
+    </insert>
+
+    <!-- cumulative_carbon / cumulative_days 누적 업데이트 -->
+    <update id="updateVirtualForestCumulative">
+        UPDATE virtual_forests
+        SET cumulative_carbon = cumulative_carbon + #{carbonKg},
+            cumulative_days   = cumulative_days   + #{treeDays},
+            updated_at        = NOW()
+        WHERE member_id = #{memberId}
+    </update>
+
+    <!-- 완성 소나무 수 및 숲 레벨 갱신
+         조건: cumulative_days / 365 로 tree_count 재계산
+         레벨 최대 5까지 제한 -->
+    <update id="updateForestLevelAndTreeCount">
+        UPDATE virtual_forests
+        SET tree_count   = #{treeCount},
+            forest_level = #{forestLevel},
+            updated_at   = NOW()
+        WHERE member_id = #{memberId}
+    </update>
+
+    <!-- 현재 누적 소나무 일수 조회 (레벨 재계산용) -->
+    <select id="getCumulativeDays" parameterType="Long" resultType="Long">
+        SELECT COALESCE(cumulative_days, 0)
+        FROM virtual_forests
+        WHERE member_id = #{memberId}
+    </select>
+
+</mapper>

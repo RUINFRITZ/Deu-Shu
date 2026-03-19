@@ -552,9 +552,17 @@ function renderPins(pins) {
         const marker = L.marker([pin.lat, pin.lng], {
             icon: createMarkerIcon(pin.totalStock)
         })
-        .bindPopup(buildPopup(pin), { maxWidth: 220 })
+        .bindPopup(buildPopup(pin), { 
+            maxWidth: 220,
+            autoPan: true
+        })
         .addTo(map);
 
+        // popup autopan으로 인한 moveend 방지
+        marker.on('popupopen', () => {
+            isProgrammaticMove = true;
+        });
+        
         markerMap[pin.id] = marker;
     });
 }
@@ -621,6 +629,10 @@ function focusMapPin(cardEl) {
         isProgrammaticMove = true;
         map.flyTo([lat, lng], 16, { animate: true, duration: 0.8 });
     }
+    
+    setTimeout(() => {
+        isProgrammaticMove = false;
+    }, 900);
 
     if (markerMap[id]) {
         markerMap[id].openPopup();
@@ -947,6 +959,11 @@ if (navigator.geolocation) {
 map.on('moveend', function () {
     if (isProgrammaticMove) {
         isProgrammaticMove = false;
+        return;
+    }
+    
+    // popup autopan 직후 moveend 방지
+    if (map._popup && map._popup.isOpen()) {
         return;
     }
 

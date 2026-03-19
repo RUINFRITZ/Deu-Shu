@@ -37,6 +37,7 @@ public class StoreService {
         if (store == null) {
             throw new IllegalArgumentException("STORE_NOT_FOUND: " + storeId);
         }
+        
 
         List<String> images = storeMapper.findStoreImages(storeId);
         StoreDetailResponse.RatingInfo rating = storeMapper.findRatingInfo(storeId);
@@ -57,6 +58,7 @@ public class StoreService {
         res.setImages(images);
         res.setRating(rating);
         res.setItems(items);
+        
         return res;
     }
     // ══════════════════════════════════════════════════════════════

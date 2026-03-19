@@ -84,6 +84,13 @@ function handleLogout() {
     .catch(function() { location.reload(); });
 }
 
+if (window.location.pathname === '/') {
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('error') === 'forbidden' || params.get('error') === 'unauthorized' ) {
+        showToast('アクセスできないページです', 'error');
+        history.replaceState(null, '', '/');
+    }
+}
 // =========================================================================
 // [ ドゥーシュー ] 統合された DOMContentLoaded イベントリスナー
 // =========================================================================
@@ -679,5 +686,7 @@ function handleBizRegister() {
     .catch(function() {
         showFieldMsg('bizRegEmailMsg', 'サーバーエラーが発生しました');
     });
+	
+	
 }
 

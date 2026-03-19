@@ -515,58 +515,6 @@
 	    from { opacity: 0; transform: translateY(20px); }
 	    to   { opacity: 1; transform: translateY(0); }
 	}
-	
-	/* =============================================
-	   ESG 포인트
-	============================================= */
-	
-	.esg-card {
-	    background: linear-gradient(135deg, #064e3b 0%, #065f46 100%);
-	    border-radius: 12px;
-	    padding: 2rem;
-	    color: #fff;
-	    margin-bottom: 1.2rem;
-	    position: relative;
-	    overflow: hidden;
-	}
-	
-	.esg-card::before {
-	    content: '🌳';
-	    position: absolute;
-	    right: 1.5rem;
-	    top: 50%;
-	    transform: translateY(-50%);
-	    font-size: 5rem;
-	    opacity: 0.15;
-	}
-	
-	.esg-label {
-	    font-size: 0.8rem;
-	    opacity: 0.8;
-	    letter-spacing: 0.06em;
-	    margin-bottom: 0.5rem;
-	}
-	
-	.esg-point {
-	    font-size: 2.8rem;
-	    font-weight: 900;
-	    font-family: 'Noto Serif JP', serif;
-	    line-height: 1;
-	}
-	
-	.esg-point span {
-	    font-size: 1rem;
-	    font-weight: 400;
-	    opacity: 0.8;
-	    margin-left: 0.3rem;
-	}
-	
-	.esg-desc {
-	    font-size: 0.8rem;
-	    opacity: 0.7;
-	    margin-top: 0.6rem;
-	}
-	
 	/* =============================================
 	   준비중 섹션
 	============================================= */
@@ -589,6 +537,226 @@
 	.coming-soon p {
 	    font-size: 0.925rem;
 	}
+	
+	/* =============================================
+	   ★ 수정: ESG 섹션 — 탄소 절감량 + 숲 gif 표시
+	============================================= */
+
+	/* 메인 탄소 카드 (기존 esg-card 대체) */
+	.esg-carbon-card {
+	    background: linear-gradient(135deg, #064e3b 0%, #065f46 100%);
+	    border-radius: 14px;
+	    padding: 2rem;
+	    color: #fff;
+	    margin-bottom: 1.2rem;
+	    position: relative;
+	    overflow: hidden;
+	    display: flex;
+	    align-items: center;
+	    gap: 1.5rem;
+	}
+
+	.esg-carbon-card .esg-text-block {
+	    flex: 1;
+	}
+
+	.esg-carbon-label {
+	    font-size: 0.8rem;
+	    opacity: 0.75;
+	    letter-spacing: 0.08em;
+	    margin-bottom: 0.4rem;
+	}
+
+	.esg-carbon-value {
+	    font-size: 3rem;
+	    font-weight: 900;
+	    font-family: 'Noto Serif JP', serif;
+	    line-height: 1;
+	    color: #a7f3d0;
+	}
+
+	.esg-carbon-value span {
+	    font-size: 1.1rem;
+	    font-weight: 400;
+	    color: #fff;
+	    margin-left: 0.3rem;
+	    opacity: 0.85;
+	}
+
+	.esg-carbon-desc {
+	    font-size: 0.8rem;
+	    opacity: 0.7;
+	    margin-top: 0.6rem;
+	    line-height: 1.6;
+	}
+	
+	/* 숲 레벨 배지 */
+	.esg-level-badge {
+	    display: inline-flex;
+	    align-items: center;
+	    gap: 0.4rem;
+	    background: rgba(255,255,255,0.15);
+	    border-radius: 20px;
+	    padding: 0.3rem 0.8rem;
+	    font-size: 0.78rem;
+	    margin-top: 0.8rem;
+	    backdrop-filter: blur(4px);
+	}
+
+	/* 소나무 SVG 애니메이션 컨테이너 */
+	.esg-forest-svg-wrap {
+	    flex-shrink: 0;
+	    display: flex;
+	    align-items: center;
+	    justify-content: center;
+	}
+	.pine-anim {
+	    display: none;
+	    width: 100%;
+	    height: 100%;
+	    align-items: center;
+	    justify-content: center;
+	}
+	.pine-anim.active { display: flex; }
+	.pine-anim svg { width: 100%; height: 100%; overflow: visible; }
+
+	/* 소나무 흔들림 애니메이션 */
+	@keyframes pine-bob {
+	    0%,100% { transform: rotate(-4deg) translateY(0); }
+	    50%      { transform: rotate(4deg) translateY(-3px); }
+	}
+	@keyframes pine-sway-s {
+	    0%,100% { transform: rotate(-4deg); }
+	    50%      { transform: rotate(4deg); }
+	}
+	@keyframes pine-sway-m {
+	    0%,100% { transform: rotate(-3deg); }
+	    50%      { transform: rotate(3deg); }
+	}
+	@keyframes pine-sway-l {
+	    0%,100% { transform: rotate(-2deg); }
+	    50%      { transform: rotate(2deg); }
+	}
+	@keyframes pine-sway-xl {
+	    0%,100% { transform: rotate(-1.5deg); }
+	    50%      { transform: rotate(1.5deg); }
+	}
+	.pine-lv1-g {
+	    transform-box: fill-box;
+	    transform-origin: 50% 100%;
+	    animation: pine-bob 2.5s ease-in-out infinite;
+	}
+	.pine-lv2-g {
+	    transform-box: fill-box;
+	    transform-origin: 50% 100%;
+	    animation: pine-sway-s 3.5s ease-in-out infinite;
+	}
+	.pine-lv3-g {
+	    transform-box: fill-box;
+	    transform-origin: 50% 100%;
+	    animation: pine-sway-m 5s ease-in-out infinite;
+	}
+	.pine-lv4-g {
+	    transform-box: fill-box;
+	    transform-origin: 50% 100%;
+	    animation: pine-sway-l 6.5s ease-in-out infinite;
+	}
+	.pine-lv5-left {
+	    transform-box: fill-box;
+	    transform-origin: 50% 100%;
+	    animation: pine-sway-s 4s ease-in-out infinite;
+	}
+	.pine-lv5-center {
+	    transform-box: fill-box;
+	    transform-origin: 50% 100%;
+	    animation: pine-sway-xl 7s ease-in-out infinite;
+	    animation-delay: -1s;
+	}
+	.pine-lv5-right {
+	    transform-box: fill-box;
+	    transform-origin: 50% 100%;
+	    animation: pine-sway-m 5s ease-in-out infinite;
+	    animation-delay: -2.5s;
+	}
+
+	/* 다음 레벨까지 진행 바 */
+	.esg-progress-card {
+	    background: #fff;
+	    border: 1px solid var(--border);
+	    border-radius: 12px;
+	    padding: 1.4rem 1.6rem;
+	    margin-bottom: 1.2rem;
+	}
+
+	.esg-progress-title {
+	    font-size: 0.8rem;
+	    color: var(--mid-gray);
+	    margin-bottom: 0.8rem;
+	    display: flex;
+	    justify-content: space-between;
+	    align-items: center;
+	}
+
+	.esg-progress-bar-wrap {
+	    height: 8px;
+	    background: #f3f4f6;
+	    border-radius: 99px;
+	    overflow: hidden;
+	}
+
+	.esg-progress-bar-fill {
+	    height: 100%;
+	    background: linear-gradient(90deg, #065f46, #34d399);
+	    border-radius: 99px;
+	    transition: width 0.8s ease;
+	}
+
+	/* 소나무 통계 카드 */
+	.esg-stats-grid {
+	    display: grid;
+	    grid-template-columns: 1fr 1fr 1fr;
+	    gap: 0.9rem;
+	    margin-bottom: 1.2rem;
+	}
+
+	.esg-stat-item {
+	    background: #fff;
+	    border: 1px solid var(--border);
+	    border-radius: 10px;
+	    padding: 1.1rem;
+	    text-align: center;
+	}
+
+	.esg-stat-emoji {
+	    font-size: 1.5rem;
+	    margin-bottom: 0.4rem;
+	    display: block;
+	}
+
+	.esg-stat-value {
+	    font-size: 1.3rem;
+	    font-weight: 800;
+	    color: var(--primary);
+	    font-family: 'Noto Serif JP', serif;
+	}
+
+	.esg-stat-label {
+	    font-size: 0.72rem;
+	    color: var(--mid-gray);
+	    margin-top: 0.2rem;
+	}
+
+	/* 메시지 배너 */
+	.esg-message-banner {
+	    background: #f0fdf4;
+	    border: 1px solid #bbf7d0;
+	    border-radius: 10px;
+	    padding: 1rem 1.2rem;
+	    font-size: 0.85rem;
+	    color: #065f46;
+	    line-height: 1.7;
+	}
+
 	
 	/* =============================================
 	   회원 탈퇴
@@ -694,7 +862,7 @@
                 <i class="bi bi-receipt"></i> 注文履歴
             </button>
             <button class="sidebar-nav-item" onclick="switchSection('esg', this)">
-                <i class="bi bi-tree"></i> ESGポイント
+                <i class="bi bi-tree"></i> エコ活動
             </button>
             <button class="sidebar-nav-item" onclick="switchSection('favorites', this)">
                 <i class="bi bi-heart"></i> お気に入り
@@ -762,19 +930,173 @@
             </div>
         </section>
 
-        <!-- ESG 포인트 (미구현) -->
+<!-- ★ 수정: ESG 섹션 전면 개편 — 탄소 절감량 + 숲 gif -->
         <section class="mypage-section" id="section-esg">
-            <h2 class="section-title">ESGエコポイント</h2>
-            <div class="esg-card">
-                <div class="esg-label">保有ポイント</div>
-                <div class="esg-point" id="esgPoint">0<span>pt</span></div>
-                <div class="esg-desc">フードロスを減らすたびにポイントが貯まります 🌱</div>
+            <h2 class="section-title">🌱 エコ活動</h2>
+
+            <!-- 메인 탄소 카드 -->
+            <div class="esg-carbon-card">
+                <div class="esg-text-block">
+                    <div class="esg-carbon-label">🌍 あなたが節約した CO₂量</div>
+                    <div class="esg-carbon-value">
+                        <span id="esgCarbonKg">0.00</span><span>kg</span>
+                    </div>
+                    <div class="esg-carbon-desc" id="esgCarbonDesc">
+                        フードロスを減らすたびに、地球が喜びます 🌿
+                    </div>
+                    <!-- 숲 레벨 배지 -->
+                    <div class="esg-level-badge">
+                        🌳 <span id="esgLevelName">種（たね）</span>
+                    </div>
+                </div>
+                <!-- 소나무 SVG 애니메이션 — forest_level에 따라 JS로 표시/숨김 -->
+                <div id="esgForestSvg" class="esg-forest-svg-wrap">
+
+                    <!-- Level 1: 種（たね）새싹 -->
+                    <div class="pine-anim active" data-level="1">
+                        <svg viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg">
+                            <ellipse cx="50" cy="105" rx="26" ry="5" fill="rgba(255,255,255,0.15)"/>
+                            <g class="pine-lv1-g">
+                                <rect x="47" y="68" width="6" height="37" rx="3" fill="#fcd34d"/>
+                                <path d="M50,64 Q28,48 33,68 Q42,66 50,64Z" fill="#4ade80"/>
+                                <path d="M50,64 Q72,48 67,68 Q58,66 50,64Z" fill="#86efac"/>
+                                <ellipse cx="50" cy="57" rx="7" ry="10" fill="#22c55e"/>
+                                <ellipse cx="50" cy="54" rx="4" ry="6" fill="#a7f3d0"/>
+                            </g>
+                        </svg>
+                    </div>
+
+                    <!-- Level 2: 苗木（なえぎ）묘목 -->
+                    <div class="pine-anim" data-level="2">
+                        <svg viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg">
+                            <ellipse cx="50" cy="105" rx="26" ry="5" fill="rgba(255,255,255,0.15)"/>
+                            <g class="pine-lv2-g">
+                                <rect x="46" y="84" width="8" height="21" rx="2" fill="#fcd34d"/>
+                                <polygon points="50,58 24,84 76,84" fill="#16a34a"/>
+                                <polygon points="50,36 30,62 70,62" fill="#22c55e"/>
+                                <polygon points="50,16 36,40 64,40" fill="#4ade80"/>
+                                <polygon points="50,16 42,30 58,30" fill="#a7f3d0" opacity="0.6"/>
+                            </g>
+                        </svg>
+                    </div>
+
+                    <!-- Level 3: 小さな森 작은 소나무 -->
+                    <div class="pine-anim" data-level="3">
+                        <svg viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg">
+                            <ellipse cx="50" cy="105" rx="28" ry="5" fill="rgba(255,255,255,0.15)"/>
+                            <g class="pine-lv3-g">
+                                <rect x="45" y="82" width="10" height="23" rx="2" fill="#fcd34d"/>
+                                <polygon points="50,62 18,82 82,82" fill="#14532d"/>
+                                <polygon points="50,44 24,66 76,66" fill="#16a34a"/>
+                                <polygon points="50,26 30,48 70,48" fill="#22c55e"/>
+                                <polygon points="50,10 34,32 66,32" fill="#4ade80"/>
+                                <polygon points="50,10 42,24 58,24" fill="#a7f3d0" opacity="0.55"/>
+                                <circle cx="40" cy="60" r="2" fill="rgba(255,255,255,0.45)"/>
+                                <circle cx="62" cy="56" r="1.5" fill="rgba(255,255,255,0.35)"/>
+                            </g>
+                        </svg>
+                    </div>
+
+                    <!-- Level 4: 森 큰 소나무 -->
+                    <div class="pine-anim" data-level="4">
+                        <svg viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg">
+                            <ellipse cx="50" cy="105" rx="30" ry="5" fill="rgba(255,255,255,0.15)"/>
+                            <g class="pine-lv4-g">
+                                <rect x="44" y="80" width="12" height="25" rx="3" fill="#fcd34d"/>
+                                <polygon points="50,66 13,80 87,80" fill="#14532d"/>
+                                <polygon points="50,50 18,68 82,68" fill="#166534"/>
+                                <polygon points="50,34 24,54 76,54" fill="#16a34a"/>
+                                <polygon points="50,18 30,40 70,40" fill="#22c55e"/>
+                                <polygon points="50,4 35,24 65,24" fill="#4ade80"/>
+                                <polygon points="50,4 42,18 58,18" fill="#a7f3d0" opacity="0.55"/>
+                                <path d="M13,80 Q32,74 50,76" stroke="rgba(255,255,255,0.35)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                                <path d="M18,68 Q34,62 50,64" stroke="rgba(255,255,255,0.3)" stroke-width="2" fill="none" stroke-linecap="round"/>
+                                <circle cx="50" cy="6" r="2" fill="rgba(255,255,255,0.6)"/>
+                            </g>
+                        </svg>
+                    </div>
+
+                    <!-- Level 5: 大きな森 소나무 숲 -->
+                    <div class="pine-anim" data-level="5">
+                        <svg viewBox="0 0 160 110" xmlns="http://www.w3.org/2000/svg">
+                            <ellipse cx="80" cy="105" rx="70" ry="5" fill="rgba(255,255,255,0.15)"/>
+                            <!-- 왼쪽 작은 소나무 -->
+                            <g class="pine-lv5-left">
+                                <rect x="24" y="86" width="8" height="19" rx="2" fill="#fcd34d"/>
+                                <polygon points="28,62 8,86 48,86" fill="#16a34a"/>
+                                <polygon points="28,42 12,66 44,66" fill="#22c55e"/>
+                                <polygon points="28,24 16,46 40,46" fill="#4ade80"/>
+                                <polygon points="28,10 20,28 36,28" fill="#86efac"/>
+                            </g>
+                            <!-- 가운데 큰 소나무 -->
+                            <g class="pine-lv5-center">
+                                <rect x="75" y="80" width="10" height="25" rx="2" fill="#fcd34d"/>
+                                <polygon points="80,58 50,80 110,80" fill="#14532d"/>
+                                <polygon points="80,40 54,62 106,62" fill="#16a34a"/>
+                                <polygon points="80,22 58,46 102,46" fill="#22c55e"/>
+                                <polygon points="80,6 62,28 98,28" fill="#4ade80"/>
+                                <polygon points="80,6 72,20 88,20" fill="#a7f3d0" opacity="0.6"/>
+                                <circle cx="80" cy="8" r="2" fill="rgba(255,255,255,0.6)"/>
+                            </g>
+                            <!-- 오른쪽 중간 소나무 -->
+                            <g class="pine-lv5-right">
+                                <rect x="126" y="84" width="8" height="21" rx="2" fill="#fcd34d"/>
+                                <polygon points="130,62 110,84 150,84" fill="#16a34a"/>
+                                <polygon points="130,42 114,66 146,66" fill="#22c55e"/>
+                                <polygon points="130,24 116,46 144,46" fill="#4ade80"/>
+                                <polygon points="130,10 122,28 138,28" fill="#86efac"/>
+                            </g>
+                            <!-- 눈 점 -->
+                            <circle cx="18" cy="82" r="1.5" fill="rgba(255,255,255,0.4)"/>
+                            <circle cx="50" cy="76" r="2" fill="rgba(255,255,255,0.4)"/>
+                            <circle cx="112" cy="78" r="1.5" fill="rgba(255,255,255,0.35)"/>
+                        </svg>
+                    </div>
+
+                </div>
             </div>
-            <div class="coming-soon">
-                <i class="bi bi-clock-history"></i>
-                <p>ポイント履歴機能は準備中です</p>
+
+            <!-- 다음 레벨까지 진행 바 -->
+            <div class="esg-progress-card">
+                <div class="esg-progress-title">
+                    <span>次のレベルまで</span>
+                    <span style="color:var(--primary); font-weight:700;">
+                        あと <span id="esgDaysLeft">365</span>日分
+                    </span>
+                </div>
+                <div class="esg-progress-bar-wrap">
+                    <div class="esg-progress-bar-fill" id="esgProgressBar" style="width:0%"></div>
+                </div>
+                <div style="font-size:0.75rem; color:var(--light-gray); margin-top:0.5rem; text-align:right;">
+                    累計 <span id="esgTotalDays">0</span> 日分 / 次のレベル <span id="esgNextLevelDays">365</span> 日分
+                </div>
+            </div>
+
+            <!-- 통계 카드 3개 -->
+            <div class="esg-stats-grid">
+                <div class="esg-stat-item">
+                    <span class="esg-stat-emoji">🌲</span>
+                    <div class="esg-stat-value" id="esgTreeCount">0</div>
+                    <div class="esg-stat-label">完成した松の木</div>
+                </div>
+                <div class="esg-stat-item">
+                    <span class="esg-stat-emoji">📅</span>
+                    <div class="esg-stat-value" id="esgCumulativeDays">0</div>
+                    <div class="esg-stat-label">累計ツリーデー</div>
+                </div>
+                <div class="esg-stat-item">
+                    <span class="esg-stat-emoji">🏆</span>
+                    <div class="esg-stat-value" id="esgForestLevelNum">1</div>
+                    <div class="esg-stat-label">フォレストレベル</div>
+                </div>
+            </div>
+
+            <!-- 기여도 메시지 배너 -->
+            <div class="esg-message-banner" id="esgMessageBanner">
+                🌱 あなたは今日も地球の友達です。食品を1つ救うたびに、<strong>30年生の松の木が数日分</strong>の働きをしてくれます。
             </div>
         </section>
+
 
         <!-- 찜한 가게 -->
         <section class="mypage-section" id="section-favorites">
@@ -793,7 +1115,7 @@
             <div class="danger-card">
                 <div class="danger-card-title">退会する前にご確認ください</div>
                 <p>
-                    退会すると、ご注文履歴・ESGポイント・お気に入りなど<br>
+                    退会すると、ご注文履歴・エコ活動・お気に入りなど<br>
                     すべてのデータが削除され、復元できません。<br>
                     本当に退会しますか？
                 </p>
@@ -898,8 +1220,7 @@
 <script src="https://cdn.iamport.kr/v1/iamport.js"></script>
 
 <script>
-const DEFAULT_ITEM_IMAGE = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIiB2aWV3Qm94PSIwIDAgMTUwIDE1MCI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIxNTAiIHJ4PSIxMCIgZmlsbD0iI0Y4RkFGRCIvPjxwYXRoIGQ9Ik05NiA1Mkg5MFY0NEM5MCAzNS4xNjM0IDgzLjI4NDMgMjggNzUgMjhDNjYuNzE1NyAyOCA2MCAzNS4xNjM0IDYwIDQ0VjUySDU0QzQ5LjU4MTcgNTIgNDYgNTUuNTgxNyA0NiA2MFYxMTBDNDYgMTE0LjQxOCA0OS41ODE3IDExOCA1NCAxMThIOTZDMTAwLjQxOCAxMTggMTA0IDExNC40MTggMTA0IDExMFY2MEMxMDQgNTUuNTgxNyAxMDAuNDE4IDUyIDk2IDUyWk04NCA0NFY1Mkg2NlY0NEM2NiAzOC40Nzc4IDcwLjA3NTQgMzQuNzI3MyA3NSAzNC43MzczQzc5LjkyNDYgMzQuNzM3MyA4NCAzOC40Nzc4IDg0IDQ0Wk04NiA1Mkg2NFY0NEM2NCAzNy4zNzI2IDY4LjkyNDkgMzIgNzUgMzJDODEuMDc1MSAzMiA4NiAzNy4zNzI2IDg2IDQ0VjUyWiIgZmlsbD0iI0E3RjNEMCIvPjxwYXRoIGQ9Ik05NiA1Nkg1NEM1MS43OTA5IDU2IDUwIDU3Ljc5MDkgNTAgNjBWMTEwQzUwIDExMi4yMDkgNTEuNzkwOSAxMTQgNTQgMTE0SDk2Qzk4LjIwOTEgMTE0IDEwMCAxMTIuMjA5IDEwMCAxMTBWNjBDMTAwIDU3Ljc5MDkgOTguMjA5MSA1NiA5NiA1NlpNNzUgOTQuNjI5QzczIDEwMCA3MiAxMDIuNzE0IDcyIDEwMi43MTRDNzIgMTAyLjcxNCA3MCAxMDMgNjguOTE0IDExNEM2Ny44Mjg1IDEyNSA3MCAxMzIgNzUgMTMyQzc5Ljk5OTIgMTMyIDgxLjk5OTEgMTI1IDgwLjk5ODggMTE0Qzc5Ljk5OTIgMTAzIDc4IDEwMi43MTQgNzggMTAyLjcxNEM3OCAxMDIuNzE0IDc3IDEwMCA3NSA5NC42Mjl6IiBmaWxsPSIjMDY1Zjg2IiBmaWxsLW9wYWNpdHk9IjAuMDUiLz48L3N2Zz4=';
-
+const DEFAULT_ITEM_IMAGE = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIiB2aWV3Qm94PSIwIDAgMTUwIDE1MCI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIxNTAiIHJ4PSIxMCIgZmlsbD0iI0Y4RkFGRCIvPjwvc3ZnPg==';
 // 섹션 전환
 function switchSection(name, btn) {
     document.querySelectorAll('.mypage-section').forEach(function(s) {
@@ -1018,9 +1339,11 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('editLastNameKana').value  = data.lastNameKana  || '';
         document.getElementById('editFirstNameKana').value = data.firstNameKana || '';
         document.getElementById('editPhone').value         = data.phone         || '';
-        document.getElementById('esgPoint').innerHTML = (data.esgPoint || 0) + '<span>pt</span>';
-    })
+        var esgPointEl = document.getElementById('esgPoint');
+        if (esgPointEl) esgPointEl.innerHTML = (data.esgPoint || 0) + '<span>pt</span>';
+        })
     .catch(function() {
+    	console.error('[MyPage] 초기화 오류:', err); // ← 에러 원인 출력
         location.href = '/';
     });
 });
@@ -1287,7 +1610,11 @@ function switchSection(name, btn) {
         loadTodayPickupOrders(); // 既存のピックアップ関数
     } else if (name === 'favorites') {
         loadFavorites();
+    }else if (name === 'esg') {
+        // ★ 추가: ESG 탭 전환 시 데이터 로드
+        loadEsgForest();
     }
+
 }
 
 /*
@@ -1519,6 +1846,73 @@ async function executeReorder(oldOrderId) {
         Swal.fire({ icon: 'error', title: 'ネットワークエラー', text: '通信に失敗しました。', confirmButtonColor: '#065f46' });
     }
 }
+
+//★ 추가: ESG 숲 데이터 로드 및 렌더링
+async function loadEsgForest() {
+    try {
+        const res = await fetch('/api/v1/mypage/esg');
+        if (res.status === 401) {
+            showToast('ログインセッションが切れました。', 'error');
+            setTimeout(() => location.href = '/', 1500);
+            return;
+        }
+        if (!res.ok) throw new Error('サーバーエラー: ' + res.status);
+
+        const data = await res.json();
+        renderEsgForest(data);
+
+    } catch (error) {
+        console.error('[ESG] データの取得失敗:', error);
+    }
+}
+
+// ★ 추가: ESG 데이터를 DOM에 렌더링
+function renderEsgForest(data) {
+    const carbon    = data.cumulativeCarbon  || 0;
+    const days      = data.cumulativeDays    || 0;
+    const trees     = data.treeCount         || 0;
+    const level     = data.forestLevel       || 1;
+    const levelName = data.forestLevelName   || '種（たね）';
+    const gifPath   = data.forestGifPath     || '/images/esg/forest-level1.gif';
+    const daysLeft  = data.daysUntilNextLevel || 365;
+
+    // 탄소량 표시
+    document.getElementById('esgCarbonKg').textContent = Number(carbon).toFixed(2);
+
+    // 숲 레벨 배지
+    document.getElementById('esgLevelName').textContent = levelName;
+
+    // 소나무 SVG — 해당 레벨만 표시
+    document.querySelectorAll('#esgForestSvg .pine-anim').forEach(el => {
+        el.classList.toggle('active', parseInt(el.dataset.level) === level);
+    });
+
+    // 통계 카드
+    document.getElementById('esgTreeCount').textContent      = trees;
+    document.getElementById('esgCumulativeDays').textContent = days;
+    document.getElementById('esgForestLevelNum').textContent = level;
+
+    // 다음 레벨 진행 바 계산
+    const currentLevelStart = Math.floor(days / 365) * 365;
+    const nextLevelDays = currentLevelStart + 365;
+    const progressPct = Math.min(((days - currentLevelStart) / 365) * 100, 100);
+
+    document.getElementById('esgDaysLeft').textContent    = daysLeft;
+    document.getElementById('esgTotalDays').textContent   = days;
+    document.getElementById('esgNextLevelDays').textContent = nextLevelDays;
+    document.getElementById('esgProgressBar').style.width = progressPct.toFixed(1) + '%';
+
+    // 탄소 절감 기여도 메시지 (레벨에 따라 변경)
+    const messages = {
+        1: '🌱 まだ始まったばかり。食品を救うたびに、<strong>30年生の松の木が数日分</strong>の働きをします。',
+        2: '🌿 苗木が育ってきました！地球への貢献が着実に積み上がっています。これからも一緒に頑張りましょう。',
+        3: '🌳 小さな森を育てています。あなたの行動が<strong>地域の食品ロス削減</strong>に直接貢献しています。',
+        4: '🌲 立派な森になりました！あなたのESG活動は周りのお手本です。今後も続けていきましょう。',
+        5: '🏔️ 大きな森の主人公！あなたは<strong>地球環境のヒーロー</strong>です。素晴らしい貢献に感謝します！'
+    };
+    document.getElementById('esgMessageBanner').innerHTML = messages[level] || messages[1];
+}
+
 
 </script>
 

@@ -9,6 +9,7 @@ package com.deushu.common.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -19,6 +20,7 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     /*
@@ -106,9 +108,24 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/orders/**").hasRole("USER")
                 .requestMatchers("/api/v1/owner/**").hasAnyRole("OWNER", "ADMIN")
 
+                // ESG부분 추가 -준성
+                .requestMatchers("/api/v1/mypage/esg/community").permitAll()
+                // footer 링크 추가 -준성
+                .requestMatchers("/terms/**, /privacy/**, /info/**, /faq/**, /contact/** ").permitAll()
+                
+                
+                
                 // 上記以外のすべてのアプローチは認証(ログイン)を要求して安全に遮断
                 .anyRequest().authenticated()
             );
+        
+		        // 권한 없는 페이지(/admin 등)에 접근했을 때
+		        // 인덱스 페이지로 리다이렉트하고 에러 토스트를 표시
+        	http.exceptionHandling(ex -> ex
+        			.accessDeniedHandler((req, res, e) -> res.sendRedirect("/?error=forbidden"))
+        			.authenticationEntryPoint((req, res, e) -> res.sendRedirect("/?error=unauthorized"))
+        			);
+		        
 
         return http.build();
     }

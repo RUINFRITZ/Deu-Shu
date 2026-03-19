@@ -1,12 +1,15 @@
 package com.deushu.order.mapper;
 
+import java.util.List;
+
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
 import com.deushu.order.domain.ItemEntity;
 import com.deushu.order.domain.OrderEntity;
 import com.deushu.order.domain.OrderItemEntity;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 import com.deushu.order.dto.MyOrderResponse;
-import java.util.List;
+import com.deushu.order.dto.PendingPickupOrderDto;
 
 @Mapper
 public interface OrderMapper {
@@ -76,4 +79,14 @@ public interface OrderMapper {
     
     // キャンセルされた注文の商品履歴を再取得
     List<OrderItemEntity> findOrderItemsByOrderId(@Param("orderId") Long orderId);
+    
+    // ── ★ 오너 페이지: 결제 완료 대기 주문 목록 ─────────────────────────
+    
+    /**
+     * 특정 가게의 PAYMENT_COMPLETED 주문 목록 조회.
+     * 오너 페이지 section-pickup 하단 "入金済み注文リスト" 에 표시.
+     * 결제 시각 오래된 순(ASC)으로 정렬 — 대기 시간이 긴 주문을 위로.
+     */
+    List<PendingPickupOrderDto> findPendingPickupOrders(@Param("storeId") Long storeId);
+    
 }
