@@ -111,7 +111,7 @@ public class SecurityConfig {
                 // ESG부분 추가 -준성
                 .requestMatchers("/api/v1/mypage/esg/community").permitAll()
                 // footer 링크 추가 -준성
-                .requestMatchers("/terms/**, /privacy/**, /info/**, /faq/**, /contact/** ").permitAll()
+                .requestMatchers("/terms/**", "/privacy/**", "/info/**", "/faq/**", "/contact/**").permitAll()
                 
                 
                 
