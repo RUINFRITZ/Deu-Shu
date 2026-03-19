@@ -5,7 +5,7 @@
 
 <mapper namespace="com.deushu.review.mapper.ReviewMapper">
 
-    <!-- 리뷰 목록 조회 -->
+      <!-- 리뷰 목록 조회 (cursor 기반 페이징) -->
     <select id="findByStoreId" resultType="com.deushu.review.dto.ReviewListResponse$ReviewItem">
         SELECT
             r.id,
@@ -25,11 +25,14 @@
         LEFT JOIN items i ON i.id = oi.item_id
         WHERE r.store_id   = #{storeId}
           AND r.deleted_at IS NULL
+          <if test="cursor != null">
+              AND r.id &lt; #{cursor}
+          </if>
         GROUP BY
             r.id, r.member_id, m.first_name,
             o.created_at, r.title, r.content, r.rating, r.photo_url, r.created_at
         ORDER BY r.created_at DESC
-        LIMIT 20
+        LIMIT #{size}
     </select>
 
     <!-- 주문당 1리뷰 중복 체크 -->

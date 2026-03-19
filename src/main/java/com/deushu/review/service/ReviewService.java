@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.List;
+
 
 @Service
 @RequiredArgsConstructor
@@ -17,14 +19,25 @@ public class ReviewService {
 
     private final ReviewMapper reviewMapper;
     private final OrderMapper  orderMapper;
+    
+    private static final int PAGE_SIZE = 10;
 
-    public ReviewListResponse listByStore(long storeId) {
+    public ReviewListResponse listByStore(long storeId, Long cursor) {
+        // size+1 개 조회해서 다음 페이지 존재 여부 판단
+        List<ReviewListResponse.ReviewItem> items =
+                reviewMapper.findByStoreId(storeId, cursor, PAGE_SIZE + 1);
+
+        boolean hasNext = items.size() > PAGE_SIZE;
+        if (hasNext) items = items.subList(0, PAGE_SIZE);
+ 
+        Long nextCursor = hasNext ? items.get(items.size() - 1).getId() : null;
+ 
         ReviewListResponse res = new ReviewListResponse();
-        res.setItems(reviewMapper.findByStoreId(storeId));
-        res.setNextCursor(null);
+        res.setItems(items);
+        res.setNextCursor(nextCursor);
         return res;
     }
-
+        
     public void create(ReviewCreateRequest req) {
         if (req.getStoreId()  == null) throw new IllegalArgumentException("storeId 필수");
         if (req.getMemberId() == null) throw new IllegalArgumentException("memberId 필수");
