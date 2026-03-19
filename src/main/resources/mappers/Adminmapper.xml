@@ -20,11 +20,11 @@
 		AS totalStoreCount,
 		(SELECT COUNT(*) FROM orders
 		WHERE order_status IN ('PAYMENT_COMPLETED', 'PICKUP_COMPLETED')
-		AND DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+		AND DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY))
 		AS yesterdayOrderCount,
 		(SELECT COALESCE(SUM(total_price), 0) FROM orders
 		WHERE order_status IN ('PAYMENT_COMPLETED', 'PICKUP_COMPLETED')
-		AND DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+		AND DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY))
 		AS yesterdaySales,
 		(SELECT COUNT(*) FROM members
 		WHERE deleted_at IS NULL
