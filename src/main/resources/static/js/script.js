@@ -43,7 +43,9 @@ function updateHeaderAuth() {
         var heroCta        = document.getElementById('heroCta');
         var mypageLink     = document.getElementById('dropdownMypageLink');
         var ownerLink      = document.getElementById('dropdownOwnerLink');
-
+		var adminLink      = document.getElementById('dropdownAdminLink');
+		var adminDivider   = document.getElementById('dropdownAdminDivider');
+		
         if (data.success) {
             if (btnGuest) btnGuest.style.display = 'none';
             if (menuWrap) menuWrap.style.display = 'inline-block';
@@ -54,11 +56,15 @@ function updateHeaderAuth() {
 			
             if (heroCta) heroCta.style.display = 'none';
 
-            var isOwner = (data.role === 'ROLE_OWNER' || data.role === 'ROLE_ADMIN');
+            var isOwner = (data.role === 'ROLE_OWNER');
+			var isAdmin = (data.role === 'ROLE_ADMIN');
+
             // マイページ: 일반 회원(ROLE_USER)만 표시
-            if (mypageLink) mypageLink.style.display = isOwner ? 'none' : 'flex';
+            if (mypageLink) mypageLink.style.display = (isOwner || isAdmin) ? 'none' : 'flex';
             // オーナーページ: ROLE_OWNER / ROLE_ADMIN 만 표시
             if (ownerLink)  ownerLink.style.display  = isOwner ? 'flex' : 'none';
+			if (adminLink)    adminLink.style.display    = isAdmin ? 'flex' : 'none';
+			if (adminDivider) adminDivider.style.display = isAdmin ? 'block' : 'none';
         } else {
 			if (btnGuest) btnGuest.style.display = '';
             if (menuWrap) menuWrap.style.display = 'none';

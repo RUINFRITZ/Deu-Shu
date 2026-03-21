@@ -46,7 +46,7 @@ public interface EsgRepository {
     Integer calcOrderTreeDays(@Param("orderId") Long orderId);
 
     /** order_carbon_savings 에 절감 이력 저장 */
-    void insertOrderCarbonSaving(
+    int insertOrderCarbonSaving(
         @Param("orderId")        Long    orderId,
         @Param("memberId")       Long    memberId,
         @Param("totalCarbonKg")  Double  totalCarbonKg,

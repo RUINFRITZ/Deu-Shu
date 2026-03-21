@@ -155,10 +155,18 @@
 				            <a th:href="@{/owner}" class="user-dropdown-item" id="dropdownOwnerLink" style="display:none;"> 
 				                <i class="bi bi-shop"></i> オーナーページ
 				            </a> 
+				            <!-- 기본은 display:none, JS가 role 보고 결정 -->
+							<a th:href="@{/admin/dashboard}"
+							   class="user-dropdown-item"
+							   id="dropdownAdminLink"
+							   style="display:none; color: #e65c00; font-weight: 600;">
+							    <i class="bi bi-shield-lock-fill"></i> 管理者ページ
+							</a>
 				            
 				            <a th:href="@{/order/pickup}" class="user-dropdown-item" th:if="${hasCompletedOrder}"> 
 				                <i class="bi bi-bag-check"></i> 注文状況
 				            </a>
+				            
 				            
 				            <div class="user-dropdown-divider"></div>
 				            
