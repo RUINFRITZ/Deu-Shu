@@ -583,7 +583,16 @@ async function submitReview() {
             Swal.fire({ title: 'エラー', text: json.message || 'レビューの登録に失敗しました。', icon: 'error', iconColor: '#dc2626', confirmButtonColor: '#065f46', confirmButtonText: '確認' });
             return;
         }
-
+	
+		closeReviewModal(); 
+		
+		document.getElementById('reviewTitle').value   = '';
+		document.getElementById('reviewContent').value = '';
+		currentRating = 5.0;
+		ratingLocked  = false;
+		updateStars();
+		removeImage();
+		
 		await Swal.fire({
             title: '登録完了',
             text: 'レビューが正常に登録されました。',
@@ -593,16 +602,8 @@ async function submitReview() {
             confirmButtonText: '確認'
         });
 		
-        closeReviewModal();
+		loadReviews(storeId);
 		
-        document.getElementById('reviewTitle').value   = '';
-        document.getElementById('reviewContent').value = '';
-        currentRating = 5.0;
-        ratingLocked  = false;
-        updateStars();
-        removeImage();
-        loadReviews(storeId);
-
     } catch (err) {
         console.error('[レビュー登録] エラー:', err);
         Swal.fire({ title: 'エラー', text: 'エラーが発生しました。もう一度お試しください。', icon: 'error', iconColor: '#dc2626', confirmButtonColor: '#065f46', confirmButtonText: '確認' });
@@ -1129,7 +1130,7 @@ async function verifyPayment(impUid, orderId) {
               // 탄소 모달 조회 실패 시 조용히 무시하고 기존 흐름 유지
 				console.warn('[탄소 모달] 데이터 조회 실패:', carbonErr);
 				showToast('決済が正常に完了しました！マイページへ移動します。', 'success');
-				setTimeout(() => { window.location.href = '/mypage'; }, 1500);
+				// setTimeout(() => { window.location.href = '/mypage'; }, 1500);
 				}
 			} else {
 	        	showToast(verifyData.message || '決済の検証に失敗しました。', 'error');
@@ -1394,6 +1395,7 @@ function openCarbonModal(carbonKg, treeDays, category) {
 function closeCarbonModal() {
     document.getElementById('carbonOverlay').classList.remove('open');
     document.body.style.overflow = '';
+	window.location.href = '/mypage';  // ← 추가
 }
  
 function handleCarbonOverlayClick(e) {

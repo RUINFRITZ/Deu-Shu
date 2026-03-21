@@ -14,6 +14,7 @@ public class MyOrderResponse {
     private String storeName;
     private LocalDateTime createdAt;
     private Integer totalPrice;
+    private String orderStatus; // 인재 추가
     private List<OrderItemSummary> items;
     private boolean reviewed;   // 이미 리뷰 작성했는지 여부
 
