@@ -50,7 +50,14 @@ public class EsgService {
         }
 
         // 2. order_carbon_savings 에 저장 (이미 존재하면 중복 저장 방지)
-        esgRepository.insertOrderCarbonSaving(orderId, memberId, totalCarbonKg, totalTreeDays);
+        // 2. order_carbon_savings 에 저장 (이미 존재하면 중복 저장 방지)
+        //    INSERT IGNORE → 실제 INSERT 됐으면 1, 이미 존재하면 0 반환
+        int inserted = esgRepository.insertOrderCarbonSaving(orderId, memberId, totalCarbonKg, totalTreeDays);
+        if (inserted == 0) {
+            log.warn("⚠️ [ESG] orderId {} 는 이미 처리된 주문입니다. virtual_forests 업데이트를 건너뜁니다.", orderId);
+            return;
+        }
+        
         log.info("✅ [ESG] order_carbon_savings 저장 완료 — {}kg, {}일", totalCarbonKg, totalTreeDays);
 
         // 3. virtual_forests 테이블 없으면 초기 레코드 생성 (신규 회원 대응)
