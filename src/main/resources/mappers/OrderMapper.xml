@@ -120,6 +120,7 @@
 		<result property="storeName" column="store_name" />
 		<result property="createdAt" column="created_at" />
 		<result property="totalPrice" column="total_price" />
+		 <result property="orderStatus" column="order_status" />  <!-- 인재 추가 -->
 		<result property="reviewed" column="reviewed" />
 		<collection property="items"
 			ofType="com.deushu.order.dto.MyOrderResponse$OrderItemSummary">
@@ -139,6 +140,7 @@
 		s.name AS store_name,
 		o.created_at,
 		o.total_price,
+		o.order_status, <!-- 인재추가 -->
 		oi.item_id,
 		i.name AS item_name,
 		oi.quantity,
