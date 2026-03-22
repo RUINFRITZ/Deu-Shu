@@ -1,5 +1,9 @@
 #  ドゥーシュー (Deu-Shu)
 JSL人材開発院 Cloud連携Web開発者課程26期 チームプロジェクト
+
+以下のリンクから、プロジェクトのシステムアーキテクチャ、機能デモンストレーション、およびチームメンバーの回顧録を含むプレゼンテーションをご覧いただけます。
+[![Presentation Link](https://img.shields.io/badge/Presentation-View_Demo-F28940?style=for-the-badge&logo=github&logoColor=white)][(https://github.com/RUINFRITZ/Deu-Shu/presentation_DeuShu.html)
+
 > **「どうしよう…」という店舗オーナーの悩みを、「드슈(どうぞ)」という温かい提案へ。** > 廃棄されるはずだった食品を救い、地球に仮想の木を植える生活密着型ESG（ライフ・インテグレーテッドESG）プラットフォームです。
 
 
