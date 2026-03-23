@@ -1,4 +1,4 @@
-# ドゥーシュー「Deu-Shu」 [![Presentation Link](https://img.shields.io/badge/Presentation-View_Demo-F28940?style=for-the-badge&logo=github&logoColor=white)](https://ruinfritz.github.io/Deu-Shu/presentation_DeuShu.html)
+# ドゥーシュー「드슈, Deu-Shu」 [![Presentation Link](https://img.shields.io/badge/Presentation-View_Demo-F28940?style=for-the-badge&logo=github&logoColor=white)](https://ruinfritz.github.io/Deu-Shu/presentation_DeuShu.html)
 **JSL人材開発院 Cloud連携Web開発者課程26期 チームプロジェクト**
 
 > **「どうしよう…」という店舗オーナーの悩みを、「드슈『どうぞ』」という温かい提案へ。** <br>
