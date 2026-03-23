@@ -44,7 +44,7 @@ public class ReviewController {
     public ResponseEntity<Map<String, Object>> create(@RequestBody ReviewCreateRequest req) {
         Long memberId = getSessionMemberId();
         if (memberId == null)
-            return ResponseEntity.status(401).body(Map.of("success", false, "message", "로그인이 필요합니다."));
+            return ResponseEntity.status(401).body(Map.of("success", false, "message", "ログインが必要です。"));
         req.setMemberId(memberId);
 
         try {
@@ -64,16 +64,16 @@ public class ReviewController {
 
         if (file.isEmpty())
             return ResponseEntity.badRequest()
-                    .body(Map.of("success", false, "message", "파일이 없습니다."));
+                    .body(Map.of("success", false, "message", "ファイルがありません。"));
 
         String contentType = file.getContentType();
         if (contentType == null || !contentType.startsWith("image/"))
             return ResponseEntity.badRequest()
-                    .body(Map.of("success", false, "message", "이미지 파일만 업로드 가능합니다."));
+                    .body(Map.of("success", false, "message", "画像ファイルのみアップロード可能です。"));
 
         if (file.getSize() > 5 * 1024 * 1024)
             return ResponseEntity.badRequest()
-                    .body(Map.of("success", false, "message", "파일 크기는 5MB 이하여야 합니다."));
+                    .body(Map.of("success", false, "message", "ファイルサイズは5MB以下でなければなりません。"));
 
         try {
             String ext = "";
@@ -85,13 +85,13 @@ public class ReviewController {
             s3Service.upload(file, key);
 
             String url = String.format("https://%s.s3.%s.amazonaws.com/%s", bucket, region, key);
-            log.info("[리뷰 이미지 업로드 완료] url={}", url);
+            log.info("[レビュー画像のアップロードが完了した] url={}", url);
             return ResponseEntity.ok(Map.of("success", true, "url", url));
 
         } catch (Exception e) {
-            log.error("[리뷰 이미지 업로드 실패]", e);
+            log.error("[レビュー画像のアップロードに失敗]", e);
             return ResponseEntity.internalServerError()
-                    .body(Map.of("success", false, "message", "업로드 중 오류가 발생했습니다."));
+                    .body(Map.of("success", false, "message", "アップロード中にエラーが発生しました。"));
         }
     }
 
@@ -100,7 +100,7 @@ public class ReviewController {
     public ResponseEntity<Map<String, Object>> delete(@PathVariable("reviewId") long reviewId) {
         Long memberId = getSessionMemberId();
         if (memberId == null)
-            return ResponseEntity.status(401).body(Map.of("success", false, "message", "로그인이 필요합니다."));
+            return ResponseEntity.status(401).body(Map.of("success", false, "message", "ログインが必要です。"));
 
         try {
             reviewService.delete(reviewId, memberId);

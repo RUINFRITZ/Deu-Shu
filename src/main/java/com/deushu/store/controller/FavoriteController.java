@@ -39,7 +39,7 @@ public class FavoriteController {
     public ResponseEntity<?> myFavorites(HttpSession session) {
         Long memberId = (Long) session.getAttribute("memberId");
         if (memberId == null) {
-            return ResponseEntity.status(401).body(Map.of("message", "로그인이 필요합니다."));
+            return ResponseEntity.status(401).body(Map.of("message", "ログインが必要です。"));
         }
         return ResponseEntity.ok(favoriteService.getFavoriteStores(memberId));
     }
@@ -63,7 +63,7 @@ public class FavoriteController {
         Long memberId = (Long) session.getAttribute("memberId");
         if (memberId == null) {
             return ResponseEntity.status(401)
-                    .body(Map.of("message", "로그인이 필요합니다."));
+                    .body(Map.of("message", "ログインが必要です。"));
         }
 
         boolean favorited = favoriteService.toggle(memberId, storeId);
