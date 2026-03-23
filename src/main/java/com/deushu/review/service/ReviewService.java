@@ -39,30 +39,30 @@ public class ReviewService {
     }
         
     public void create(ReviewCreateRequest req) {
-        if (req.getStoreId()  == null) throw new IllegalArgumentException("storeId 필수");
-        if (req.getMemberId() == null) throw new IllegalArgumentException("memberId 필수");
-        if (!StringUtils.hasText(req.getTitle()))   throw new IllegalArgumentException("제목을 입력해주세요.");
-        if (!StringUtils.hasText(req.getContent())) throw new IllegalArgumentException("내용을 입력해주세요.");
+        if (req.getStoreId()  == null) throw new IllegalArgumentException("storeId 必須");
+        if (req.getMemberId() == null) throw new IllegalArgumentException("memberId 必須");
+        if (!StringUtils.hasText(req.getTitle()))   throw new IllegalArgumentException("タイトルを入力してください。");
+        if (!StringUtils.hasText(req.getContent())) throw new IllegalArgumentException("内容を入力してください。");
         if (req.getRating() == null || req.getRating() < 1 || req.getRating() > 5)
-            throw new IllegalArgumentException("별점은 1~5 사이로 입력해주세요.");
+            throw new IllegalArgumentException("評価は1〜5の間で入力してください。");
 
         // 결제 완료된 주문이 있는지 확인
         boolean hasPurchased = orderMapper.existsCompletedOrder(req.getMemberId(), req.getStoreId());
         if (!hasPurchased)
-            throw new IllegalStateException("해당 가게에서 결제 완료된 주문이 없습니다.");
+            throw new IllegalStateException("この店舗では、決済が完了した注文はありません。");
 
         // 리뷰 작성 기한 3일 체크
         if (req.getOrderId() != null) {
             OrderEntity order = orderMapper.findOrderById(req.getOrderId());
             if (order != null && order.getCreatedAt() != null) {
                 if (LocalDateTime.now().isAfter(order.getCreatedAt().plusDays(3)))
-                    throw new IllegalStateException("리뷰 작성 기한(3일)이 지났습니다.");
+                    throw new IllegalStateException("レビュー作成期限（3日）が過ぎました。");
             }
         }
 
         // 중복 리뷰 방지
         if (req.getOrderId() != null && reviewMapper.existsByOrderId(req.getOrderId()) > 0)
-            throw new IllegalStateException("이미 해당 주문에 리뷰가 존재합니다.");
+            throw new IllegalStateException("すでにその注文にはレビューが存在します。");
 
         reviewMapper.insert(req);
     }
@@ -70,6 +70,6 @@ public class ReviewService {
     public void delete(long reviewId, long memberId) {
         int affected = reviewMapper.deleteById(reviewId, memberId);
         if (affected == 0)
-            throw new IllegalStateException("삭제할 수 없습니다. (본인 리뷰가 아니거나 이미 삭제된 리뷰입니다.)");
+            throw new IllegalStateException("削除できません。 (自分のレビューでないか、すでに削除されたレビューです。)");
     }
 }
