@@ -377,7 +377,7 @@ function verifyBusinessNumber() {
     .then(function(data) {
         if (!data.success) {
             setInputState('bizRegBizNum', 'is-error');
-            showFieldMsg('bizRegBizNumMsg', data.message || '⚠ 登録されていない事業者番号です');
+            showFieldMsg('bizRegBizNumMsg', data.message || '⚠ 代表者名が一致しません');
             return;
         }
 
@@ -385,7 +385,7 @@ function verifyBusinessNumber() {
         if (data.lastName !== enteredLast || data.firstName !== enteredFirst) {
             setInputState('bizRegBizNum', 'is-error');
             showFieldMsg('bizRegBizNumMsg',
-                '⚠ 代表者名が一致しません（登録名：' + data.lastName + ' ' + data.firstName + '）');
+                '⚠ 代表者名が一致しません');
             return;
         }
 

@@ -1,0 +1,246 @@
+폴더 PATH의 목록입니다.
+볼륨 일련 번호는 8E20-6079입니다.
+C:.
+|   tree.txt
+|   
++---main
+|   +---java
+|   |   \---com
+|   |       \---deushu
+|   |           |   DeuShuApplication.java
+|   |           |   
+|   |           +---admin
+|   |           |   +---controller
+|   |           |   |       AdminController.java
+|   |           |   |       
+|   |           |   +---dto
+|   |           |   |       AdminDto.java
+|   |           |   |       
+|   |           |   +---mapper
+|   |           |   |       AdminRepository.java
+|   |           |   |       
+|   |           |   \---service
+|   |           |           AdminService.java
+|   |           |           
+|   |           +---common
+|   |           |   +---config
+|   |           |   |       CacheConfig.java
+|   |           |   |       S3Config.java
+|   |           |   |       SecurityConfig.java
+|   |           |   |       WebMvcConfig.java
+|   |           |   |       
+|   |           |   +---controller
+|   |           |   |       IndexController.java
+|   |           |   |       RootLogoutController.java
+|   |           |   |       
+|   |           |   +---exception
+|   |           |   |       GlobalExceptionHandler.java
+|   |           |   |       
+|   |           |   +---response
+|   |           |   |       ApiResponse.java
+|   |           |   |       
+|   |           |   \---util
+|   |           |           Bbox.java
+|   |           |           SalesScheduler.java
+|   |           |           
+|   |           +---esg
+|   |           |   +---controller
+|   |           |   |       EsgController.java
+|   |           |   |       
+|   |           |   +---dto
+|   |           |   |       CarbonPreviewDto.java
+|   |           |   |       EsgForestDto.java
+|   |           |   |       OrderCarbonSavingDto.java
+|   |           |   |       
+|   |           |   +---mapper
+|   |           |   |       EsgRepository.java
+|   |           |   |       
+|   |           |   \---service
+|   |           |           EsgService.java
+|   |           |           
+|   |           +---member
+|   |           |   +---controller
+|   |           |   |       AuthController.java
+|   |           |   |       MyPageApiController.java
+|   |           |   |       OwnerController.java
+|   |           |   |       
+|   |           |   +---domain
+|   |           |   |       MemberEntity.java
+|   |           |   |       
+|   |           |   +---dto
+|   |           |   |       LoginRequest.java
+|   |           |   |       
+|   |           |   +---mapper
+|   |           |   |       MemberRepository.java
+|   |           |   |       
+|   |           |   \---service
+|   |           |           MemberService.java
+|   |           |           
+|   |           +---order
+|   |           |   +---controller 1
+|   |           |   |       OrderController.java
+|   |           |   |       
+|   |           |   +---domain 3
+|   |           |   |       ItemEntity.java
+|   |           |   |       OrderEntity.java
+|   |           |   |       OrderItemEntity.java
+|   |           |   |       
+|   |           |   +---dto 9
+|   |           |   |       ItemSalesSummaryDto.java
+|   |           |   |       MyOrderResponse.java
+|   |           |   |       MyPageOrderResponseDto.java
+|   |           |   |       OrderCreateRequestDto.java
+|   |           |   |       OrderQrDto.java
+|   |           |   |       PaymentVerifyRequestDto.java
+|   |           |   |       PendingPickupOrderDto.java
+|   |           |   |       PickupVerifyResponse.java
+|   |           |   |       SalesSummaryDto.java
+|   |           |   |       
+|   |           |   +---mapper 1
+|   |           |   |       OrderMapper.java
+|   |           |   |       
+|   |           |   \---service 4
+|   |           |           OrderCleanupScheduler.java
+|   |           |           OrderQrService.java
+|   |           |           OrderService.java
+|   |           |           PaymentService.java
+|   |           |           
+|   |           +---review
+|   |           |   +---controller
+|   |           |   |       ReviewController.java
+|   |           |   |       
+|   |           |   +---domain
+|   |           |   |       ReviewEntity.java
+|   |           |   |       
+|   |           |   +---dto
+|   |           |   |       FavoriteResponse.java
+|   |           |   |       ReviewCreateRequest.java
+|   |           |   |       ReviewCreateResponse.java
+|   |           |   |       ReviewListResponse.java
+|   |           |   |       ReviewUploadRequest.java
+|   |           |   |       
+|   |           |   +---mapper
+|   |           |   |       ReviewMapper.java
+|   |           |   |       ReviewRepository.java
+|   |           |   |       
+|   |           |   \---service
+|   |           |           ReviewService.java
+|   |           |           
+|   |           +---store
+|   |           |   +---controller
+|   |           |   |       FavoriteController.java
+|   |           |   |       ReviewSummaryController.java
+|   |           |   |       StoreApiController.java
+|   |           |   |       StoreController.java
+|   |           |   |       
+|   |           |   +---domain
+|   |           |   |       StoreEntity.java
+|   |           |   |       StoreImageEntity.java
+|   |           |   |       
+|   |           |   +---dto
+|   |           |   |       FavoriteStoreDto.java
+|   |           |   |       NearbyStoreResponse.java
+|   |           |   |       RegionLocation.java
+|   |           |   |       ReviewForSummaryDto.java
+|   |           |   |       ReviewSummaryResponseDto.java
+|   |           |   |       StoreDetailDto.java
+|   |           |   |       StoreDetailResponse.java
+|   |           |   |       StoreDetailRows.java
+|   |           |   |       StoreFilterRequest.java
+|   |           |   |       StoreImageDto.java
+|   |           |   |       StoreMapDto.java
+|   |           |   |       
+|   |           |   +---mapper
+|   |           |   |       FavoriteMapper.java
+|   |           |   |       ItemRepository.java
+|   |           |   |       ReviewSummaryMapper.java
+|   |           |   |       SalesRepository.java
+|   |           |   |       StoreMapper.java
+|   |           |   |       
+|   |           |   \---service
+|   |           |           FavoriteService.java
+|   |           |           GeminiReviewSummaryService.java
+|   |           |           RegionService.java
+|   |           |           S3Service.java
+|   |           |           StoreService.java
+|   |           |           
+|   |           \---util
+|   |                   PasswordGenerator.java
+|   |                   
+|   \---resources
+|       |   application.properties
+|       |   
+|       +---mappers
+|       |       Adminmapper.xml
+|       |       EsgMapper.xml
+|       |       FavoriteMapper.xml
+|       |       ItemMapper.xml
+|       |       MemberMapper.xml
+|       |       OrderMapper.xml
+|       |       ReviewMapper.xml
+|       |       ReviewSummaryMapper.xml
+|       |       SalesMapper.xml
+|       |       StoreMapper.xml
+|       |       
+|       +---static
+|       |   +---css
+|       |   |       admin.css
+|       |   |       detail.css
+|       |   |       owner.css
+|       |   |       style.css
+|       |   |       
+|       |   +---images
+|       |   |       no-image.png
+|       |   |       
+|       |   \---js
+|       |           admin.js
+|       |           detail.js
+|       |           owner.js
+|       |           script.js
+|       |           
+|       \---templates
+|           |   index.html
+|           |   
+|           +---admin
+|           |       complaints.html
+|           |       dashboard.html
+|           |       members.html
+|           |       orders.html
+|           |       reviews.html
+|           |       stores.html
+|           |       
+|           +---error
+|           |       404.html
+|           |       
+|           +---fragments
+|           |       admin_sidebar.html
+|           |       footer.html
+|           |       header.html
+|           |       
+|           +---member
+|           |       login.html
+|           |       mypage.html
+|           |       ownerPage.html
+|           |       
+|           +---order
+|           |       ordercomplete.html
+|           |       pickup.html
+|           |       
+|           +---policy
+|           |       contact.html
+|           |       faq.html
+|           |       info.html
+|           |       privacy.html
+|           |       terms.html
+|           |       
+|           \---store
+|                   detail.html
+|                   list.html
+|                   storeList.html
+|                   
+\---test
+    \---java
+        \---com
+            \---deushu
+                    DeuShuApplicationTests.java
+                    
